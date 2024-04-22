@@ -1,0 +1,12 @@
+{
+  "eslint.enable": true,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.rulers": [
+    120
+  ],   
+  "files.insertFinalNewline": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+}

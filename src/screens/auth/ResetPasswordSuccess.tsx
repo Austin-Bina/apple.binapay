@@ -1,0 +1,50 @@
+import { ImageBackground, View } from "react-native";
+import React from "react";
+import tw from "@lib/tailwind";
+import { Button, Text } from "react-native-paper";
+import { StackScreenProps } from "@navigators/types";
+
+const ResetPasswordSuccessScreen: React.FC<
+  StackScreenProps<"Reset Password Successful">
+> = ({ navigation }) => {
+  const onSubmit = function () {
+    navigation.navigate("Auth", { screen: "Login" });
+  };
+
+  return (
+    <ImageBackground
+      source={require("@assets/images/background-with-logo.png")}
+    >
+      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+        <View style={tw`flex-1 justify-center`}>
+          <View style={tw`p-4 h-1/2 justify-end`}>
+            <View>
+              <Text
+                style={tw`w-full font-bold text-3xl text-center text-gray-800 mb-2.5`}
+              >
+                Password Reset Successful 🎉
+              </Text>
+              <Text
+                style={tw`leading-6 w-full font-light text-base text-gray text-center`}
+              >
+                Your password has been successfully reset. Use your new password
+                to log in.
+              </Text>
+            </View>
+          </View>
+        </View>
+        <Button
+          style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+          onPress={onSubmit}
+          mode="contained"
+        >
+          <Text style={tw`text-white text-center text-base font-bold`}>
+            Login Now
+          </Text>
+        </Button>
+      </View>
+    </ImageBackground>
+  );
+};
+
+export default ResetPasswordSuccessScreen;
