@@ -34,7 +34,8 @@ const ResetPasswordSuccessScreen: React.FC<
           </View>
         </View>
         <Button
-          style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+          style={tw`mt-auto mb-[30px] w-full rounded-full`}
+          contentStyle={tw`py-2`}
           onPress={onSubmit}
           mode="contained"
         >

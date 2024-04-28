@@ -1,5 +1,5 @@
-import Screen from "@components/shared/Screen";
-import ScrollableView from "@components/shared/ScrollableView";
+import Screen from "@components/ui/shared/Screen";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import React from "react";

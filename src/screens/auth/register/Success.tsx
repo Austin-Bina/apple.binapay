@@ -35,15 +35,16 @@ const RegisterSuccessScreen: React.FC<
             </View>
           </View>
         </View>
-        <Button
-          style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
-          onPress={onSubmit}
-          mode="contained"
-        >
-          <Text style={tw`text-white text-center text-base font-bold`}>
+        <View style={tw`px-4 pb-4 pt-1`}>
+          <Button
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
+            onPress={onSubmit}
+            mode="contained"
+          >
             Continue to Home
-          </Text>
-        </Button>
+          </Button>
+        </View>
       </View>
     </ImageBackground>
   );

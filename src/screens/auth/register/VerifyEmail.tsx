@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { View, Text } from "react-native";
-import { Button, HelperText } from "react-native-paper";
-import {
-  RegistrationStackScreenProps,
-  StackScreenProps,
-} from "@navigators/types";
+import { Button } from "react-native-paper";
+import { RegistrationStackScreenProps } from "@navigators/types";
 import tw from "@lib/tailwind";
-import Screen from "@components/shared/Screen";
-import OtpInput from "@components/form/OtpInput";
+import Screen from "@components/ui/shared/Screen";
+import OtpInput from "@components/ui/form/OtpInput";
 import { Colors } from "@constants/theme";
 
 type Props = RegistrationStackScreenProps<"Verify Email">;
@@ -59,9 +56,10 @@ const VerifyEmail: React.FC<Props> = (props) => {
           </Text>
         </View>
 
-        <View>
+        <View style={tw`gap-4 mb-5`}>
           <Button
-            style={tw`flex items-center mb-4 justify-center py-2 w-full rounded-[94px]`}
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
             loading={fetching}
             mode="contained"
             disabled={!pinReady || fetching}
@@ -70,7 +68,8 @@ const VerifyEmail: React.FC<Props> = (props) => {
             Continue
           </Button>
           <Button
-            style={tw`flex items-center mb-[30px] justify-center py-2 w-full rounded-[94px]`}
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2 w-full`}
             loading={fetching}
             mode="outlined"
             textColor={Colors.gray[500]}

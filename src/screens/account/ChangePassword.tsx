@@ -1,16 +1,16 @@
 import { View } from "react-native";
 import React, { useState } from "react";
-import CustomTextInput from "@components/form/TextInput";
+import CustomTextInput from "@components/ui/form/TextInput";
 import { Button, Text, TextInput } from "react-native-paper";
 import { AccountStackScreenProps, StackScreenProps } from "@navigators/types";
 import * as Yup from "yup";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import Screen from "@components/shared/Screen";
-import PleaseWaitModal from "@components/modals/PleaseWaitModal";
+import Screen from "@components/ui/shared/Screen";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import tw from "@lib/tailwind";
-import ScrollableView from "@components/shared/ScrollableView";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 
 type ResetPasswordProps = AccountStackScreenProps<"Change Password">;
 
@@ -164,7 +164,8 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
           </View>
 
           <Button
-            style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+            style={tw`mt-auto mb-[30px] w-full rounded-full`}
+            contentStyle={tw`p-2`}
             disabled={fetching}
             onPress={onSubmit}
             mode="contained"

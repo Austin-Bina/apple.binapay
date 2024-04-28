@@ -1,11 +1,12 @@
-import CustomTextInput from "@components/form/TextInput";
-import Screen from "@components/shared/Screen";
+import CustomTextInput from "@components/ui/form/TextInput";
+import Screen from "@components/ui/shared/Screen";
 import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import React from "react";
 import { Dimensions, View } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text, TextInput } from "react-native-paper";
+import { scale } from "react-native-size-matters";
 
 type Props = HomeStackScreenProps<"Card Details">;
 
@@ -58,7 +59,8 @@ export default function CardDetailsScreen({ navigation }: Props) {
         </View>
         <View>
           <Button
-            style={tw`mt-10 mb-[30px] px-2 py-2 w-full rounded-full`}
+            style={tw`mt-10 mb-[30px] w-full rounded-full`}
+            contentStyle={tw`py-2`}
             onPress={onSubmit}
             mode="contained"
           >
@@ -69,7 +71,7 @@ export default function CardDetailsScreen({ navigation }: Props) {
 
           <Image
             source={require("@assets/images/secured-by-paystack.png")}
-            width={deviceWidth - 200}
+            width={scale(deviceWidth - 200)}
             style={tw`mx-auto`}
           />
         </View>

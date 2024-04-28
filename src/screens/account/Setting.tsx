@@ -1,4 +1,4 @@
-import Screen from "@components/shared/Screen";
+import Screen from "@components/ui/shared/Screen";
 import tw from "@lib/tailwind";
 import React, { Fragment } from "react";
 import { View } from "react-native";
@@ -18,7 +18,7 @@ import SupportIcon from "@assets/icons/support-head.svg";
 import PrivacyIcon from "@assets/icons/privacy.svg";
 import LogoutIcon from "@assets/icons/logout.svg";
 import { Colors } from "@constants/theme";
-import ScrollableView from "@components/shared/ScrollableView";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
 import { StackActions } from "@react-navigation/native";
 

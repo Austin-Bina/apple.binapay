@@ -6,8 +6,8 @@ import {
   StackScreenProps,
 } from "@navigators/types";
 import tw from "@lib/tailwind";
-import Screen from "@components/shared/Screen";
-import OtpInput from "@components/form/OtpInput";
+import Screen from "@components/ui/shared/Screen";
+import OtpInput from "@components/ui/form/OtpInput";
 import { Colors } from "@constants/theme";
 
 type Props = RegistrationStackScreenProps<"Create Transaction Pin">;
@@ -36,9 +36,7 @@ const CreateTransactionPin: React.FC<Props> = (props) => {
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>
             Set Your Transaction PIN
           </Text>
-          <Text
-            style={tw`w-full mb-10 text-gray-500 font-normal`}
-          >
+          <Text style={tw`w-full mb-10 text-gray-500 font-normal`}>
             Secure your transactions with a 4-digit PIN. Choose a PIN that is
             easy for you to remember but hard for others to guess.
           </Text>
@@ -52,9 +50,10 @@ const CreateTransactionPin: React.FC<Props> = (props) => {
             </View>
           </View>
         </View>
-        <View>
+        <View style={tw`gap-4 mb-5`}>
           <Button
-            style={tw`flex items-center mb-4 justify-center py-2 w-full rounded-[94px]`}
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
             loading={fetching}
             mode="contained"
             disabled={!pinReady || fetching}
@@ -63,7 +62,8 @@ const CreateTransactionPin: React.FC<Props> = (props) => {
             Continue
           </Button>
           <Button
-            style={tw`flex items-center mb-[30px] justify-center py-2 w-full rounded-[94px]`}
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2 w-full`}
             loading={fetching}
             mode="outlined"
             textColor={Colors.gray[500]}

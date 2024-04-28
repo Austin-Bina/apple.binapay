@@ -5,6 +5,7 @@ import {
   BottomSheetBackdrop,
   BottomSheetScrollView,
   BottomSheetBackdropProps,
+  BottomSheetProps as PrimitiveBottomSheetProps,
 } from "@gorhom/bottom-sheet";
 import { useTheme } from "react-native-paper";
 import BottomSheetModalHeader from "./BottomSheetHeader";
@@ -15,7 +16,7 @@ interface BottomSheetModalProps {
   headerTitle?: string;
   closeFilter?: () => void;
   showHeader?: boolean;
-  initialSnapPoints?: number[];
+  initialSnapPoints?: PrimitiveBottomSheetProps["snapPoints"];
   onDismiss?: () => void;
 }
 
@@ -67,7 +68,7 @@ const BottomSheetModal = forwardRef<
         ref={ref}
         onChange={() => {}}
         snapPoints={initialSnapPoints}
-        backgroundStyle={{ backgroundColor: 'white' }}
+        backgroundStyle={{ backgroundColor: "white" }}
         handleIndicatorStyle={{ backgroundColor: Colors.gray[300] }}
         handleStyle={styles.handleStyle}
         topInset={60}
@@ -76,6 +77,7 @@ const BottomSheetModal = forwardRef<
         android_keyboardInputMode="adjustResize"
         enablePanDownToClose
         onDismiss={onDismiss}
+        enableDynamicSizing
       >
         {showHeader && (
           <BottomSheetModalHeader

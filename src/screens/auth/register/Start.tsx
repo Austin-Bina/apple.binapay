@@ -1,28 +1,25 @@
 import { View, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 import { Button, Text } from "react-native-paper";
-import {
-  AuthStackScreenProps,
-  RegistrationStackScreenProps,
-} from "@navigators/types";
+import { RegistrationStackScreenProps } from "@navigators/types";
 import { Controller } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as Yup from "yup";
 import { useForm } from "react-hook-form";
 import { phoneValidation } from "@utils/phone";
 import tw from "@lib/tailwind";
 import { Country, CountryCode } from "react-native-country-picker-modal";
-import CustomTextInput from "@components/form/TextInput";
-import { PhoneInput } from "@components/form/PhoneInput";
-import ScrollableView from "@components/shared/ScrollableView";
-import Screen from "@components/shared/Screen";
+import CustomTextInput from "@components/ui/form/TextInput";
+import { PhoneInput } from "@components/ui/form/PhoneInput";
+import ScrollableView from "@components/ui/shared/ScrollableView";
+import Screen from "@components/ui/shared/Screen";
 import { StackActions } from "@react-navigation/native";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-const schema = Yup.object().shape({
-  name: Yup.string().min(3, "Too Short").required("Required").trim(),
+const schema = z.object({
+  name: z.string().min(3, "Too Short").trim(),
   phone: phoneValidation,
-  email: Yup.string().email("Invalid email").required("Required").trim(),
-  referralCode: Yup.string().min(7, "Too Short").trim(),
+  email: z.string().email("Invalid email").trim(),
+  referralCode: z.string().min(7, "Too Short").trim(),
 });
 
 const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({
@@ -37,7 +34,7 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: "Abdul Amos",
       phone: ["09121738252", "NG"],
@@ -153,24 +150,21 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({
           <Text style={tw`text-xs text-center`}>
             By registering, you accept BinaPay's{" "}
             <Text style={tw`text-primary-400`}>Terms & Conditions</Text> and
-            <Text style={tw`text-primary-400`}>Privacy Policy</Text>. Your data
+            <Text style={tw`text-primary-400`}> Privacy Policy</Text>. Your data
             will be securely encrypted.
           </Text>
         </View>
-        <View style={tw`mb-10`}>
-          <Button
-            style={tw`mt-5 mb-8 py-2 w-full text-white rounded-[94px]`}
-            mode="contained"
-            onPress={onSubmit}
-          >
-            <Text
-              style={tw`text-white text-center text-base font-medium leading-normal`}
-            >
-              Continue
-            </Text>
-          </Button>
-        </View>
       </ScrollableView>
+      <View style={tw`px-4 pb-4 pt-1`}>
+        <Button
+          style={tw`w-full rounded-[94px]`}
+          contentStyle={tw`py-2`}
+          mode="contained"
+          onPress={onSubmit}
+        >
+          Continue
+        </Button>
+      </View>
     </Screen>
   );
 };

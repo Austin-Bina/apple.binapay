@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo, useRef } from "react";
-import IconButtonWithLabel from "@components/button/IconButtonWithLabel";
-import Screen from "@components/shared/Screen";
-import ScrollableView from "@components/shared/ScrollableView";
+import React, { useCallback, useRef } from "react";
+import IconButtonWithLabel from "@components/ui/button";
+import Screen from "@components/ui/shared/Screen";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 import UserAppbar from "@components/UserAppbar";
 import tw from "@lib/tailwind";
-import { ServicesStackScreenProps, TabNavScreenProps } from "@navigators/types";
-import { Dimensions, View } from "react-native";
+import { ServicesStackScreenProps } from "@navigators/types";
+import { View } from "react-native";
 import PhoneIcon from "@assets/icons/phone.svg";
 import WifiIcon from "@assets/icons/wifi.svg";
 import ZapIcon from "@assets/icons/lightning.svg";
@@ -18,29 +18,24 @@ import AgentIcon from "@assets/icons/man-with-cap.svg";
 import FlightIcon from "@assets/icons/flight.svg";
 import GiftIcon from "@assets/icons/gift-box.svg";
 import TicketIcon from "@assets/icons/tickets.svg";
-import BottomSheetModal from "@components/modals/BottomSheet/BottomSheet";
+import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
+import { getNavigate } from "@utils/navigation";
+import { scale, verticalScale } from "react-native-size-matters";
 
 type Props = ServicesStackScreenProps<"List">;
 
-const deviceHeight = Dimensions.get("window").height;
-const deviceWidth = Dimensions.get("window").width;
-
 export default function ListServicesScreen({ navigation }: Props) {
-  const comingSoonSheet = useRef<BottomSheetModalMethods>(null);
-  const attachmentActionModalSnapPoints = useMemo(
-    () => [deviceHeight - 300, deviceHeight - 300],
-    []
-  );
+  const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
-  const openComingSoonModal = useCallback(() => {
-    comingSoonSheet.current?.present();
+  const openBottomSheet = useCallback(() => {
+    bottomSheet.current?.present();
   }, []);
 
-  const closeComingSoonModal = useCallback(() => {
-    comingSoonSheet.current?.dismiss();
+  const closeBottomSheet = useCallback(() => {
+    bottomSheet.current?.dismiss();
   }, []);
 
   return (
@@ -68,27 +63,35 @@ export default function ListServicesScreen({ navigation }: Props) {
             RenderIcon={ZapIcon}
             size={24}
             label="Electricity"
-            onPress={openComingSoonModal}
+            onPress={() => {
+              navigation.navigate("Electricity Bill");
+            }}
           />
         </View>
         <View style={tw`flex-row justify-around my-5`}>
           <IconButtonWithLabel
+            RenderIcon={TvIcon}
+            size={24}
+            label="TV+Subscription"
+            onPress={() => {
+              navigation.navigate("TV Subscription");
+            }}
+          />
+          <IconButtonWithLabel
             RenderIcon={GraduationCapIcon}
             size={24}
             label="Education+Payments"
-            onPress={openComingSoonModal}
+            onPress={() => {
+              navigation.navigate("Select Educational Payment");
+            }}
           />
           <IconButtonWithLabel
             RenderIcon={BarCodeIcon}
             size={24}
             label="Airtime EPIN+Purchase & Printing"
-            onPress={openComingSoonModal}
-          />
-          <IconButtonWithLabel
-            RenderIcon={SwapIcon}
-            size={24}
-            label="Airtime Swap"
-            onPress={openComingSoonModal}
+            onPress={() => {
+              navigation.navigate("Airtime EPIN Purchase");
+            }}
           />
         </View>
         <View style={tw`flex-row justify-around my-5`}>
@@ -96,19 +99,27 @@ export default function ListServicesScreen({ navigation }: Props) {
             RenderIcon={AwardIcon}
             size={24}
             label="Get Reward+on BinaPay"
-            onPress={openComingSoonModal}
+            onPress={async () => {
+              const { navigate } = await getNavigate();
+              navigate("Main", {
+                screen: "Menu",
+                params: {
+                  screen: "BinaPay Rewards",
+                },
+              });
+            }}
           />
           <IconButtonWithLabel
-            RenderIcon={TvIcon}
+            RenderIcon={SwapIcon}
             size={24}
-            label="TV+Subscription"
-            onPress={openComingSoonModal}
+            label="Airtime Swap"
+            onPress={openBottomSheet}
           />
           <IconButtonWithLabel
             RenderIcon={AgentIcon}
             size={24}
             label="Agent"
-            onPress={openComingSoonModal}
+            onPress={openBottomSheet}
           />
         </View>
         <View style={tw`flex-row justify-around my-5`}>
@@ -116,31 +127,31 @@ export default function ListServicesScreen({ navigation }: Props) {
             RenderIcon={FlightIcon}
             size={24}
             label="Flight"
-            onPress={openComingSoonModal}
+            onPress={openBottomSheet}
           />
           <IconButtonWithLabel
             RenderIcon={GiftIcon}
             size={24}
             label="GiftCard"
-            onPress={openComingSoonModal}
+            onPress={openBottomSheet}
           />
           <IconButtonWithLabel
             RenderIcon={TicketIcon}
             size={24}
             label="Tickets"
-            onPress={openComingSoonModal}
+            onPress={openBottomSheet}
           />
         </View>
         <BottomSheetModal
-          ref={comingSoonSheet}
-          initialSnapPoints={attachmentActionModalSnapPoints}
-          closeFilter={closeComingSoonModal}
+          ref={bottomSheet}
+          initialSnapPoints={["55%", "55%"]}
+          closeFilter={closeBottomSheet}
           children={
             <View style={tw`flex-1 items-center px-2.5`}>
               <Image
                 source={require("@assets/images/oops.png")}
-                width={deviceWidth - 50}
-                style={tw`mb-8`}
+                width={scale(240)}
+                style={tw`mb-6`}
               />
               <Text variant="titleLarge" style={tw`font-bold mb-2`}>
                 Service Coming Soon
@@ -155,8 +166,9 @@ export default function ListServicesScreen({ navigation }: Props) {
               </Text>
               <Button
                 mode="contained"
-                onPress={closeComingSoonModal}
-                style={tw`w-full py-2 rounded-full`}
+                onPress={closeBottomSheet}
+                style={tw`w-full rounded-full`}
+                contentStyle={tw`py-2`}
               >
                 Back
               </Button>

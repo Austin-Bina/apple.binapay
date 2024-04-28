@@ -1,18 +1,17 @@
 import { TouchableOpacity, View } from "react-native";
 import React, { useState } from "react";
-import * as Yup from "yup";
 import tw from "@lib/tailwind";
-
 import { Button, Text } from "react-native-paper";
 import { StackScreenProps } from "@navigators/types";
 import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import Screen from "@components/shared/Screen";
-import CustomTextInput from "@components/form/TextInput";
-import PleaseWaitModal from "@components/modals/PleaseWaitModal";
+import Screen from "@components/ui/shared/Screen";
+import CustomTextInput from "@components/ui/form/TextInput";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import { z } from 'zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 
-const schema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Required"),
+const schema = z.object({
+  email: z.string().email("Invalid email"),
 });
 
 const ForgetPassword: React.FC<StackScreenProps<"Forget Password">> = ({
@@ -26,7 +25,7 @@ const ForgetPassword: React.FC<StackScreenProps<"Forget Password">> = ({
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: zodResolver(schema),
     defaultValues: {
       email: route.params.email,
     },
@@ -80,7 +79,8 @@ const ForgetPassword: React.FC<StackScreenProps<"Forget Password">> = ({
           </View>
         </View>
         <Button
-          style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+          style={tw`mt-auto mb-[30px] w-full rounded-full`}
+          contentStyle={tw`p-2`}
           disabled={fetching}
           onPress={onSubmit}
           mode="contained"

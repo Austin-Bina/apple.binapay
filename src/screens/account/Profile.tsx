@@ -2,19 +2,19 @@ import React, { useState } from "react";
 import tw from "twrnc";
 import { View, Platform } from "react-native";
 import { Appbar, Button } from "react-native-paper";
-import * as Yup from "yup";
 import { Country, CountryCode } from "react-native-country-picker-modal";
 import { AccountStackScreenProps } from "@navigators/types";
 import { Controller, useForm } from "react-hook-form";
-import CustomTextInput from "@components/form/TextInput";
-import { yupResolver } from "@hookform/resolvers/yup";
-import Screen from "@components/shared/Screen";
-import ScrollableView from "@components/shared/ScrollableView";
-import ImageInput from "@components/shared/ImageInput";
+import CustomTextInput from "@components/ui/form/TextInput";
+import Screen from "@components/ui/shared/Screen";
+import ScrollableView from "@components/ui/shared/ScrollableView";
+import ImageInput from "@components/ui/shared/ImageInput";
 import { phoneValidation } from "@utils/phone";
-import { PhoneInput } from "@components/form/PhoneInput";
-import PleaseWaitModal from "@components/modals/PleaseWaitModal";
+import { PhoneInput } from "@components/ui/form/PhoneInput";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 import { Asset } from "react-native-image-picker";
+import { z } from 'zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const buildImageObj = (attachment: Asset) => {
   const uri = attachment.uri;
@@ -29,9 +29,9 @@ const buildImageObj = (attachment: Asset) => {
   };
 };
 
-const schema = Yup.object().shape({
-  name: Yup.string().min(2, "Too Short").required("Required").trim(),
-  email: Yup.string().email("Invalid Email").required("Required").trim(),
+const schema = z.object({
+  name: z.string().min(2, "Too Short").nonempty("Required").trim(),
+  email: z.string().email("Invalid Email").nonempty("Required").trim(),
   phone: phoneValidation,
 });
 
@@ -58,7 +58,7 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({
       email: "abdul@gmail.com",
       phone: ["09121738252", "NG"],
     },
-    resolver: yupResolver(schema),
+    resolver: zodResolver(schema),
   });
 
   const handleAddImage = (imageObj: Asset) => {
@@ -155,7 +155,8 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({
           mode="contained"
           disabled={fetching}
           onPress={onSubmit}
-          style={tw`my-10 py-2 rounded-full`}
+          style={tw`my-10 rounded-full`}
+          contentStyle={tw`py-2`}
         >
           {fetching ? "Saving..." : "Save Changes"}
         </Button>

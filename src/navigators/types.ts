@@ -47,6 +47,9 @@ export type AccountParamList = {
   Profile: undefined;
   Settings: undefined;
   "Change Password": undefined;
+  "BinaPay Rewards": undefined;
+  "Earning Summary": undefined;
+  "Verify Account": undefined;
 };
 export type AccountStackScreenProps<T extends keyof AccountParamList> =
   NativeStackScreenProps<AccountParamList, T>;
@@ -76,9 +79,19 @@ export type ServicesParamList = {
   "Airtime Purchase": undefined;
   "Data Purchase": undefined;
   "Electricity Bill": undefined;
-  "Educational Payment": undefined;
+  "Select Educational Payment": undefined;
+  "Educational Payment": {
+    provider: string;
+  };
   "Airtime EPIN Purchase": undefined;
   "Airtime Swap": undefined;
+  "Service Purchase Success": {
+    transactionId: string;
+  };
+  "Confirm Transaction": {
+    transactionId: string;
+  };
+  "TV Subscription": undefined;
 };
 export type ServicesStackScreenProps<T extends keyof ServicesParamList> =
   NativeStackScreenProps<ServicesParamList, T>;

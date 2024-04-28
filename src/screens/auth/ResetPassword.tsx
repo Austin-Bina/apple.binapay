@@ -1,14 +1,14 @@
 import { View } from "react-native";
 import React, { useState } from "react";
 import tw from "twrnc";
-import CustomTextInput from "@components/form/TextInput";
+import CustomTextInput from "@components/ui/form/TextInput";
 import { Button, Text, TextInput } from "react-native-paper";
 import { StackScreenProps } from "@navigators/types";
 import * as Yup from "yup";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import Screen from "@components/shared/Screen";
-import PleaseWaitModal from "@components/modals/PleaseWaitModal";
+import Screen from "@components/ui/shared/Screen";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 
 type ResetPasswordProps = StackScreenProps<"Reset Password">;
 
@@ -50,7 +50,6 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
     if (isLoggedOut) {
       props.navigation.navigate("Reset Password Successful");
     } else {
-      props.navigation.navigate("Account", { screen: "Settings" });
     }
     setFetching(false);
   });
@@ -128,6 +127,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
 
         <Button
           style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+          contentStyle={tw`py-2`}
           disabled={fetching}
           onPress={onSubmit}
           mode="contained"

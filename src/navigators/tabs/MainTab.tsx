@@ -30,16 +30,24 @@ export const TabBar = () => {
         tabBar={({ navigation, state, descriptors, insets }) => {
           const activeRoute = state.routes[state.index];
           const routeName = getFocusedRouteNameFromRoute(activeRoute) ?? "";
-          const hideTabBar =
-            [
-              "Profile",
-              "Change Password",
-              "Add Money",
-              "Card Details",
-              "Payment Success",
-              "Airtime Purchase",
-              "Data Purchase",
-            ].includes(routeName);
+          const hideTabBar = [
+            "Profile",
+            "Change Password",
+            "Add Money",
+            "Card Details",
+            "Payment Success",
+            "Airtime Purchase",
+            "Airtime EPIN Purchase",
+            "Data Purchase",
+            "Confirm Transaction",
+            "Select Educational Payment",
+            "Educational Payment",
+            "TV Subscription",
+            "Electricity Bill",
+            "BinaPay Rewards",
+            "Earning Summary",
+            "Verify Account",
+          ].includes(routeName);
 
           return (
             <BottomNavigation.Bar

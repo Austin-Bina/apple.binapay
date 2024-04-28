@@ -26,20 +26,18 @@ function AppNavigator() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5`}>
-            <TouchableRipple
-              onPress={() => {
-                if (navigation.canGoBack()) {
-                  navigation.goBack();
-                } else {
-                  navigation.reset({ routes: [{ name: "Onboarding" }] });
-                }
-              }}
-              style={tw`pb-2.5`}
-            >
-              <LeftArrowIcon width={38} height={38} />
-            </TouchableRipple>
-          </View>
+          <TouchableRipple
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.reset({ routes: [{ name: "Onboarding" }] });
+              }
+            }}
+            style={tw`mr-2.5 overflow-hidden p-0.5`}
+          >
+            <LeftArrowIcon width={38} height={38} />
+          </TouchableRipple>
         ),
       })}
     >

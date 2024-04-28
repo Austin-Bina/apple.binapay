@@ -101,8 +101,6 @@ const Onboarding: React.FC<StackScreenProps<"Onboarding">> = ({
             </ImageBackground>
           )}
           showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          bounces={false}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { x: scrollX } } }],
             {

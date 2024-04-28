@@ -11,7 +11,7 @@ interface Props {
 const Screen = ({ children, style }: Props) => {
   return (
     <SafeAreaView
-      style={[tw`flex flex-1 bg-white`, style]}
+      style={[tw`flex-1 bg-white`, style]}
       edges={["right", "bottom", "left"]}
     >
       {children}

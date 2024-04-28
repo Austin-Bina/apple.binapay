@@ -1,6 +1,7 @@
 import React from "react";
-import { Modal, ModalProps, Portal, Text } from "react-native-paper";
+import { Modal, ModalProps, Portal } from "react-native-paper";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import tw from "@lib/tailwind";
 
 export default function PleaseWaitModal({
   style,
@@ -8,9 +9,8 @@ export default function PleaseWaitModal({
 }: Omit<ModalProps, "children">) {
   return (
     <Portal>
-      <Modal dismissable={false} style={style} {...rest}>
+      <Modal dismissable={false} style={[tw`items-center justify-center`,style]} {...rest}>
         <View style={styles.modalContainerStyle}>
-          <Text style={{ textAlign: "center" }}>Please wait...</Text>
           <ActivityIndicator size="large" animating />
         </View>
       </Modal>
@@ -22,6 +22,8 @@ const styles = StyleSheet.create({
   modalContainerStyle: {
     marginHorizontal: "10%",
     backgroundColor: "white",
+    width: 50,
+    height: 50,
     padding: 20,
     borderRadius: 12,
     display: "flex",

@@ -3,7 +3,6 @@ import React from "react";
 import tw from "@lib/tailwind";
 import { Button, Text } from "react-native-paper";
 import { HomeStackScreenProps } from "@navigators/types";
-import { getNavigate } from "@utils/navigation";
 
 type Props = HomeStackScreenProps<"Payment Success">;
 
@@ -35,7 +34,8 @@ export default function PaymentSuccessScreen({ navigation }: Props) {
           </View>
         </View>
         <Button
-          style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+          style={tw`mt-auto mb-[30px] w-full rounded-full`}
+          contentStyle={tw`py-2`}
           onPress={onSubmit}
           mode="contained"
         >

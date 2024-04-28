@@ -8,6 +8,9 @@ import ChangePassword from "@screens/account/ChangePassword";
 import { View } from "react-native";
 import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
+import BinaRewardsScreen from "@screens/account/BinaRewards";
+import EarningSummaryScreen from "@screens/account/EarningSummary";
+import VerifyAccountScreen from "@screens/account/VerifyAccount";
 
 const Stack = createNativeStackNavigator<AccountParamList>();
 
@@ -21,20 +24,18 @@ function AccountStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5`}>
-            <TouchableRipple
-              onPress={() => {
-                if (navigation.canGoBack()) {
-                  navigation.goBack();
-                } else {
-                  navigation.reset({ routes: [{ name: "Onboarding" }] });
-                }
-              }}
-              style={tw`pb-2.5`}
-            >
-              <LeftArrowIcon width={38} height={38} />
-            </TouchableRipple>
-          </View>
+          <TouchableRipple
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.reset({ routes: [{ name: "Onboarding" }] });
+              }
+            }}
+            style={tw`mr-2.5 overflow-hidden p-0.5`}
+          >
+            <LeftArrowIcon width={38} height={38} />
+          </TouchableRipple>
         ),
       })}
     >
@@ -44,6 +45,9 @@ function AccountStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="BinaPay Rewards" component={BinaRewardsScreen} />
+      <Stack.Screen name="Earning Summary" component={EarningSummaryScreen} />
+      <Stack.Screen name="Verify Account" component={VerifyAccountScreen} />
       <Stack.Screen name="Change Password" component={ChangePassword} />
     </Stack.Navigator>
   );

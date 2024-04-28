@@ -3,7 +3,7 @@ import { View, Text, Animated, TouchableOpacity } from "react-native";
 import { Button, SegmentedButtons } from "react-native-paper";
 import { RegistrationStackScreenProps } from "@navigators/types";
 import tw from "@lib/tailwind";
-import Screen from "@components/shared/Screen";
+import Screen from "@components/ui/shared/Screen";
 import { Colors } from "@constants/theme";
 import MaleOne from "@assets/images/avatars/male-1.svg";
 import MaleTwo from "@assets/images/avatars/male-2.svg";
@@ -13,21 +13,22 @@ import FemaleOne from "@assets/images/avatars/female-1.svg";
 import FemaleTwo from "@assets/images/avatars/female-2.svg";
 import FemaleThree from "@assets/images/avatars/female-3.svg";
 import FemaleFour from "@assets/images/avatars/female-4.svg";
+import { scale } from "react-native-size-matters";
 
 type Props = RegistrationStackScreenProps<"Choose Avatar">;
 
 const AVATARS = {
   male: [
-    { id: "MaleOne", component: <MaleOne width={140} /> },
-    { id: "MaleTwo", component: <MaleTwo width={140} /> },
-    { id: "MaleThree", component: <MaleThree width={140} /> },
-    { id: "MaleFour", component: <MaleFour width={140} /> },
+    { id: "MaleOne", component: <MaleOne width={scale(120)} /> },
+    { id: "MaleTwo", component: <MaleTwo width={scale(120)} /> },
+    { id: "MaleThree", component: <MaleThree width={scale(120)} /> },
+    { id: "MaleFour", component: <MaleFour width={scale(120)} /> },
   ],
   female: [
-    { id: "FemaleOne", component: <FemaleOne width={140} /> },
-    { id: "FemaleTwo", component: <FemaleTwo width={140} /> },
-    { id: "FemaleThree", component: <FemaleThree width={140} /> },
-    { id: "FemaleFour", component: <FemaleFour width={140} /> },
+    { id: "FemaleOne", component: <FemaleOne width={scale(120)} /> },
+    { id: "FemaleTwo", component: <FemaleTwo width={scale(120)} /> },
+    { id: "FemaleThree", component: <FemaleThree width={scale(120)} /> },
+    { id: "FemaleFour", component: <FemaleFour width={scale(120)} /> },
   ],
 };
 
@@ -52,14 +53,15 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
     const avatars = AVATARS[avatarType as keyof typeof AVATARS];
 
     return (
-      <View style={tw`flex-row flex-wrap gap-2 justify-between`}>
+      <View style={tw`flex-row flex-wrap gap-2 justify-around`}>
         {avatars.map((avatar) => (
           <TouchableOpacity
             key={avatar.id}
             onPress={() => handleAvatarSelection(avatar.id)}
             style={[
-              tw`w-[40%] w-[150px] h-[150px] mb-2 border-2 border-transparent rounded-full justify-center items-center p-2`,
+              tw`mb-2 border-2 border-transparent rounded-full justify-center items-center p-2`,
               selectedAvatar === avatar.id && tw`border-blue-500 border-2`,
+              { width: scale(130), height: scale(130) },
             ]}
           >
             {avatar.component}
@@ -94,23 +96,23 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
                 onSecondaryContainer: "white",
               },
             }}
-            style={tw`px-4`}
           />
           <Animated.View
             style={{
-              ...tw`px-4 py-8`,
+              ...tw`py-8`,
               opacity: fadeAnim,
             }}
           >
             {renderAvatars()}
           </Animated.View>
         </View>
-        <View>
+        <View style={tw`px-4 pb-4 pt-1`}>
           <Button
-            style={tw`flex items-center mb-4 justify-center py-2 w-full rounded-[94px]`}
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
             mode="contained"
-            disabled={!selectedAvatar} // Disable continue if no avatar selected
-            onPress={() => navigation.navigate("Register Success")} // Assuming navigation prop
+            disabled={!selectedAvatar}
+            onPress={() => navigation.navigate("Register Success")}
           >
             Continue
           </Button>

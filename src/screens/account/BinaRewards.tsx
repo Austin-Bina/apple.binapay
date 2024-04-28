@@ -1,0 +1,51 @@
+import Screen from "@components/ui/shared/Screen";
+import tw from "@lib/tailwind";
+import { AccountStackScreenProps } from "@navigators/types";
+import React from "react";
+import { View } from "react-native";
+import { Image } from "react-native-element-image";
+import { Button, Text } from "react-native-paper";
+import CopyReferralCode from "@components/ui/widgets/CopyReferralCode";
+
+type Props = AccountStackScreenProps<"BinaPay Rewards">;
+
+export default function BinaRewardsScreen({ navigation }: Props) {
+  const referralCode = "ASD1FR32-ABDUL";
+
+  return (
+    <Screen style={tw`px-4 justify-between`}>
+      <View>
+        <Image
+          source={require("@assets/images/money-and-coins.png")}
+          width={245}
+          style={tw`mx-auto mb-8`}
+        />
+        <Text
+          variant="titleLarge"
+          style={tw`text-center text-gray-800 font-bold`}
+        >
+          Get Reward on BinaPay
+        </Text>
+        <Text variant="bodyMedium" style={tw`text-gray-500 text-center mt-2`}>
+          Our referral program allows you to earn exciting benefits for every
+          successful referral you make. Spread the word and reap the rewards
+          together!
+        </Text>
+        <CopyReferralCode referralCode={referralCode} />
+      </View>
+      <View style={tw`px-4 pb-4 pt-1`}>
+        <Button
+          style={tw`w-full rounded-full`}
+          contentStyle={tw`py-2`}
+          labelStyle={tw`text-white text-center text-base font-bold`}
+          onPress={() => {
+            navigation.navigate("Earning Summary");
+          }}
+          mode="contained"
+        >
+          View Earnings
+        </Button>
+      </View>
+    </Screen>
+  );
+}

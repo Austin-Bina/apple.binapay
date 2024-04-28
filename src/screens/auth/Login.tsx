@@ -2,20 +2,20 @@ import React, { useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import tw from "@lib/tailwind";
-import * as Yup from "yup";
-import CustomTextInput from "@components/form/TextInput";
+import CustomTextInput from "@components/ui/form/TextInput";
 import { AuthStackScreenProps } from "@navigators/types";
 import { StackActions } from "@react-navigation/native";
 import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import Screen from "@components/shared/Screen";
-import ScrollableView from "@components/shared/ScrollableView";
-import PleaseWaitModal from "@components/modals/PleaseWaitModal";
+import Screen from "@components/ui/shared/Screen";
+import ScrollableView from "@components/ui/shared/ScrollableView";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 import { getNavigate } from "@utils/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-const schema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Required"),
-  password: Yup.string().min(6, "Too short!").required("Required"),
+const schema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Too short!"),
 });
 
 const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
@@ -29,11 +29,11 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: zodResolver(schema),
     defaultValues: {
-      email: 'ttebify@gmail.com',
-      password: 'password',
-    }
+      email: "ttebify@gmail.com",
+      password: "password",
+    },
   });
 
   const onSubmit = handleSubmit(async function (values) {
@@ -117,19 +117,16 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
           </TouchableOpacity>
         </View>
       </ScrollableView>
-      <View style={tw`px-4 mb-[30px]`}>
+      <View style={tw`px-4 pb-4 pt-1`}>
         <Button
-          style={tw`mt-auto px-2 py-2 w-full rounded-full`}
+          style={tw`w-full rounded-full`}
+          contentStyle={tw`py-2`}
           loading={fetching}
           disabled={fetching}
           mode="contained"
           onPress={onSubmit}
         >
-          <Text
-            style={tw`text-white text-center text-base font-medium leading-normal`}
-          >
-            {fetching ? "Wait..." : "Login"}
-          </Text>
+          {fetching ? "Wait..." : "Login"}
         </Button>
       </View>
       <PleaseWaitModal visible={fetching} />

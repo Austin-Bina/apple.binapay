@@ -1,21 +1,19 @@
 import { Animated, Dimensions, ImageBackground, View } from "react-native";
-import Screen from "@components/shared/Screen";
-import ScrollableView from "@components/shared/ScrollableView";
+import Screen from "@components/ui/shared/Screen";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 import { Colors } from "@constants/theme";
 import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Button,
-  IconButton,
-  SegmentedButtons,
-  Text,
-  TextInput,
-} from "react-native-paper";
-import InfoIcon from "@assets/icons/info.svg";
+import { Button, IconButton, SegmentedButtons, Text } from "react-native-paper";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { Image } from "react-native-element-image";
-import CustomTextInput from "@components/form/TextInput";
+import Banner from "@components/ui/banner";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import NairaInput from "@components/ui/form/NairaInput";
+import { scale } from "react-native-size-matters";
 
 type Props = HomeStackScreenProps<"Add Money">;
 const deviceWidth = Dimensions.get("window").width;
@@ -38,16 +36,15 @@ export default function AddMoneyScreen(props: Props) {
         <SegmentedButtons
           value={value}
           onValueChange={setValue}
+          density="regular"
           buttons={[
             {
               value: "bank",
               label: "Bank",
-              style: tw`py-2 rounded-full border border-gray-200`,
             },
             {
               value: "card",
               label: "Card",
-              style: tw`py-2 rounded-full border border-gray-200`,
             },
           ]}
           theme={{
@@ -110,10 +107,18 @@ const BankView = () => (
 
 type CardViewProps = HomeStackScreenProps<"Add Money">;
 
-const CardView: React.FC<CardViewProps> = ({ navigation }) => {
-  const [amount, setAmount] = useState(5000);
-  const calculatedAmount = amount - amount * 0.04;
+const schema = z.object({
+  amount: z.string(),
+});
 
+const CardView: React.FC<CardViewProps> = ({ navigation }) => {
+  const { control, watch, setValue, handleSubmit } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      amount: "5000",
+    },
+  });
+  const values = watch();
   const onSubmit = () => {
     navigation.navigate("Card Details");
   };
@@ -123,41 +128,29 @@ const CardView: React.FC<CardViewProps> = ({ navigation }) => {
       <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
         Fund with Card
       </Text>
-      <Text variant="bodyMedium" style={tw`text-gray-400 mb-6`}>
+      <Text variant="bodyMedium" style={tw`text-gray-400`}>
         Use your card to conveniently add funds to your BinaPay wallet.
       </Text>
-      <Banner message="Funding wallet with card attracts additional charges of 4% only." />
-
+      <Banner
+        style={tw`mt-6`}
+        message="Funding wallet with card attracts additional charges of 4% only."
+      />
       <View>
-        <TextInput
-          style={tw`text-center w-full bg-white my-5`}
-          contentStyle={tw`font-bold text-2xl text-gray-700`}
-          outlineStyle={tw.style(
-            "rounded-2xl",
-            false ? "border-red-500" : "border-gray-300"
-          )}
-          onChangeText={(value) => {
-            const number = Number.parseFloat(value.replace("₦", "")) || 0;
-            setAmount(number);
-          }}
-          mode="outlined"
-          value={`₦${amount.toFixed(2)}`}
-          keyboardType="numeric"
-        />
-
+        <NairaInput name="amount" control={control} />
         <View
-          style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full`}
+          style={tw`bg-green-50 mt-4 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full`}
         >
           <Text
             variant="bodyMedium"
             style={tw`text-green-600 text-center font-bold`}
           >
-            You get ₦{calculatedAmount.toFixed(2)}
+            You get ₦{values.amount}
           </Text>
         </View>
       </View>
       <Button
-        style={tw`mt-10 mb-[30px] px-2 py-2 w-full rounded-full`}
+        style={tw`mt-10 mb-[30px] w-full rounded-full`}
+        contentStyle={tw`py-2`}
         onPress={onSubmit}
         mode="contained"
       >
@@ -168,26 +161,12 @@ const CardView: React.FC<CardViewProps> = ({ navigation }) => {
 
       <Image
         source={require("@assets/images/secured-by-paystack.png")}
-        width={deviceWidth - 200}
+        width={scale(deviceWidth - 200)}
         style={tw`mx-auto`}
       />
     </View>
   );
 };
-
-interface BannerProps {
-  message: string;
-}
-const Banner: React.FC<BannerProps> = ({ message }) => (
-  <View
-    style={tw`bg-secondary-50 flex-row items-center p-2.5 rounded-xl gap-1 w-full`}
-  >
-    <InfoIcon width={24} height={24} />
-    <Text variant="bodySmall" style={tw`text-secondary-500 w-11/12`}>
-      {message}
-    </Text>
-  </View>
-);
 
 interface BankCardProps {
   accountName: string;
