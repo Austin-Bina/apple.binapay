@@ -2,10 +2,8 @@ import React from "react";
 import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TabParamList } from "@navigators/types";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import tw from "@lib/tailwind";
 import { Colors } from "@constants/theme";
-import ListServicesScreen from "@screens/services/List";
 import { BottomNavigation, Icon } from "react-native-paper";
 import AccountStack from "@navigators/stacks/account";
 import HomeStack from "@navigators/stacks/home";
@@ -18,9 +16,9 @@ import ServicesStack from "@navigators/stacks/services";
 const Tab = createBottomTabNavigator<TabParamList>();
 
 export const TabBar = () => {
-  const safeAreaInsets = useSafeAreaInsets();
 
-  const screen = (
+
+  return (
     <View style={tw`flex-1`}>
       <Tab.Navigator
         backBehavior="history"
@@ -125,19 +123,6 @@ export const TabBar = () => {
           component={AccountStack}
         />
       </Tab.Navigator>
-    </View>
-  );
-
-  return (
-    <View
-      style={[
-        tw`h-full w-full`,
-        {
-          paddingTop: safeAreaInsets.top,
-        },
-      ]}
-    >
-      {screen}
     </View>
   );
 };

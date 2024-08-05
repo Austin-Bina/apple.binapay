@@ -1,21 +1,47 @@
 import { StatusBar } from "expo-status-bar";
 import { PaperProvider } from "react-native-paper";
 import { defaultTheme } from "./src/constants/theme";
-import { NavigationContainer } from "@react-navigation/native";
-import { navigationRef } from "@utils/navigation";
-import AppNavigator from "@navigators/MainStack";
+import Router from "@navigators/MainStack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import tw from "@lib/tailwind";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Provider } from "react-redux";
+import { persistor, store } from "@store/main";
+import { PersistGate } from "redux-persist/integration/react";
+import NoNetworkBar from "@components/ui/widgets/no-network-bar";
+// import * as Sentry from "@sentry/react-native";
+import { Alert, BackHandler } from "react-native";
+// import ErrorHelper from "@helpers/errors";
+import { RootSiblingParent as ToastRootSiblingParent } from "react-native-root-siblings";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function App() {
+function Binapay() {
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
+    // ErrorHelper.init();
+
+    const handleBackButtonClick = () => {
+      Alert.alert(
+        "Exit",
+        "Are you sure you want to exit the app?",
+        [
+          {
+            text: "Cancel",
+            onPress: () => {},
+            style: "cancel",
+          },
+          { text: "OK", onPress: () => BackHandler.exitApp() },
+        ],
+        { cancelable: false }
+      );
+      return true;
+    };
+
+    BackHandler.addEventListener("hardwareBackPress", handleBackButtonClick);
+
     async function prepare() {
       try {
         // Make any API calls you need to do here
@@ -32,6 +58,13 @@ export default function App() {
     }
 
     prepare();
+
+    return () => {
+      BackHandler.removeEventListener(
+        "hardwareBackPress",
+        handleBackButtonClick
+      );
+    };
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
@@ -50,15 +83,31 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
-      <PaperProvider theme={defaultTheme}>
-        <GestureHandlerRootView style={tw`flex-1`} onLayout={onLayoutRootView}>
-          <BottomSheetModalProvider>
-            <StatusBar style="dark" animated />
-            <AppNavigator />
-          </BottomSheetModalProvider>
-        </GestureHandlerRootView>
-      </PaperProvider>
-    </NavigationContainer>
+    <ToastRootSiblingParent>
+      <GestureHandlerRootView style={tw`flex-1`} onLayout={onLayoutRootView}>
+        <React.Fragment>
+          <StatusBar style="dark" animated backgroundColor="white" />
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <PaperProvider theme={defaultTheme}>
+                <NoNetworkBar />
+                <Router />
+              </PaperProvider>
+            </PersistGate>
+          </Provider>
+        </React.Fragment>
+      </GestureHandlerRootView>
+    </ToastRootSiblingParent>
   );
 }
+
+// if (!__DEV__) {
+//   Sentry.init({
+//     dsn: Config.SENTRY_DSN,
+//     tracesSampleRate: 1.0,
+//     attachScreenshot: true,
+//   });
+// }
+
+// export default !__DEV__ ? Sentry.wrap(Binapay) : Binapay;
+export default Binapay;

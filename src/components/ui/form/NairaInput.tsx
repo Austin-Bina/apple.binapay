@@ -1,13 +1,7 @@
 import { Colors } from "@constants/theme";
 import tw from "@lib/tailwind";
-import React, { useState } from "react";
-import {
-  Control,
-  Controller,
-  FieldValues,
-  useController,
-  useFormState,
-} from "react-hook-form";
+import React from "react";
+import { Control, useController } from "react-hook-form";
 import CurrencyInput from "react-native-currency-input";
 import { TextInput } from "react-native-paper";
 

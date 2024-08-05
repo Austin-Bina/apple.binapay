@@ -1,6 +1,6 @@
 import { Colors } from "@constants/theme";
 import tw from "@lib/tailwind";
-import Clipboard from "@react-native-clipboard/clipboard";
+import * as Clipboard from 'expo-clipboard';
 import React, { Fragment, useState } from "react";
 import { View } from "react-native";
 import { Text, TouchableRipple, IconButton } from "react-native-paper";
@@ -12,8 +12,8 @@ interface Props {
 const CopyReferralCode: React.FC<Props> = ({ referralCode }) => {
   const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = () => {
-    Clipboard.setString(referralCode);
+  const copyToClipboard = async () => {
+    await Clipboard.setStringAsync(referralCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

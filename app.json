@@ -11,12 +11,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.binapay"
+      "bundleIdentifier": "com.binapay",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +33,14 @@
       "eas": {
         "projectId": "911c2695-3035-4a30-8054-9f2bc7b63ee8"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data to ensure that your personal information and app data remain secure. Using Face ID provides an extra layer of protection, making sure that only you can access your sensitive data."
+        }
+      ]
+    ]
   }
 }

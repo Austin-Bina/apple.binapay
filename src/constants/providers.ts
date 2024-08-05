@@ -1,4 +1,4 @@
-import { ServiceProvidersMap } from "src/types/app";
+import { ServiceProvidersMap } from "@type/app";
 
 export const serviceProvidersMap: ServiceProvidersMap = {
   internet: {

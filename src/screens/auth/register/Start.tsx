@@ -14,6 +14,8 @@ import Screen from "@components/ui/shared/Screen";
 import { StackActions } from "@react-navigation/native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import APIHelper from "@lib/api";
+import { route } from "@helpers/route";
 
 const schema = z.object({
   name: z.string().min(3, "Too Short").trim(),
@@ -47,8 +49,15 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({
     setCountryCode(country.cca2);
   };
 
-  const onSubmit = handleSubmit(async function (values) {
-    navigation.navigate("Verify Email", { email: values.email });
+  const onSubmit = handleSubmit(async function (data) {
+    try {
+      const response = await APIHelper.post(route("auth.register"), data);
+
+      // if()
+    } catch (error) {
+
+    }
+    navigation.navigate("Verify Email", { email: data.email });
   });
 
   return (

@@ -5,7 +5,7 @@ import { phoneValidation } from "@utils/phone";
 import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FlatList, TouchableOpacity, View } from "react-native";
-import { Button, Text, TextInput } from "react-native-paper";
+import { Button, Text } from "react-native-paper";
 import { z } from "zod";
 import ArrowRight from "@assets/icons/arrow-right.svg";
 import Banner from "@components/ui/banner";
@@ -18,7 +18,7 @@ import { Image } from "react-native-element-image";
 import { INTERNET_PROVIDERS, serviceProvidersMap } from "@constants/providers";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
-import { moderateScale, scale, verticalScale } from "react-native-size-matters";
+import { scale } from "react-native-size-matters";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
 

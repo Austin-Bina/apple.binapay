@@ -1,11 +1,14 @@
 import tw from "@lib/tailwind";
 import { StackActions } from "@react-navigation/native";
+import { useTypedSelector } from "@store/common";
 import { getNavigate } from "@utils/navigation";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Text } from "react-native-paper";
 
 export default function UserAppbar() {
+  const { user: currentUser } = useTypedSelector((state) => state.auth);
+
   return (
     <Appbar.Header style={tw`bg-white`}>
       <TouchableOpacity
@@ -26,12 +29,14 @@ export default function UserAppbar() {
           <Avatar.Image
             size={48}
             style={tw`rounded-full bg-gray-200`}
-            source={require("@assets/draft/male-avatar-circle.png")}
+            source={{
+              uri: currentUser?.avatar,
+            }}
           />
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
           <Text style={tw`text-zinc-500 text-sm font-normal`}>
-            Hi, Abdul 👋🏽
+            Hi, {currentUser?.firstname} 👋🏽
           </Text>
           <Text style={tw`text-zinc-800 text-lg font-medium leading-snug`}>
             Pay seamlessly with BinaPay!

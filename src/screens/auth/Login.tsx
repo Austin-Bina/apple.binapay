@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import tw from "@lib/tailwind";
@@ -9,9 +9,14 @@ import { Controller, useForm } from "react-hook-form";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
-import { getNavigate } from "@utils/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTypedDispatch, useTypedSelector } from "@store/common";
+import {
+  authSliceActions,
+
+} from "@store/slice/auth";
+import { selectIsLoggingIn } from "@store/selectors/auth";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -21,8 +26,10 @@ const schema = z.object({
 const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
   navigation,
 }) => {
-  const [fetching, setFetching] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+
+  const isLoggingIn = useTypedSelector(selectIsLoggingIn);
+  const dispatch = useTypedDispatch();
 
   const {
     control,
@@ -36,11 +43,12 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
     },
   });
 
-  const onSubmit = handleSubmit(async function (values) {
-    console.log(values);
+  useEffect(() => {
+    dispatch(authSliceActions.resetAuth());
+  }, [dispatch]);
 
-    const { reset } = await getNavigate();
-    reset({ routes: [{ name: "Main" }] });
+  const onSubmit = handleSubmit(async function (values) {
+    dispatch(authSliceActions.doLogin(values));
   });
 
   return (
@@ -121,15 +129,15 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
         <Button
           style={tw`w-full rounded-full`}
           contentStyle={tw`py-2`}
-          loading={fetching}
-          disabled={fetching}
+          loading={isLoggingIn}
+          disabled={isLoggingIn}
           mode="contained"
           onPress={onSubmit}
         >
-          {fetching ? "Wait..." : "Login"}
+          Login
         </Button>
       </View>
-      <PleaseWaitModal visible={fetching} />
+      <PleaseWaitModal visible={isLoggingIn} />
     </Screen>
   );
 };

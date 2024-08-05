@@ -78,6 +78,9 @@ const Onboarding: React.FC<StackScreenProps<"Onboarding">> = ({
           ref={slideRef}
           horizontal
           data={onboarding}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          snapToInterval={width}
           keyExtractor={(item) => item.title}
           renderItem={({ item }) => (
             <ImageBackground
@@ -110,6 +113,8 @@ const Onboarding: React.FC<StackScreenProps<"Onboarding">> = ({
           onViewableItemsChanged={viewableItemsChanged}
           viewabilityConfig={viewConfig}
           scrollEventThrottle={32}
+          pagingEnabled
+          disableIntervalMomentum
         />
       </Animated.View>
       <View

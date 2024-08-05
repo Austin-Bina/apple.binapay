@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
 import { Button, Card, IconButton } from "react-native-paper";
@@ -17,6 +17,8 @@ import UserAppbar from "@components/UserAppbar";
 import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
 import { scale } from "react-native-size-matters";
+import { useTypedSelector } from "@store/common";
+import { formatToNaira } from "@utils/money";
 
 const TransactionEmptyState = () => {
   return (
@@ -25,7 +27,11 @@ const TransactionEmptyState = () => {
         <View
           style={tw`justify-center h-16 w-16 items-center p-4 bg-secondary-50 rounded-3xl`}
         >
-          <SadFaceIcon fill={Colors.secondary[500]} width={scale(30)} height={scale(30)} />
+          <SadFaceIcon
+            fill={Colors.secondary[500]}
+            width={scale(30)}
+            height={scale(30)}
+          />
         </View>
         <Text style={tw`font-medium text-lg text-gray-500 text-center`}>
           No Transactions!
@@ -42,6 +48,14 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({
 }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
 
+  const { user } = useTypedSelector((state) => state.auth);
+
+  const balanceNaira = useMemo(() => {
+    return balanceVisible ? formatToNaira(user?.wallet_balance) : "₦***.**";
+  }, [user?.wallet_balance, balanceVisible]);
+
+  // const recentTransactions = trans as any[];
+
   const toggleBalance = () => setBalanceVisible(!balanceVisible);
 
   return (
@@ -53,7 +67,7 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({
           <Card.Content style={tw`items-center`}>
             <View style={tw`flex-row justify-center items-center`}>
               <Text style={tw`text-gray-900 font-bold text-xl text-center`}>
-                {balanceVisible ? "₦0.00" : "₦****.**"}
+                {balanceNaira}
               </Text>
               <IconButton
                 icon={balanceVisible ? "eye-off-outline" : "eye-outline"}

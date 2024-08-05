@@ -5,7 +5,6 @@ import { AccountParamList } from "@navigators/types";
 import SettingScreen from "@screens/account/Setting";
 import ProfileScreen from "@screens/account/Profile";
 import ChangePassword from "@screens/account/ChangePassword";
-import { View } from "react-native";
 import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import BinaRewardsScreen from "@screens/account/BinaRewards";

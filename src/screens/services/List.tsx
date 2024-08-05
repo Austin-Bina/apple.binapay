@@ -23,7 +23,7 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
 import { getNavigate } from "@utils/navigation";
-import { scale, verticalScale } from "react-native-size-matters";
+import { scale } from "react-native-size-matters";
 
 type Props = ServicesStackScreenProps<"List">;
 

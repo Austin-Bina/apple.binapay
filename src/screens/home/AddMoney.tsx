@@ -6,7 +6,7 @@ import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import React, { useState, useRef, useEffect } from "react";
 import { Button, IconButton, SegmentedButtons, Text } from "react-native-paper";
-import Clipboard from "@react-native-clipboard/clipboard";
+import * as Clipboard from 'expo-clipboard';
 import { Image } from "react-native-element-image";
 import Banner from "@components/ui/banner";
 import { z } from "zod";
@@ -181,8 +181,8 @@ const BankCard: React.FC<BankCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = () => {
-    Clipboard.setString(accountNumber);
+  const copyToClipboard = async () => {
+    await Clipboard.setStringAsync(accountNumber);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
