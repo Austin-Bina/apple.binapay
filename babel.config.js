@@ -22,6 +22,7 @@ module.exports = function (api) {
             "@context": "./src/context",
             "@hooks": "./src/hooks",
             "@env": "./src/env",
+            "@contexts": "./src/contexts",
           },
         },
       ],

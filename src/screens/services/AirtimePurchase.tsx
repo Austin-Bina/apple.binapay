@@ -2,10 +2,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import { phoneValidation } from "@utils/phone";
-import React, { useCallback, useRef, useState } from "react";
+import React, { Fragment, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FlatList, TouchableOpacity, View } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { Button, Checkbox, Text, TouchableRipple } from "react-native-paper";
 import { z } from "zod";
 import ArrowRight from "@assets/icons/arrow-right.svg";
 import Banner from "@components/ui/banner";
@@ -19,20 +19,34 @@ import { INTERNET_PROVIDERS, serviceProvidersMap } from "@constants/providers";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import { scale } from "react-native-size-matters";
+import { useTypedDispatch, useTypedSelector } from "@store/common";
+import { addPendingTransaction } from "@store/slice/transactionSlice";
+import { TransactionForm } from "@enum/transaction";
+import { formatToNaira } from "@utils/money";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
+type ErrorFlag = React.ComponentPropsWithoutRef<typeof Banner>;
+
+const MIN_AMOUNT = 20;
 
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
-  phone: phoneValidation,
-  amount: z.string(),
+  phone: z.string().min(11),
+  amount: z.number(),
   type: z.string(),
+  ported_number: z.boolean(),
+  pin: z.string().optional(),
 });
+
+type FormValue = typeof schema;
 
 export default function AirtimePurchaseScreen({ navigation }: Props) {
   const [fetching, setFetching] = useState(false);
+  const [errorFlagData, setErrorFlagData] = useState<ErrorFlag | null>(null);
 
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
+  const { user } = useTypedSelector((s) => s.auth);
+  const dispatch = useTypedDispatch();
 
   const {
     control,
@@ -40,31 +54,51 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
     setValue,
     handleSubmit,
     formState: { errors },
+    trigger,
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
-      phone: ["09121738252", "NG"],
-      amount: "100",
-      type: "sme",
+      phone: user?.phone,
+      amount: 0,
+      type: "VTU",
+      ported_number: false,
     },
+    mode: "onChange",
   });
 
   const values = watch();
 
-  const openBottomSheet = useCallback(() => {
-    bottomSheet.current?.present();
-  }, []);
+  const airtimeTypes = useMemo(() => {
+    const selected = values.provider;
 
-  const closeBottomSheet = useCallback(() => {
+    const types = serviceProvidersMap.internet[selected].type;
+    return types;
+  }, [values.provider]);
+
+  const openBottomSheet = useCallback(async () => {
+    const valid = await trigger();
+    if (valid) {
+      bottomSheet.current?.present();
+    }
+  }, [values]);
+
+  const closeBottomSheet = () => {
     bottomSheet.current?.dismiss();
-  }, []);
+  };
 
   const handleMakePayment = handleSubmit((values) => {
-    console.log(values);
+    const transaction = {
+      id: TransactionForm.AIRTIME_PURCHASE,
+      data: values,
+    };
+
+    dispatch(addPendingTransaction(transaction));
+
     navigation.navigate("Confirm Transaction", {
-      transactionId: "airtime_purchase",
+      transactionId: transaction.id,
     });
+
     closeBottomSheet();
   });
 
@@ -107,13 +141,14 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
               placeholder="+234 000 000 0000"
               mode="outlined"
               onBlur={onBlur}
-              value={value?.[0] || ""}
+              value={value}
               onChangeText={onChange}
               error={!!errors.phone}
               errorMessage={errors.phone?.message}
             />
           )}
         />
+
         <View style={tw`flex-row justify-end`}>
           <TouchableOpacity onPress={() => {}}>
             <View style={tw`flex-row items-center gap-1`}>
@@ -122,30 +157,41 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
             </View>
           </TouchableOpacity>
         </View>
+        <Controller
+          control={control}
+          name="ported_number"
+          render={({ field: { value, onChange }, fieldState: { error } }) => (
+            <View
+              style={tw`border border-gray-300 rounded-xl w-[50%] overflow-hidden`}
+            >
+              <TouchableRipple
+                onPress={() => {
+                  onChange(!value);
+                }}
+                style={tw`flex-row items-center `}
+              >
+                <Fragment>
+                  <Checkbox status={value ? "checked" : "unchecked"} />
+                  <Text>Ported Number</Text>
+                </Fragment>
+              </TouchableRipple>
+            </View>
+          )}
+        />
         <DropdownMenuField
           label="Airtime Type"
           placeholder="Select Airtime Type"
           name="type"
           control={control}
-          data={[
-            {
-              label: "SME",
-              id: "sme",
-            },
-            {
-              label: "Gifting",
-              id: "gifting",
-            },
-            {
-              label: "Corporate",
-              id: "corporate",
-            },
-          ]}
+          data={airtimeTypes.map((t) => ({
+            label: t,
+            id: t,
+          }))}
         />
         <View>
           <NairaInput name="amount" control={control} />
           <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-            Wallet Balance: ₦20,000.00
+            Wallet Balance: {formatToNaira(user?.wallet_balance)}
           </Text>
         </View>
         <View
@@ -155,7 +201,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
             variant="bodyMedium"
             style={tw`text-green-600 text-center font-bold`}
           >
-            You get ₦{values.amount}
+            You get ₦{values.amount || 0}
           </Text>
         </View>
 

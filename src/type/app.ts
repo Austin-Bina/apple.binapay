@@ -1,4 +1,5 @@
 type ProviderDetails = {
+  id: number;
   key: string;
   label: string;
   logo: any;
@@ -6,7 +7,9 @@ type ProviderDetails = {
 
 export type ServiceProvidersMap = {
   internet: {
-    [key: string]: ProviderDetails;
+    [key: string]: ProviderDetails & {
+      type: string[];
+    };
   };
   education: {
     [key: string]: ProviderDetails & { description: string };
@@ -21,6 +24,6 @@ export type ServiceProvidersMap = {
 
 export interface RouteOptions {
   params?: Record<string, string | number>;
-  version?: 'v1';
-  type?: 'api' | 'web';
+  version?: "v1";
+  type?: "api" | "web";
 }

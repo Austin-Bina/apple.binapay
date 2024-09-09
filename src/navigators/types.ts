@@ -1,15 +1,7 @@
-import {
-  NavigatorScreenParams,
-  type CompositeNavigationProp,
-} from "@react-navigation/native";
-import {
-  type NativeStackScreenProps,
-  type NativeStackNavigationProp,
-} from "@react-navigation/native-stack";
-import {
-  type BottomTabScreenProps,
-  type BottomTabNavigationProp,
-} from "@react-navigation/bottom-tabs";
+import { NavigatorScreenParams, type CompositeNavigationProp } from "@react-navigation/native";
+import { type NativeStackScreenProps, type NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { type BottomTabScreenProps, type BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { TransactionForm } from "@enum/transaction";
 
 export type StackParamList = {
   Main: NavigatorScreenParams<TabParamList>;
@@ -21,27 +13,26 @@ export type StackParamList = {
   "Reset Password": { email: string };
   "Reset Password Successful": undefined;
 };
-export type StackScreenProps<T extends keyof StackParamList> =
-  NativeStackScreenProps<StackParamList, T>;
+export type StackScreenProps<T extends keyof StackParamList> = NativeStackScreenProps<StackParamList, T>;
 
 export type RegistrationParamList = {
   Start: undefined;
   "Verify Email": { email: string };
-  "Create Password": undefined;
-  "Create Transaction Pin": undefined;
-  "Choose Avatar": undefined;
   "Register Success": undefined;
+  "Complete Registration": {
+    email: string;
+  };
 };
-export type RegistrationStackScreenProps<
-  T extends keyof RegistrationParamList,
-> = NativeStackScreenProps<RegistrationParamList, T>;
+export type RegistrationStackScreenProps<T extends keyof RegistrationParamList> = NativeStackScreenProps<
+  RegistrationParamList,
+  T
+>;
 
 export type AuthParamList = {
   Login: undefined;
   Register: NavigatorScreenParams<RegistrationParamList>;
 };
-export type AuthStackScreenProps<T extends keyof AuthParamList> =
-  NativeStackScreenProps<AuthParamList, T>;
+export type AuthStackScreenProps<T extends keyof AuthParamList> = NativeStackScreenProps<AuthParamList, T>;
 
 export type AccountParamList = {
   Profile: undefined;
@@ -51,16 +42,14 @@ export type AccountParamList = {
   "Earning Summary": undefined;
   "Verify Account": undefined;
 };
-export type AccountStackScreenProps<T extends keyof AccountParamList> =
-  NativeStackScreenProps<AccountParamList, T>;
+export type AccountStackScreenProps<T extends keyof AccountParamList> = NativeStackScreenProps<AccountParamList, T>;
 
 export type TabParamList = {
   Home: NavigatorScreenParams<HomeParamList>;
   Services: NavigatorScreenParams<ServicesParamList>;
   Menu: NavigatorScreenParams<AccountParamList>;
 };
-export type TabNavScreenProps<T extends keyof TabParamList> =
-  BottomTabScreenProps<TabParamList, T>;
+export type TabNavScreenProps<T extends keyof TabParamList> = BottomTabScreenProps<TabParamList, T>;
 
 export type HomeParamList = {
   Dashboard: undefined;
@@ -71,8 +60,7 @@ export type HomeParamList = {
   "Transaction History": undefined;
   "Transaction Details": undefined;
 };
-export type HomeStackScreenProps<T extends keyof HomeParamList> =
-  NativeStackScreenProps<HomeParamList, T>;
+export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScreenProps<HomeParamList, T>;
 
 export type ServicesParamList = {
   List: undefined;
@@ -86,18 +74,16 @@ export type ServicesParamList = {
   "Airtime EPIN Purchase": undefined;
   "Airtime Swap": undefined;
   "Service Purchase Success": {
-    transactionId: string;
+    transactionId: TransactionForm;
   };
   "Confirm Transaction": {
-    transactionId: string;
+    transactionId: TransactionForm;
   };
   "TV Subscription": undefined;
 };
-export type ServicesStackScreenProps<T extends keyof ServicesParamList> =
-  NativeStackScreenProps<ServicesParamList, T>;
+export type ServicesStackScreenProps<T extends keyof ServicesParamList> = NativeStackScreenProps<ServicesParamList, T>;
 
-export type StackNavigationProp<T extends keyof StackParamList> =
-  CompositeNavigationProp<
-    NativeStackNavigationProp<StackParamList, T>,
-    BottomTabNavigationProp<TabParamList>
-  >;
+export type StackNavigationProp<T extends keyof StackParamList> = CompositeNavigationProp<
+  NativeStackNavigationProp<StackParamList, T>,
+  BottomTabNavigationProp<TabParamList>
+>;

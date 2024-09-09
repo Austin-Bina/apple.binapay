@@ -3,16 +3,23 @@ import React, { useMemo, useState } from "react";
 import { Text, useTheme } from "react-native-paper";
 import tw from "@lib/tailwind";
 import { scale } from "react-native-size-matters";
+import { Control, useController } from "react-hook-form";
 
 type OtpInputProps = {
-  code: string;
+  control: Control<any>;
+  name: string;
   maximumLength?: number;
-  setCode: React.Dispatch<React.SetStateAction<string>>;
-  error?: string;
 };
 
-const OtpInput = ({ code = "", maximumLength = 6, setCode }: OtpInputProps) => {
-  const [inputValue, setInputValue] = useState(code);
+const OtpInput = ({ control, name = "pin", maximumLength = 6 }: OtpInputProps) => {
+  const {
+    field: { onChange, value },
+  } = useController({
+    control,
+    name,
+    defaultValue: "",
+  });
+
   const arrayInput = useMemo(() => {
     return Array.from(Array(maximumLength).keys());
   }, [maximumLength]);
@@ -22,9 +29,8 @@ const OtpInput = ({ code = "", maximumLength = 6, setCode }: OtpInputProps) => {
   } = useTheme();
 
   const handleTextChange = (text: string) => {
-    const cleanedText = text.replace(/[^0-9]/g, "");
-    setInputValue(cleanedText);
-    setCode(cleanedText);
+    const newValue = text.replace(/\D/g, "").slice(0, maximumLength);
+    onChange(newValue);
   };
 
   return (
@@ -36,20 +42,17 @@ const OtpInput = ({ code = "", maximumLength = 6, setCode }: OtpInputProps) => {
             style={[
               tw`rounded-2xl border items-center justify-center`,
               {
-                borderColor: inputValue.length === index ? primary : "#B8B8D2",
+                borderColor: value.length === index ? primary : "#B8B8D2",
                 width: scale(40),
-                height: scale(40)
+                height: scale(40),
               },
-            ]}
-          >
-            <Text style={{ fontSize: 22, fontWeight: "600" }}>
-              {inputValue[index] || ""}
-            </Text>
+            ]}>
+            <Text style={{ fontSize: 22, fontWeight: "600" }}>{value[index] || ""}</Text>
           </View>
         ))}
       </View>
       <TextInput
-        value={inputValue}
+        value={value}
         onChangeText={handleTextChange}
         maxLength={maximumLength}
         keyboardType="numeric"

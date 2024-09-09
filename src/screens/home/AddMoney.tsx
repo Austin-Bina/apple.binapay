@@ -6,7 +6,7 @@ import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import React, { useState, useRef, useEffect } from "react";
 import { Button, IconButton, SegmentedButtons, Text } from "react-native-paper";
-import * as Clipboard from 'expo-clipboard';
+import * as Clipboard from "expo-clipboard";
 import { Image } from "react-native-element-image";
 import Banner from "@components/ui/banner";
 import { z } from "zod";
@@ -14,6 +14,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import NairaInput from "@components/ui/form/NairaInput";
 import { scale } from "react-native-size-matters";
+import { DVA } from "@type/user";
+import { useTypedSelector } from "@store/common";
+import { selectUser } from "@store/selectors/auth";
 
 type Props = HomeStackScreenProps<"Add Money">;
 const deviceWidth = Dimensions.get("window").width;
@@ -21,6 +24,8 @@ const deviceWidth = Dimensions.get("window").width;
 export default function AddMoneyScreen(props: Props) {
   const [value, setValue] = useState("bank");
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const user = useTypedSelector(selectUser);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -59,49 +64,41 @@ export default function AddMoneyScreen(props: Props) {
           style={{
             ...tw`px-4 py-8`,
             opacity: fadeAnim,
-          }}
-        >
-          {value === "bank" ? <BankView /> : <CardView {...props} />}
+          }}>
+          {value === "bank" ? <BankView accounts={user?.accounts || []} /> : <CardView {...props} />}
         </Animated.View>
       </ScrollableView>
     </Screen>
   );
 }
 
-const BankView = () => (
+type BankProps = {
+  accounts: DVA[];
+};
+
+const BankView: React.FC<BankProps> = ({ accounts }) => (
   <View>
     <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
       Fund with Bank Transfer
     </Text>
     <Text variant="bodyMedium" style={tw`text-gray-400 mb-6`}>
-      Transfer the desired amount to the following bank account. Once the
-      transfer is complete, your BinaPay wallet will be credited
+      Transfer the desired amount to the following bank account. Once the transfer is complete, your BinaPay wallet will
+      be credited
     </Text>
     <Banner message="Automated bank transfer attracts additional charges of 4% only." />
-    <View>
-      <ImageBackground
-        source={require("@assets/images/card-background-waves.png")}
-        style={tw`bg-primary-900 p-4 rounded-lg shadow-xl shadow-primary/20 mt-4`}
-      >
-        <BankCard
-          accountName="Abdul Godswill"
-          bankName="Wema Bank"
-          accountNumber="0176823456"
-        />
-      </ImageBackground>
-    </View>
-    <View>
-      <ImageBackground
-        source={require("@assets/images/card-background-waves.png")}
-        style={tw`bg-primary-900 p-4 rounded-lg shadow-xl shadow-primary/20 mt-4`}
-      >
-        <BankCard
-          accountName="Abdul Godswill"
-          bankName="Money Point"
-          accountNumber="0176823456"
-        />
-      </ImageBackground>
-    </View>
+    {accounts.map((account) => (
+      <View key={account.id}>
+        <ImageBackground
+          source={require("@assets/images/card-background-waves.png")}
+          style={tw`bg-primary-900 p-4 rounded-lg shadow-xl shadow-primary/20 mt-4`}>
+          <BankCard
+            accountName={account.account_name}
+            bankName={account.bank_name}
+            accountNumber={account.account_number}
+          />
+        </ImageBackground>
+      </View>
+    ))}
   </View>
 );
 
@@ -131,19 +128,11 @@ const CardView: React.FC<CardViewProps> = ({ navigation }) => {
       <Text variant="bodyMedium" style={tw`text-gray-400`}>
         Use your card to conveniently add funds to your BinaPay wallet.
       </Text>
-      <Banner
-        style={tw`mt-6`}
-        message="Funding wallet with card attracts additional charges of 4% only."
-      />
+      <Banner style={tw`mt-6`} message="Funding wallet with card attracts additional charges of 4% only." />
       <View>
         <NairaInput name="amount" control={control} />
-        <View
-          style={tw`bg-green-50 mt-4 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full`}
-        >
-          <Text
-            variant="bodyMedium"
-            style={tw`text-green-600 text-center font-bold`}
-          >
+        <View style={tw`bg-green-50 mt-4 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full`}>
+          <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
             You get ₦{values.amount}
           </Text>
         </View>
@@ -152,11 +141,8 @@ const CardView: React.FC<CardViewProps> = ({ navigation }) => {
         style={tw`mt-10 mb-[30px] w-full rounded-full`}
         contentStyle={tw`py-2`}
         onPress={onSubmit}
-        mode="contained"
-      >
-        <Text style={tw`text-white text-center text-base font-bold`}>
-          Continue
-        </Text>
+        mode="contained">
+        <Text style={tw`text-white text-center text-base font-bold`}>Continue</Text>
       </Button>
 
       <Image
@@ -174,11 +160,7 @@ interface BankCardProps {
   accountNumber: string;
 }
 
-const BankCard: React.FC<BankCardProps> = ({
-  accountName,
-  bankName,
-  accountNumber,
-}) => {
+const BankCard: React.FC<BankCardProps> = ({ accountName, bankName, accountNumber }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
@@ -201,11 +183,7 @@ const BankCard: React.FC<BankCardProps> = ({
         <Text style={tw`text-white`}>Account Number</Text>
         <View style={tw`flex-row font-bold items-center`}>
           <Text style={tw`text-base text-white`}>{accountNumber}</Text>
-          <IconButton
-            onPress={copyToClipboard}
-            icon={copied ? "sticker-check" : "content-copy"}
-            iconColor="white"
-          />
+          <IconButton onPress={copyToClipboard} icon={copied ? "sticker-check" : "content-copy"} iconColor="white" />
         </View>
       </View>
     </View>

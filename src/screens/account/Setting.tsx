@@ -6,7 +6,6 @@ import {
   Appbar,
   Avatar,
   Divider,
-  Icon,
   Text,
   TouchableRipple,
 } from "react-native-paper";
@@ -20,11 +19,14 @@ import LogoutIcon from "@assets/icons/logout.svg";
 import { Colors } from "@constants/theme";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
-import { StackActions } from "@react-navigation/native";
+import { authSliceActions } from "@store/slice/auth";
+import { useTypedDispatch } from "@store/common";
 
 type Props = AccountStackScreenProps<"Settings">;
 
 export default function SettingScreen({ navigation }: Props) {
+  const dispatch = useTypedDispatch();
+
   return (
     <Screen>
       <Appbar.Header style={tw`bg-white`}>
@@ -90,9 +92,7 @@ export default function SettingScreen({ navigation }: Props) {
           backgroundColor="#FEF2F2"
           ItemIcon={LogoutIcon}
           onPress={() => {
-            navigation.dispatch(
-              StackActions.replace("Auth", { screen: "Login" })
-            );
+            dispatch(authSliceActions.logout());
           }}
         />
         <Text variant="bodyMedium" style={tw`text-gray-400 text-center mt-10`}>

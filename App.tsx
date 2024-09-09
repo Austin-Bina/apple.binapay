@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { PaperProvider } from "react-native-paper";
+import { ActivityIndicator, PaperProvider } from "react-native-paper";
 import { defaultTheme } from "./src/constants/theme";
 import Router from "@navigators/MainStack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -35,7 +35,7 @@ function Binapay() {
           },
           { text: "OK", onPress: () => BackHandler.exitApp() },
         ],
-        { cancelable: false }
+        { cancelable: false },
       );
       return true;
     };
@@ -60,10 +60,7 @@ function Binapay() {
     prepare();
 
     return () => {
-      BackHandler.removeEventListener(
-        "hardwareBackPress",
-        handleBackButtonClick
-      );
+      BackHandler.removeEventListener("hardwareBackPress", handleBackButtonClick);
     };
   }, []);
 
@@ -88,7 +85,7 @@ function Binapay() {
         <React.Fragment>
           <StatusBar style="dark" animated backgroundColor="white" />
           <Provider store={store}>
-            <PersistGate loading={null} persistor={persistor}>
+            <PersistGate loading={<ActivityIndicator size="small" />} persistor={persistor}>
               <PaperProvider theme={defaultTheme}>
                 <NoNetworkBar />
                 <Router />

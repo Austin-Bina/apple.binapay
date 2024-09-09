@@ -2,12 +2,12 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import { getAuthToken } from "./security";
 import { env } from "@env";
 
-const APIHelper: AxiosInstance = axios.create({
+const API: AxiosInstance = axios.create({
   baseURL: env.BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
 });
 
-APIHelper.interceptors.request.use(
+API.interceptors.request.use(
   async (config) => {
     const token = await getAuthToken();
     if (token) {
@@ -20,7 +20,7 @@ APIHelper.interceptors.request.use(
   }
 );
 
-APIHelper.interceptors.response.use(
+API.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     // Sentry.captureException(error);
@@ -29,4 +29,4 @@ APIHelper.interceptors.response.use(
   }
 );
 
-export default APIHelper;
+export default API;

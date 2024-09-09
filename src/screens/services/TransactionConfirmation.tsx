@@ -10,58 +10,140 @@ import { Colors } from "@constants/theme";
 import Screen from "@components/ui/shared/Screen";
 import OtpInput from "@components/ui/form/OtpInput";
 import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
-import { verticalScale } from "react-native-size-matters";
+import { z } from "zod";
+import { TransactionForm } from "@enum/transaction";
+import { route } from "@helpers/route";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import API from "@lib/api";
+import { useTypedSelector } from "@store/common";
+import { getPendingTransaction } from "@store/slice/transactionSlice";
+import { showToast } from "@helpers/toast";
 
 type Props = ServicesStackScreenProps<"Confirm Transaction">;
 
 const maximumLength = 4;
 
+const schema = z.object({
+  pin: z
+    .string()
+    .transform((val) => {
+      const numericValue = val.slice(0, maximumLength);
+      return numericValue;
+    })
+    .refine((val) => /^[0-9]+$/.test(val), {
+      message: "PIN must only contain numbers",
+    }),
+});
+
+const sources = {
+  [TransactionForm.AIRTIME_PURCHASE]: route("services.airtime.process"),
+  [TransactionForm.DATA_PURCHASE]: "",
+  [TransactionForm.BILL_PAYMENT]: "",
+  [TransactionForm.FUNDING]: "",
+  [TransactionForm.TV_SUBSCRIPTION_CHANGE]: "",
+  [TransactionForm.TV_SUBSCRIPTION_RENEW]: "",
+  [TransactionForm.EDUCATION]: "",
+  [TransactionForm.VIRTUAL_ACCOUNT]: "",
+} as const;
+
 export default function TransactionConfirmationScreen({
   navigation,
   route,
 }: Props) {
-  const [token, setToken] = useState("");
   const [pinReady, setPinReady] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [trialCount, setTrialCount] = useState(4);
 
+  const pendingTransaction = useTypedSelector((state) =>
+    getPendingTransaction(state.transaction, route.params.transactionId)
+  );
+
+  const { control, watch, reset, handleSubmit, setError } = useForm({
+    resolver: zodResolver(schema),
+    mode: "onChange",
+    defaultValues: {
+      pin: "",
+    },
+  });
+
+  const { pin } = watch();
+
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
+  const { transactionId } = route.params;
 
   useEffect(() => {
     setErrorMessage("");
-    if (token.length === maximumLength) {
+    if (pin.length === maximumLength) {
       setPinReady(true);
+      setFetching(true);
+
       Keyboard.dismiss();
 
-      if (token === "0000") {
-        openBottomSheet();
-        setTimeout(() => {
-          navigation.goBack();
-        }, 2000);
-        return;
-      }
-
-      if (token === "1234") {
-        setFetching(true);
-
-        setTimeout(() => {
-          setFetching(false);
+      API.post(sources[transactionId], {
+        ...pendingTransaction.data,
+        pin,
+      })
+        .then((response) => {
           navigation.navigate("Service Purchase Success", route.params);
-        }, 3000);
-      } else {
-        setErrorMessage(
-          `Invalid PIN, you have ${trialCount} trials remaining.`
-        );
-        setTrialCount((prevCount) => prevCount - 1);
-        if (trialCount === 0) {
-          setTimeout(() => {
-            navigation.goBack();
-          }, 2000);
-        }
-      }
+
+          const result = response.data;
+
+          if (result.transaction_data) {
+            const { transaction_data } = result as any;
+            if (transaction_data.code < 200 || transaction_data.code > 300) {
+              reset({
+                pin: "",
+              });
+
+              setTimeout(() => {
+                navigation.goBack();
+              }, 2000);
+
+              return;
+
+              // onResponse({
+              //   error: {
+              //     order_error: true,
+              //     title: "Failed to complete order",
+              //     description: transaction_data.remark,
+              //     status: transaction_data.status,
+              //   },
+              // });
+            }
+          }
+        })
+        .catch((err) => {
+          const result = err.response?.data;
+          setFetching(false);
+
+          if (result.errors.pin) {
+            setError("pin", { message: err.errors.pin[0] });
+          }
+
+          if (result && result.transaction_data) {
+            const { remark, code, status } = result.transaction_data;
+
+            if (status === "INSUFFICIENT_FUNDS") {
+              openBottomSheet();
+            } else {
+              reset({
+                pin: "",
+              });
+              // Show error
+              // back
+              // onResponse({ error: err }); add transaction_error
+              showToast({ message: remark });
+              navigation.goBack();
+            }
+          }
+        })
+        .finally(() => {
+          setFetching(false);
+        });
     }
-  }, [token]);
+  }, [pin]);
 
   const openBottomSheet = useCallback(() => {
     bottomSheet.current?.present();
@@ -69,7 +151,6 @@ export default function TransactionConfirmationScreen({
 
   const handleClose = useCallback(() => {
     bottomSheet.current?.dismiss();
-    console.log("Closed");
   }, []);
 
   return (
@@ -88,9 +169,9 @@ export default function TransactionConfirmationScreen({
           <View style={tw`my-10`}>
             <View style={tw`flex flex-row items-center justify-center`}>
               <OtpInput
-                code={token}
+                control={control}
                 maximumLength={maximumLength}
-                setCode={setToken}
+                name="pin"
               />
             </View>
           </View>

@@ -12,16 +12,16 @@ import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
-import {
-  authSliceActions,
-
-} from "@store/slice/auth";
+import { authSliceActions } from "@store/slice/auth";
 import { selectIsLoggingIn } from "@store/selectors/auth";
+import { showToast } from "@helpers/toast";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Too short!"),
 });
+
+type FormValues = z.infer<typeof schema>;
 
 const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
   navigation,
@@ -34,8 +34,7 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
   const {
     control,
     handleSubmit,
-    formState: { errors },
-  } = useForm({
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: "ttebify@gmail.com",
@@ -48,7 +47,13 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
   }, [dispatch]);
 
   const onSubmit = handleSubmit(async function (values) {
-    dispatch(authSliceActions.doLogin(values));
+    try {
+      await dispatch(authSliceActions.doLogin(values)).unwrap();
+    } catch (error: any) {
+      if (error.message) {
+        showToast({ message: error.message as string });
+      }
+    }
   });
 
   return (
@@ -72,8 +77,6 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
               onBlur={onBlur}
               value={value}
               onChangeText={onChange}
-              error={!!errors.email}
-              errorMessage={errors.email?.message}
             />
           )}
         />
@@ -87,8 +90,6 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
               onBlur={onBlur}
               value={value}
               onChangeText={onChange}
-              error={!!errors.password}
-              errorMessage={errors.password?.message}
               secureTextEntry={passwordVisible}
               left={<TextInput.Icon icon="lock-outline" color="#71717A" />}
               right={

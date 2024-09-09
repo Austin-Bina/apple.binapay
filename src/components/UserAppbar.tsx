@@ -1,5 +1,4 @@
 import tw from "@lib/tailwind";
-import { StackActions } from "@react-navigation/native";
 import { useTypedSelector } from "@store/common";
 import { getNavigate } from "@utils/navigation";
 import React from "react";
@@ -21,26 +20,25 @@ export default function UserAppbar() {
             },
           });
         }}
-        style={tw`flex flex-row gap-3 mx-2`}
-      >
-        <View
-          style={tw`flex flex-col items-center justify-center rounded-full border border-emerald-100`}
-        >
+        style={tw`flex flex-row gap-3 mx-2`}>
+        <View style={tw`flex flex-col items-center justify-center rounded-full border border-emerald-100`}>
+          <Avatar.Image
+            size={48}
+            style={tw`rounded-full bg-gray-200`}
+            source={require("@assets/draft/male-avatar-circle.png")}
+          />
+          {/*                 
           <Avatar.Image
             size={48}
             style={tw`rounded-full bg-gray-200`}
             source={{
               uri: currentUser?.avatar,
             }}
-          />
+          /> */}
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
-          <Text style={tw`text-zinc-500 text-sm font-normal`}>
-            Hi, {currentUser?.firstname} 👋🏽
-          </Text>
-          <Text style={tw`text-zinc-800 text-lg font-medium leading-snug`}>
-            Pay seamlessly with BinaPay!
-          </Text>
+          <Text style={tw`text-zinc-500 text-sm font-normal`}>Hi, {currentUser?.name} 👋🏽</Text>
+          <Text style={tw`text-zinc-800 text-lg font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
         </View>
       </TouchableOpacity>
       <Appbar.Content title="" />

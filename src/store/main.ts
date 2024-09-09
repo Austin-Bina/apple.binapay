@@ -3,6 +3,7 @@ import {
   combineReducers,
   configureStore,
   Middleware,
+  StoreEnhancer,
   UnknownAction,
 } from "@reduxjs/toolkit";
 import {
@@ -19,10 +20,24 @@ import { createLogMiddleware } from "./middleware/log";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { authSlice, initialState as initialAuthState } from "./slice/auth";
 import { settingsSlice } from "./slice/settings";
+import {
+  initialTransactionState,
+  transactionSlice,
+} from "./slice/transactionSlice";
+import devToolsEnhancer from 'redux-devtools-expo-dev-plugin';
+import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
+
+const config = {
+  key: 'root',
+  storage: ExpoFileSystemStorage,
+  blacklist: ['loadingReducer'],
+  debug: true, //to get useful logging
+};
 
 const defaultReducer = combineReducers({
   auth: authSlice.reducer,
   settings: settingsSlice.reducer,
+  transaction: transactionSlice.reducer,
 });
 
 const persistedReducer = persistReducer<
@@ -33,10 +48,16 @@ const persistedReducer = persistReducer<
     key: "Root",
     version: 1,
     storage: AsyncStorage,
+    blacklist: [],
+    debug: true,
   },
   (s, a) => {
     if (s && a.type === "auth/logout") {
-      s = { settings: s.settings, auth: initialAuthState };
+      s = {
+        settings: s.settings,
+        auth: initialAuthState,
+        transaction: initialTransactionState,
+      };
     }
 
     return defaultReducer(s, a);
@@ -45,7 +66,7 @@ const persistedReducer = persistReducer<
 
 export const createStore = (...middlewares: Middleware[]) =>
   configureStore({
-    devTools: __DEV__,
+    devTools: false,
     reducer: persistedReducer,
     middleware(getDefaultMiddleware) {
       return getDefaultMiddleware({
@@ -55,6 +76,9 @@ export const createStore = (...middlewares: Middleware[]) =>
         immutableCheck: { warnAfter: 128 },
       }).concat(...middlewares);
     },
+    enhancers(getDefaultEnhancers) {
+      return getDefaultEnhancers().concat(devToolsEnhancer() as StoreEnhancer);
+    }
   });
 
 export const store = createStore(createLogMiddleware());
@@ -71,4 +95,3 @@ export type AsyncStoreSlice<R = {}, S = {}, T = {}, U = {}> =
   | ({ status: "rejected" } & S)
   | ({ status: "pending" } & T)
   | ({ status: "idle" } & U);
-
