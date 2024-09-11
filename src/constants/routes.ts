@@ -28,10 +28,11 @@ export const routes = {
         resolveAccount: "/api/v1/bank/resolve-account",
       },
       services: {
+        fetch: "/api/v1/trx/fetch",
         data: "/api/v1/trx/process/data",
-        airtime: {
-          process: "/api/v1/trx/process/airtime",
-        },
+        airtime: "/api/v1/trx/process/airtime",
+        electricity: "/api/v1/trx/process/electricity",
+        cable: "/api/v1/trx/process/cable",
         resolveMeter: "/api/v1/services/resolve-meter",
         resolveCable: "/api/v1/services/resolve-cable",
       },

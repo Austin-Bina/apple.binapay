@@ -24,7 +24,7 @@ const NairaInput: React.FC<Props> = ({ control, name }) => {
       separator="."
       precision={2}
       onBlur={onBlur}
-      onChangeValue={onChange}
+      onChangeValue={(value) => onChange(`${value}`)}
       value={Number.parseFloat(value)}
       renderTextInput={({ selectionColor, cursorColor, ...props }) => (
         <View>

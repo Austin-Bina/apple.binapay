@@ -16,9 +16,9 @@ export const serviceProvidersMap: ServiceProvidersMap = {
       id: 2,
       type: ["VTU"],
     },
-    etisalat: {
+    "9mobile": {
       id: 3,
-      key: "etisalat",
+      key: "9mobile",
       label: "9Mobile",
       logo: require("@assets/images/services/nine-mobile.png"),
       type: ["VTU"],
@@ -73,17 +73,11 @@ export const serviceProvidersMap: ServiceProvidersMap = {
       key: "dstv",
       logo: require("@assets/images/services/dstv.png"),
     },
-    startimes: {
+    startime: {
       id: 2,
-      label: "Startimes",
-      key: "startimes",
+      label: "Startime",
+      key: "startime",
       logo: require("@assets/images/services/startimes.png"),
-    },
-    on_startimes: {
-      id: 2,
-      label: "On Startimes",
-      key: "on_startimes",
-      logo: require("@assets/images/services/on-startimes.png"),
     },
   },
   electricity: {

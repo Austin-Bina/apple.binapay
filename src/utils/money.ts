@@ -1,33 +1,39 @@
-export function convertToNaira(
-  rawAmount: number | string = 0,
-  prefix: boolean = true
-): string {
-  const parsedAmount =
-    typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
+import { formatNumber } from "react-native-currency-input";
+
+export function convertToNaira(rawAmount: number | string = 0, prefix: boolean = true): string {
+  const parsedAmount = typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
 
   if (isNaN(parsedAmount)) {
-    throw new Error(
-      "Invalid input: amount must be a number or a string representing a number."
-    );
+    throw new Error("Invalid input: amount must be a number or a string representing a number.");
   }
 
   const amountInNaira = parsedAmount / 100;
   const amount = amountInNaira.toFixed(2);
+  const formattedAmount = formatToNaira(amountInNaira);
 
-  return prefix ? `₦${amount}` : amount;
+  return prefix ? formattedAmount : amount;
 }
 
-export function formatToNaira(rawAmount: number | string = 0) {
-  const parsedAmount =
-    typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
+export const formatToNaira = (value: string | number = 0) => {
+  let numberValue: number;
 
-  if (isNaN(parsedAmount)) {
-    throw new Error(
-      "Invalid input: amount must be a number or a string representing a number."
-    );
+  if (typeof value === "string") {
+    numberValue = Number.parseInt(value);
+  } else {
+    numberValue = value;
   }
 
-  const amount = parsedAmount.toFixed(2);
+  if (isNaN(numberValue)) {
+    throw new Error("Invalid input: amount must be a number or a string representing a number.");
+  }
 
-  return `₦${amount}`;
-}
+  const formattedNumber = formatNumber(numberValue, {
+    separator: ".",
+    prefix: "₦",
+    precision: 2,
+    delimiter: ",",
+    signPosition: "beforePrefix",
+  });
+
+  return formattedNumber;
+};

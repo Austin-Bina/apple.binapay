@@ -9,13 +9,12 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import { formatNairaValue } from "@utils/functions";
+import { formatToNaira } from "@utils/money";
 import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, TouchableOpacity } from "react-native";
 import { Image } from "react-native-element-image";
-import { Button, Text, TextInput } from "react-native-paper";
-import { verticalScale } from "react-native-size-matters";
+import { Button, Text } from "react-native-paper";
 import { z } from "zod";
 
 type Props = ServicesStackScreenProps<"Airtime EPIN Purchase">;
@@ -144,7 +143,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
             <Text variant="titleMedium">
               {[
                 values.provider.toUpperCase(),
-                formatNairaValue(values.value),
+                formatToNaira(values.value),
                 values.business_name,
               ].join(" | ")}
             </Text>

@@ -7,65 +7,58 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import { phoneValidation } from "@utils/phone";
-import React, { useCallback, useRef, useState } from "react";
+import React, { Fragment, useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FlatList, TouchableOpacity, View } from "react-native";
 import { Image } from "react-native-element-image";
-import { Button, Text, TextInput } from "react-native-paper";
+import { Button, Checkbox, Text, TextInput, TouchableRipple } from "react-native-paper";
 import { z } from "zod";
 import ArrowRight from "@assets/icons/arrow-right.svg";
 import Banner from "@components/ui/banner";
 import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
-import { scale, verticalScale } from "react-native-size-matters";
+import { scale } from "react-native-size-matters";
+import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
+import { useTypedSelector, useTypedDispatch } from "@store/common";
+import { selectUser } from "@store/selectors/auth";
+import { TransactionForm } from "@enum/transaction";
+import { addPendingTransaction } from "@store/slice/transactionSlice";
+import { useGetDataPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import { InternetProviders } from "@type/app";
+import { formatToNaira } from "@utils/money";
 
 type Props = ServicesStackScreenProps<"Data Purchase">;
 
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
-  phone: phoneValidation,
+  phone: z.string().min(11),
   data_bundle: z.string(),
+  data_amount: z.string(),
+  ported_number: z.boolean(),
   amount: z.string(),
+  type: z.string(),
 });
-
-const dataBundles = [
-  {
-    label: "Daily Plan (500MB)",
-    id: "daily_500mb",
-  },
-  {
-    label: "Weekly Plan (1.5GB)",
-    id: "weekly_1.5gb",
-  },
-  {
-    label: "Monthly Plan (5GB)",
-    id: "monthly_5gb",
-  },
-  {
-    label: "Night Plan (10GB)",
-    id: "night_10gb",
-  },
-];
 
 export default function DataPurchaseScreen({ navigation }: Props) {
   const [fetching, setFetching] = useState(false);
 
+  const { data, isLoading } = useGetDataPlansQuery();
+  const user = useTypedSelector(selectUser);
+  const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
-  const {
-    control,
-    watch,
-    setValue,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
+  const { control, watch, setValue, reset, handleSubmit } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
-      phone: ["09121738252", "NG"],
-      data_bundle: "daily_500mb",
-      amount: "100",
+      phone: user?.phone,
+      data_bundle: "",
+      data_amount: "",
+      amount: 0,
+      ported_number: false,
+      type: "",
     },
   });
 
@@ -80,12 +73,22 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   }, []);
 
   const handleMakePayment = handleSubmit((values) => {
-    console.log(values);
+    const transaction = {
+      id: TransactionForm.Data,
+      data: values,
+    };
+
+    dispatch(addPendingTransaction(transaction));
+
     navigation.navigate("Confirm Transaction", {
-      transactionId: "data_purchase",
+      transactionId: transaction.id,
     });
+
     closeBottomSheet();
   });
+
+  const provider = values.provider as InternetProviders;
+  const selectedProviderPlans = data?.data_plans[provider] || [];
 
   return (
     <Screen>
@@ -94,8 +97,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           Buy Data Bundle
         </Text>
         <Text variant="bodySmall" style={tw`text-gray-500`}>
-          Stay connected with our data bundles! Select your preferred options
-          below to purchase a data bundle.
+          Stay connected with our data bundles! Select your preferred options below to purchase a data bundle.
         </Text>
         <FlatList
           data={Object.values(serviceProvidersMap.internet)}
@@ -105,10 +107,8 @@ export default function DataPurchaseScreen({ navigation }: Props) {
               onPress={() => setValue("provider", provider.key)}
               style={[
                 tw`p-3 mx-1 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key &&
-                  tw`border-blue-500 border-2`,
-              ]}
-            >
+                values.provider === provider.key && tw`border-blue-500 border-2`,
+              ]}>
               <Image source={provider.logo} width={scale(50)} />
             </TouchableOpacity>
           )}
@@ -120,16 +120,16 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         <Controller
           control={control}
           name="phone"
-          render={({ field: { onChange, onBlur, value } }) => (
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
             <CustomTextInput
               label="Phone Number"
               placeholder="+234 000 000 0000"
               mode="outlined"
               onBlur={onBlur}
-              value={value?.[0] || ""}
+              value={value}
               onChangeText={onChange}
-              error={!!errors.phone}
-              errorMessage={errors.phone?.message}
+              error={!!error}
+              errorMessage={error?.message}
             />
           )}
         />
@@ -141,34 +141,57 @@ export default function DataPurchaseScreen({ navigation }: Props) {
             </View>
           </TouchableOpacity>
         </View>
+        <Controller
+          control={control}
+          name="ported_number"
+          render={({ field: { value, onChange }, fieldState: { error } }) => (
+            <View style={tw`border border-gray-300 rounded-xl w-[50%] overflow-hidden`}>
+              <TouchableRipple
+                onPress={() => {
+                  onChange(!value);
+                }}
+                style={tw`flex-row items-center `}>
+                <Fragment>
+                  <Checkbox status={value ? "checked" : "unchecked"} />
+                  <Text>Ported Number</Text>
+                </Fragment>
+              </TouchableRipple>
+            </View>
+          )}
+        />
         <DropdownMenuField
           label="Data Bundle"
           placeholder="Select Data Bundle"
-          name="type"
+          name="data_bundle"
           control={control}
-          data={dataBundles}
+          data={selectedProviderPlans.map((plan) => ({
+            label: `${plan.plan} - ${formatToNaira(plan.plan_amount)}`,
+            amount: plan.plan_amount,
+            data_amount: plan.plan,
+            type: plan.plan_type,
+            id: plan.id.toString(),
+          }))}
+          onDataSelect={(plan) => {
+            reset({
+              ...values,
+              amount: plan.amount,
+              data_amount: plan.data_amount,
+              data_bundle: plan.id,
+              type: plan.type,
+            });
+          }}
         />
         <View>
           <NairaInput name="amount" control={control} />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-            Wallet Balance: ₦20,000.00
-          </Text>
+          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: ₦20,000.00</Text>
         </View>
-        <View
-          style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}
-        >
-          <Text
-            variant="bodyMedium"
-            style={tw`text-green-600 text-center font-bold`}
-          >
-            You get {values.amount} GB
+        <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
+          <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
+            You get {values.data_amount}
           </Text>
         </View>
 
-        <Banner
-          style={tw`mb-20`}
-          message="You get 10% off when you purchase airtime with us"
-        />
+        <Banner style={tw`mb-20`} message="You get 10% off when you purchase airtime with us" />
       </ScrollableView>
       <View style={tw`px-4 pb-4 pt-1`}>
         <Button
@@ -177,8 +200,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           labelStyle={tw`text-white text-center text-base font-bold`}
           disabled={fetching}
           onPress={openBottomSheet}
-          mode="contained"
-        >
+          mode="contained">
           Proceed
         </Button>
       </View>
@@ -195,13 +217,8 @@ export default function DataPurchaseScreen({ navigation }: Props) {
               <View style={tw`flex-row justify-between my-2`}>
                 <Text variant="bodyLarge">Network:</Text>
                 <View style={tw`flex-row items-center gap-2.5`}>
-                  <Image
-                    width={30}
-                    source={serviceProvidersMap.internet[values.provider].logo}
-                  />
-                  <Text style={tw`text-lg font-bold`}>
-                    {serviceProvidersMap.internet[values.provider].label}
-                  </Text>
+                  <Image width={30} source={serviceProvidersMap.internet[values.provider].logo} />
+                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.internet[values.provider].label}</Text>
                 </View>
               </View>
               <View style={tw`flex-row justify-between my-2`}>
@@ -222,13 +239,14 @@ export default function DataPurchaseScreen({ navigation }: Props) {
               onPress={handleMakePayment}
               style={tw`w-full rounded-full mt-[20%]`}
               contentStyle={tw`py-2`}
-              labelStyle={tw`text-base`}
-            >
+              labelStyle={tw`text-base`}>
               Make Payment
             </Button>
           </View>
         }
       />
+      <TransactionErrorSheet />
+      <PleaseWaitModal visible={isLoading} />
     </Screen>
   );
 }

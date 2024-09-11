@@ -18,6 +18,7 @@ type Props = {
     id: string | number;
     image?: any;
   }>;
+  onDataSelect?: (data: any) => void;
 };
 
 export default function DropdownMenuField({
@@ -27,19 +28,15 @@ export default function DropdownMenuField({
   placeholder,
   label,
   search = false,
+  onDataSelect = () => {},
 }: Props) {
   return (
     <Controller
       control={control}
       name={name}
-      render={({
-        fieldState: { error },
-        field: { onChange, onBlur, value },
-      }) => (
+      render={({ fieldState: { error }, field: { onChange, value } }) => (
         <View>
-          <Text style={tw`text-gray text-sm font-light leading-loose`}>
-            {label}
-          </Text>
+          <Text style={tw`text-gray text-sm font-light leading-loose`}>{label}</Text>
           <Dropdown
             data={data}
             labelField="label"
@@ -47,7 +44,10 @@ export default function DropdownMenuField({
             value={value}
             placeholder={placeholder}
             searchPlaceholder="Search..."
-            onChange={(value) => onChange(value.id)}
+            onChange={(value) => {
+              onChange(value.id);
+              onDataSelect(value);
+            }}
             search={search}
             renderLeftIcon={() => {
               const selectedData = data.find((d) => d.id === value);
@@ -64,16 +64,11 @@ export default function DropdownMenuField({
               );
             }}
             renderRightIcon={(isOpen) => (
-              <ArrowDown
-                style={[
-                  { transform: [{ rotate: isOpen ? "180deg" : "0deg" }] },
-                ]}
-                width={24}
-              />
+              <ArrowDown style={[{ transform: [{ rotate: isOpen ? "180deg" : "0deg" }] }]} width={24} />
             )}
             style={tw.style(
               `w-full bg-white rounded-2xl border py-2 px-4`,
-              error ? "border-red-500" : "border-gray-300"
+              error ? "border-red-500" : "border-gray-300",
             )}
             placeholderStyle={tw`text-gray-400`}
             iconStyle={tw`w-6 h-6 border-gray-500`}
@@ -85,8 +80,7 @@ export default function DropdownMenuField({
             visible={!!error}
             style={{
               height: error ? "auto" : 0,
-            }}
-          >
+            }}>
             {error?.message}
           </HelperText>
         </View>

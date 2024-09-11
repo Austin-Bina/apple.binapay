@@ -27,3 +27,23 @@ export interface RouteOptions {
   version?: "v1";
   type?: "api" | "web";
 }
+
+export interface DataPlan {
+  id: number;
+  dataplan_id: string;
+  network: number;
+  plan_type: string;
+  plan_network: string;
+  month_validate: string;
+  plan: string;
+  plan_amount: string;
+}
+export interface CablePlan {
+  cable: string;
+  cableplan_id: string;
+  id: number;
+  package: string;
+  plan_amount: string;
+}
+
+export type InternetProviders = "mtn" | "airtel" | "9mobile" | "glo";

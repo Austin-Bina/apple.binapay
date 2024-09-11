@@ -23,11 +23,10 @@ import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { TransactionForm } from "@enum/transaction";
 import { formatToNaira } from "@utils/money";
+import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
+import { selectUser } from "@store/selectors/auth";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
-type ErrorFlag = React.ComponentPropsWithoutRef<typeof Banner>;
-
-const MIN_AMOUNT = 20;
 
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
@@ -38,14 +37,13 @@ const schema = z.object({
   pin: z.string().optional(),
 });
 
-type FormValue = typeof schema;
+type FormValues = z.infer<typeof schema>;
 
 export default function AirtimePurchaseScreen({ navigation }: Props) {
   const [fetching, setFetching] = useState(false);
-  const [errorFlagData, setErrorFlagData] = useState<ErrorFlag | null>(null);
 
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
-  const { user } = useTypedSelector((s) => s.auth);
+  const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
 
   const {
@@ -55,7 +53,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
     handleSubmit,
     formState: { errors },
     trigger,
-  } = useForm({
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
@@ -89,7 +87,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
 
   const handleMakePayment = handleSubmit((values) => {
     const transaction = {
-      id: TransactionForm.AIRTIME_PURCHASE,
+      id: TransactionForm.Airtime,
       data: values,
     };
 
@@ -109,21 +107,18 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
           Buy Airtime
         </Text>
         <Text variant="bodySmall" style={tw`text-gray-500`}>
-          Top up your mobile credit instantly! Enter the details below to
-          purchase airtime for your mobile phone
+          Top up your mobile credit instantly! Enter the details below to purchase airtime for your mobile phone
         </Text>
         <FlatList
           data={Object.values(serviceProvidersMap.internet)}
           renderItem={({ item: provider }) => (
             <TouchableOpacity
               key={provider.key}
-              onPress={() => setValue("provider", provider.key)}
+              onPress={() => setValue("provider", provider.key as any)}
               style={[
                 tw`p-3 mx-1 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key &&
-                  tw`border-blue-500 border-2`,
-              ]}
-            >
+                values.provider === provider.key && tw`border-blue-500 border-2`,
+              ]}>
               <Image source={provider.logo} width={scale(50)} />
             </TouchableOpacity>
           )}
@@ -161,15 +156,12 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
           control={control}
           name="ported_number"
           render={({ field: { value, onChange }, fieldState: { error } }) => (
-            <View
-              style={tw`border border-gray-300 rounded-xl w-[50%] overflow-hidden`}
-            >
+            <View style={tw`border border-gray-300 rounded-xl w-[50%] overflow-hidden`}>
               <TouchableRipple
                 onPress={() => {
                   onChange(!value);
                 }}
-                style={tw`flex-row items-center `}
-              >
+                style={tw`flex-row items-center `}>
                 <Fragment>
                   <Checkbox status={value ? "checked" : "unchecked"} />
                   <Text>Ported Number</Text>
@@ -190,25 +182,15 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
         />
         <View>
           <NairaInput name="amount" control={control} />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-            Wallet Balance: {formatToNaira(user?.wallet_balance)}
-          </Text>
+          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
         </View>
-        <View
-          style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}
-        >
-          <Text
-            variant="bodyMedium"
-            style={tw`text-green-600 text-center font-bold`}
-          >
+        <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
+          <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
             You get ₦{values.amount || 0}
           </Text>
         </View>
 
-        <Banner
-          style={tw`mb-20`}
-          message="You get 10% off when you purchase airtime with us"
-        />
+        <Banner style={tw`mb-20`} message="You get 10% off when you purchase airtime with us" />
       </ScrollableView>
       <View style={tw`px-4 pb-4 pt-1`}>
         <Button
@@ -217,8 +199,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
           labelStyle={tw`text-white text-center text-base font-bold`}
           disabled={fetching}
           onPress={openBottomSheet}
-          mode="contained"
-        >
+          mode="contained">
           Continue
         </Button>
       </View>
@@ -235,13 +216,8 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
               <View style={tw`flex-row justify-between my-2`}>
                 <Text variant="bodyLarge">Network:</Text>
                 <View style={tw`flex-row items-center gap-2.5`}>
-                  <Image
-                    width={30}
-                    source={serviceProvidersMap.internet[values.provider].logo}
-                  />
-                  <Text style={tw`text-lg font-bold`}>
-                    {serviceProvidersMap.internet[values.provider].label}
-                  </Text>
+                  <Image width={30} source={serviceProvidersMap.internet[values.provider].logo} />
+                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.internet[values.provider].label}</Text>
                 </View>
               </View>
               <View style={tw`flex-row justify-between my-2`}>
@@ -258,13 +234,14 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
               onPress={handleMakePayment}
               style={tw`w-full rounded-full mt-[20%]`}
               contentStyle={tw`py-2`}
-              labelStyle={tw`text-base`}
-            >
+              labelStyle={tw`text-base`}>
               Make Payment
             </Button>
           </View>
         }
       />
+
+      <TransactionErrorSheet />
     </Screen>
   );
 }
