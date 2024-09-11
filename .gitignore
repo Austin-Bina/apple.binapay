@@ -99,3 +99,4 @@ GoogleService-Info.plist
 
 # Project Specific files
 /svgs-to-convert
+.env
