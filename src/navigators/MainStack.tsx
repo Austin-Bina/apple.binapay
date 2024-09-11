@@ -14,7 +14,7 @@ import VerifyOTPScreen from "@screens/auth/VerifyOTP";
 import { TabBar } from "./tabs/MainTab";
 import { NavigationContainer } from "@react-navigation/native";
 import { navigationRef } from "@utils/navigation";
-import { KeyboardAvoidingView, Platform } from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useTypedSelector } from "@store/common";
 import { selectLoggedIn } from "@store/selectors/auth";
@@ -25,11 +25,7 @@ function Router() {
   const isLoggedIn = useTypedSelector(selectLoggedIn);
 
   return (
-    <KeyboardAvoidingView
-      style={tw`flex-1`}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      enabled
-    >
+    <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
       <NavigationContainer ref={navigationRef}>
         <BottomSheetModalProvider>
           <Stack.Navigator
@@ -40,49 +36,30 @@ function Router() {
               headerTitle: "",
               headerShown: true,
               headerLeft: () => (
-                <TouchableRipple
-                  onPress={() => {
-                    if (navigation.canGoBack()) {
-                      navigation.goBack();
-                    } else {
-                      navigation.reset({ routes: [{ name: "Onboarding" }] });
-                    }
-                  }}
-                  style={tw`mr-2.5 overflow-hidden p-0.5`}
-                >
-                  <LeftArrowIcon width={38} height={38} />
-                </TouchableRipple>
+                <View style={tw`mr-2.5 overflow-hidden p-0.5`}>
+                  <TouchableRipple
+                    onPress={() => {
+                      if (navigation.canGoBack()) {
+                        navigation.goBack();
+                      } else {
+                        navigation.reset({ routes: [{ name: "Main" }] });
+                      }
+                    }}>
+                    <LeftArrowIcon width={38} height={38} />
+                  </TouchableRipple>
+                </View>
               ),
-            })}
-          >
+            })}>
             {isLoggedIn ? (
               <React.Fragment>
-                <Stack.Screen
-                  name="Main"
-                  component={TabBar}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="One Time Password"
-                  component={VerifyOTPScreen}
-                />
+                <Stack.Screen name="Main" component={TabBar} options={{ headerShown: false }} />
+                <Stack.Screen name="One Time Password" component={VerifyOTPScreen} />
               </React.Fragment>
             ) : (
               <React.Fragment>
-                <Stack.Screen
-                  name="Auth"
-                  component={AuthStack}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="Onboarding"
-                  component={Onboarding}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="Forget Password"
-                  component={ForgetPassword}
-                />
+                <Stack.Screen name="Auth" component={AuthStack} options={{ headerShown: false }} />
+                <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} />
+                <Stack.Screen name="Forget Password" component={ForgetPassword} />
                 <Stack.Screen
                   name="Reset Password Successful"
                   options={{ headerShown: false }}
@@ -91,11 +68,7 @@ function Router() {
               </React.Fragment>
             )}
 
-            <Stack.Screen
-              name="Busy"
-              options={{ headerShown: false }}
-              component={Busy}
-            />
+            <Stack.Screen name="Busy" options={{ headerShown: false }} component={Busy} />
             <Stack.Screen name="Reset Password" component={ResetPassword} />
           </Stack.Navigator>
         </BottomSheetModalProvider>

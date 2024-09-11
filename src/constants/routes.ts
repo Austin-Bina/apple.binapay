@@ -22,6 +22,8 @@ export const routes = {
         updateProfile: "/api/v1/account/profile",
         manageNotifications: "/api/v1/account/notifications",
         reserveAccount: "/api/v1/account/reserve-account",
+        recentTransactions: "/api/v1/account/recent-transactions",
+        transactions: "/api/v1/account/transactions",
       },
       bank: {
         list: "/api/v1/banks",
@@ -42,5 +44,3 @@ export const routes = {
     v1: {},
   },
 };
-
-export const BASE_URL = "https://binapay.test";

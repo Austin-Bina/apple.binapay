@@ -10,6 +10,7 @@ interface Props extends Omit<React.ComponentProps<typeof Icon>, "source"> {
   RenderIcon?: React.FC<SvgProps>;
   source?: any;
   onPress: () => void;
+  isDisabled?: boolean;
 }
 
 export default function IconButtonWithLabel({
@@ -18,6 +19,7 @@ export default function IconButtonWithLabel({
   source,
   size,
   onPress,
+  isDisabled = false,
   ...rest
 }: Props) {
   return (

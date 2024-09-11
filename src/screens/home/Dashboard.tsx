@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
-import { Pressable, Text, TouchableOpacity, View } from "react-native";
+import React, { Fragment, useMemo, useState } from "react";
+import { Pressable, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
-import { Button, Card, IconButton } from "react-native-paper";
+import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
 import { HomeStackScreenProps } from "@navigators/types";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
@@ -11,42 +11,96 @@ import WifiIcon from "@assets/icons/wifi.svg";
 import ZapIcon from "@assets/icons/lightning.svg";
 import MoreIcon from "@assets/icons/three-dots-horizontal.svg";
 import ArrowRight from "@assets/icons/arrow-right.svg";
-import SadFaceIcon from "@assets/icons/sad-face.svg";
-import { Colors } from "@constants/theme";
 import UserAppbar from "@components/UserAppbar";
 import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
-import { scale } from "react-native-size-matters";
 import { useTypedSelector } from "@store/common";
 import { formatToNaira } from "@utils/money";
 import { selectUser } from "@store/selectors/auth";
+import { useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
+import { format } from "date-fns";
+import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";
+import TransactionLoader from "@components/ui/loaders/transaction-loader";
 
-const TransactionEmptyState = () => {
-  return (
-    <Card mode="contained" style={tw`bg-transparent`}>
-      <Card.Content style={tw`items-center`}>
-        <View style={tw`justify-center h-16 w-16 items-center p-4 bg-secondary-50 rounded-3xl`}>
-          <SadFaceIcon fill={Colors.secondary[500]} width={scale(30)} height={scale(30)} />
-        </View>
-        <Text style={tw`font-medium text-lg text-gray-500 text-center`}>No Transactions!</Text>
-        <Text style={tw`text-xs text-gray-400 text-center`}>
-          No recent transactions. Your financial world is quiet at the moment.
+type RecentTransactionsProps = {
+  navigation: any;
+};
+
+const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
+  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery();
+
+  const { transactions } = queryData || {};
+
+  const dynamicContent = useMemo(() => {
+    if (isLoading) {
+      return <TransactionLoader groups={["Today"]} />;
+    }
+
+    if (!transactions) {
+      return <TransactionEmptyState />;
+    }
+
+    return Object.entries(transactions).map(([group, transactions]) => (
+      <View key={group}>
+        <Text variant="titleMedium" style={tw`text-gray-900`}>
+          {group}
         </Text>
-      </Card.Content>
-    </Card>
+
+        <View>
+          {transactions.map((transaction, index) => (
+            <Fragment key={transaction.id}>
+              <TouchableOpacity
+                key={transaction.id}
+                onPress={() => {}}
+                style={tw`flex-row items-center justify-between gap-2 p-2 my-2`}>
+                <Fragment>
+                  <Avatar.Image
+                    size={40}
+                    source={{
+                      uri: "url",
+                    }}
+                    style={tw`bg-gray-300`}
+                  />
+                  <View style={tw`flex-1 mx-3`}>
+                    <Text style={tw`text-gray-900 text-sm`}>{transaction.meta.description}</Text>
+                    <Text style={tw`text-gray-500 text-xs`}>
+                      {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
+                    </Text>
+                  </View>
+                  <Text style={tw`text-gray-900 font-semibold`}>₦{transaction.amount}</Text>
+                </Fragment>
+              </TouchableOpacity>
+              {index !== transactions.length - 1 && <Divider />}
+            </Fragment>
+          ))}
+        </View>
+      </View>
+    ));
+  }, [transactions, isLoading]);
+
+  return (
+    <View style={tw`mt-4 mb-20`}>
+      <View style={tw`flex-row justify-between items-center mb-5`}>
+        <Text style={tw`text-base font-medium text-gray-600`}>Recent Transactions</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Transaction History")}>
+          <View style={tw`flex-row items-center gap-1`}>
+            <Text style={tw`text-primary text-xs`}>See More</Text>
+            <ArrowRight width={20} />
+          </View>
+        </TouchableOpacity>
+      </View>
+      {dynamicContent}
+    </View>
   );
 };
 
 const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
-
   const user = useTypedSelector(selectUser);
 
   const balanceNaira = useMemo(() => {
     return balanceVisible ? formatToNaira(user?.wallet_balance) : "₦***.**";
   }, [user?.wallet_balance, balanceVisible]);
-
-  // const recentTransactions = trans as any[];
 
   const toggleBalance = () => setBalanceVisible(!balanceVisible);
 
@@ -93,7 +147,7 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
           </Pressable>
         )}
 
-        <View style={tw`mb-6`}>
+        <View style={tw`my-4`}>
           <Text style={tw`text-base font-medium text-gray-600 mb-3.5`}>Services</Text>
           <View style={tw`flex-row justify-around`}>
             <IconButtonWithLabel
@@ -155,21 +209,7 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
           </View>
         </View>
         {/* Recent Transactions */}
-        <View style={tw`mt-8 mb-20`}>
-          <View style={tw`flex-row justify-between items-center mb-10`}>
-            <Text style={tw`text-base font-medium text-gray-600`}>Recent Transactions</Text>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate("Transaction History");
-              }}>
-              <View style={tw`flex-row items-center gap-1`}>
-                <Text style={tw`text-primary text-xs`}>See More</Text>
-                <ArrowRight width={20} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <TransactionEmptyState />
-        </View>
+        <RecentTransactions navigation={navigation} />
       </ScrollableView>
     </Screen>
   );

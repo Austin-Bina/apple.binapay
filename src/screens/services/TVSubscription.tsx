@@ -19,7 +19,7 @@ import { selectUser } from "@store/selectors/auth";
 import { addPendingTransaction, setTransactionError } from "@store/slice/transactionSlice";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, Keyboard } from "react-native";
 import { Image } from "react-native-element-image";
 import { ActivityIndicator, Button, Text } from "react-native-paper";
 import { z } from "zod";
@@ -183,12 +183,19 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
     });
   };
 
-  const openBottomSheet = useCallback(() => {
+  const openBottomSheet = useCallback(async () => {
     if (!readyToPay) {
       return validateCard();
     }
 
-    bottomSheet.current?.present();
+    const valid = await trigger();
+
+    if (valid) {
+      Keyboard.dismiss();
+      setTimeout(() => {
+        bottomSheet.current?.present();
+      }, 100);
+    }
   }, [readyToPay, validateCard]);
 
   const closeBottomSheet = useCallback(() => {

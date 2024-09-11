@@ -6,12 +6,11 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import { phoneValidation } from "@utils/phone";
 import React, { Fragment, useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FlatList, TouchableOpacity, View } from "react-native";
+import { FlatList, Keyboard, TouchableOpacity, View } from "react-native";
 import { Image } from "react-native-element-image";
-import { Button, Checkbox, Text, TextInput, TouchableRipple } from "react-native-paper";
+import { Button, Checkbox, Text, TouchableRipple } from "react-native-paper";
 import { z } from "zod";
 import ArrowRight from "@assets/icons/arrow-right.svg";
 import Banner from "@components/ui/banner";
@@ -49,7 +48,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
-  const { control, watch, setValue, reset, handleSubmit } = useForm({
+  const { control, watch, trigger, setValue, reset, handleSubmit } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
@@ -64,9 +63,15 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   const values = watch();
 
-  const openBottomSheet = useCallback(() => {
-    bottomSheet.current?.present();
-  }, []);
+  const openBottomSheet = useCallback(async () => {
+    const valid = await trigger();
+    if (valid) {
+      Keyboard.dismiss();
+      setTimeout(() => {
+        bottomSheet.current?.present();
+      }, 100);
+    }
+  }, [values]);
 
   const closeBottomSheet = useCallback(() => {
     bottomSheet.current?.dismiss();
@@ -183,7 +188,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         />
         <View>
           <NairaInput name="amount" control={control} />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: ₦20,000.00</Text>
+          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
         </View>
         <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
           <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
@@ -227,7 +232,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
               </View>
               <View style={tw`flex-row justify-between my-2`}>
                 <Text variant="bodyLarge">Data Amount:</Text>
-                <Text style={tw`text-lg font-bold`}>500GB</Text>
+                <Text style={tw`text-lg font-bold`}>{values.data_amount}</Text>
               </View>
               <View style={tw`flex-row items-center justify-between my-2`}>
                 <Text variant="bodyLarge">Number:</Text>

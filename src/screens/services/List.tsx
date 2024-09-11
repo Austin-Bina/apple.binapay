@@ -114,6 +114,8 @@ export default function ListServicesScreen({ navigation }: Props) {
             size={24}
             label="Airtime Swap"
             onPress={openBottomSheet}
+            isDisabled
+            
           />
           <IconButtonWithLabel
             RenderIcon={AgentIcon}

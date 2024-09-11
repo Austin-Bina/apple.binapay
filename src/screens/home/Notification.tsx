@@ -11,21 +11,21 @@ type Props = HomeStackScreenProps<"Notification">;
 
 const notifications = [
   {
-    id: '3r7xefxtexvgdvdxe',
+    id: "3r7xefxtexvgdvdxe",
     title: "Transaction Completed",
     body: "Your airtime purchase was completed successfully",
     data: "Mar 12, 2024 4:01 PM",
     image: require("@assets/icons/logo-small.png"),
   },
   {
-    id: 'yu5e378dguyxecee',
+    id: "yu5e378dguyxecee",
     title: "Transaction Completed",
     body: "Your wallet has been credited with ₦20,000.00",
     data: "Mar 12, 2024 4:01 PM",
     image: require("@assets/icons/logo-small.png"),
   },
   {
-    id: '3r7b dbvtd7i8o9ydhxexec',
+    id: "3r7b dbvtd7i8o9ydhxexec",
     title: "Referral Payout",
     body: "Your wallet has been credited with ₦200.00 of your referral earning",
     data: "Mar 12, 2024 4:01 PM",
@@ -35,14 +35,12 @@ const notifications = [
 
 export default function NotificationScreen({}: Props) {
   return (
-    <Screen>
-      <Text
-        variant="titleLarge"
-        style={tw`text-gray-800 mb-2 font-bold px-4 mt-10 `}
-      >
-        Notification
-      </Text>
+    <View style={tw`flex-1 bg-white`}>
       <ScrollableView style={tw`px-4 mt-5`}>
+        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold px-4 mt-10 `}>
+          Notification
+        </Text>
+
         <Text variant="bodySmall" style={tw`text-gray-400`}>
           Today
         </Text>
@@ -51,8 +49,7 @@ export default function NotificationScreen({}: Props) {
             <TouchableOpacity
               key={data.id}
               onPress={() => {}}
-              style={tw`flex-row items-center gap-2 my-3 p-2 rounded-2xl border border-gray-100`}
-            >
+              style={tw`flex-row items-center gap-2 my-3 p-2 rounded-2xl border border-gray-100`}>
               <Fragment>
                 <Image source={data.image} width={60} height={60} />
                 <View>
@@ -68,6 +65,6 @@ export default function NotificationScreen({}: Props) {
           ))}
         </View>
       </ScrollableView>
-    </Screen>
+    </View>
   );
 }

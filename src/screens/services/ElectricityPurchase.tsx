@@ -7,7 +7,7 @@ import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 import { Image } from "react-native-element-image";
 import { ActivityIndicator, Button, Chip, Text } from "react-native-paper";
 import { z } from "zod";
@@ -200,7 +200,10 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
     }
     const valid = await trigger();
     if (valid) {
-      bottomSheet.current?.present();
+      Keyboard.dismiss();
+      setTimeout(() => {
+        bottomSheet.current?.present();
+      }, 100);
     }
   }, [readyToPay, validateMeter]);
 

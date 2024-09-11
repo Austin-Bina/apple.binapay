@@ -1,4 +1,4 @@
-import { StyleProp, ViewStyle } from "react-native";
+import { Platform, StyleProp, ViewStyle } from "react-native";
 import React, { ReactNode } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "@lib/tailwind";
@@ -9,11 +9,12 @@ interface Props {
   withBackgroundImage?: boolean;
 }
 const Screen = ({ children, style }: Props) => {
+  const iosEdges = ["right", "left"] as const;
+  const otherEdges = ["right", "left", "top"] as const;
+  const edges = Platform.OS === "ios" ? iosEdges : otherEdges;
+
   return (
-    <SafeAreaView
-      style={[tw`flex-1 bg-white`, style]}
-      edges={["right", "bottom", "left"]}
-    >
+    <SafeAreaView style={[tw`flex-1 bg-white`, style]} edges={edges}>
       {children}
     </SafeAreaView>
   );

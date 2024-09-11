@@ -47,3 +47,12 @@ export interface CablePlan {
 }
 
 export type InternetProviders = "mtn" | "airtel" | "9mobile" | "glo";
+
+export interface CustomPagination<T> {
+  data: T[];
+  current_page: number;
+  from: number | null;
+  to: number | null;
+  per_page: number;
+  total: number;
+}

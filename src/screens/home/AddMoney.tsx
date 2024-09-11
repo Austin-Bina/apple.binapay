@@ -102,13 +102,15 @@ const BankView: React.FC<BankProps> = ({ accounts }) => (
   </View>
 );
 
-type CardViewProps = HomeStackScreenProps<"Add Money">;
+type CardViewProps = HomeStackScreenProps<"Add Money"> & {
+  comingSoon?: boolean;
+};
 
 const schema = z.object({
   amount: z.string(),
 });
 
-const CardView: React.FC<CardViewProps> = ({ navigation }) => {
+const CardView: React.FC<CardViewProps> = ({ navigation, comingSoon }) => {
   const { control, watch, setValue, handleSubmit } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -119,6 +121,19 @@ const CardView: React.FC<CardViewProps> = ({ navigation }) => {
   const onSubmit = () => {
     navigation.navigate("Card Details");
   };
+
+  if (comingSoon) {
+    return (
+      <View style={tw`flex-1 justify-center items-center`}>
+        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
+          Coming Soon
+        </Text>
+        <Text variant="bodyMedium" style={tw`text-gray-400`}>
+          This feature is not yet available.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View>

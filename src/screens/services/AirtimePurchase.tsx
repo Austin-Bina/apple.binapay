@@ -1,10 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import { phoneValidation } from "@utils/phone";
 import React, { Fragment, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FlatList, TouchableOpacity, View } from "react-native";
+import { FlatList, Keyboard, TouchableOpacity, View } from "react-native";
 import { Button, Checkbox, Text, TouchableRipple } from "react-native-paper";
 import { z } from "zod";
 import ArrowRight from "@assets/icons/arrow-right.svg";
@@ -28,10 +27,21 @@ import { selectUser } from "@store/selectors/auth";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
 
+const MIN_PAYMENT_AMOUNT = 49;
+
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
   phone: z.string().min(11),
-  amount: z.number(),
+  amount: z
+    .string()
+    .optional()
+    .transform((val) => {
+      const numericValue = val ? parseFloat(val.replace(/[₦,]/g, "")) : 0;
+      return numericValue;
+    })
+    .refine((val) => !isNaN(val) && val >= MIN_PAYMENT_AMOUNT, {
+      message: `Amount must not be less than ${formatToNaira(MIN_PAYMENT_AMOUNT)}`,
+    }),
   type: z.string(),
   ported_number: z.boolean(),
   pin: z.string().optional(),
@@ -58,7 +68,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
     defaultValues: {
       provider: "mtn",
       phone: user?.phone,
-      amount: 0,
+      amount: "0",
       type: "VTU",
       ported_number: false,
     },
@@ -77,7 +87,10 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
   const openBottomSheet = useCallback(async () => {
     const valid = await trigger();
     if (valid) {
-      bottomSheet.current?.present();
+      Keyboard.dismiss();
+      setTimeout(() => {
+        bottomSheet.current?.present();
+      }, 100);
     }
   }, [values]);
 
@@ -92,12 +105,10 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
     };
 
     dispatch(addPendingTransaction(transaction));
-
+    closeBottomSheet();
     navigation.navigate("Confirm Transaction", {
       transactionId: transaction.id,
     });
-
-    closeBottomSheet();
   });
 
   return (
