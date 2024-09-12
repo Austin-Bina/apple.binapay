@@ -90,6 +90,13 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   const provider = values.provider;
 
   useEffect(() => {
+    if (readyToPay && values.smart_card_number) {
+      setReadyToPay(false);
+      setValue("customer_name", "");
+    }
+  }, [values.smart_card_number]);
+
+  useEffect(() => {
     if (!isLoading && data?.cable_plans) {
       const initialPackages = data.cable_plans[provider] || [];
       setCablePackages(initialPackages);
@@ -303,7 +310,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
           }}
         />
         <View style={tw`mb-5`}>
-          <NairaInput name="amount" control={control} />
+          <NairaInput name="amount" control={control} isDisabled />
           <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
         </View>
       </ScrollableView>

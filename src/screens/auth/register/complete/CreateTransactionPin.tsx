@@ -4,7 +4,7 @@ import { Button } from "react-native-paper";
 import { RegistrationStackScreenProps } from "@navigators/types";
 import tw from "@lib/tailwind";
 import Screen from "@components/ui/shared/Screen";
-import { RegistrationFormValues, useCompleteRegisterForm } from "@contexts/complete-registration";
+import { RegistrationFormValues, useCompleteRegisterForm } from "@providers/complete-registration";
 import { useFormContext } from "react-hook-form";
 import OtpInput from "@components/ui/form/OtpInput";
 

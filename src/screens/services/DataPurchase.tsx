@@ -187,7 +187,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           }}
         />
         <View>
-          <NairaInput name="amount" control={control} />
+          <NairaInput name="amount" control={control} isDisabled />
           <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
         </View>
         <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>

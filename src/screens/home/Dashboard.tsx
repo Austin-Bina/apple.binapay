@@ -1,7 +1,7 @@
 import React, { Fragment, useMemo, useState } from "react";
-import { Pressable, TouchableOpacity, View } from "react-native";
+import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
-import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
+import { Avatar, Button, Card, Divider, IconButton, ProgressBar, Text } from "react-native-paper";
 import { HomeStackScreenProps } from "@navigators/types";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
@@ -14,100 +14,60 @@ import ArrowRight from "@assets/icons/arrow-right.svg";
 import UserAppbar from "@components/UserAppbar";
 import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
-import { useTypedSelector } from "@store/common";
-import { formatToNaira } from "@utils/money";
-import { selectUser } from "@store/selectors/auth";
-import { useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
+import { useTypedDispatch, useTypedSelector } from "@store/common";
+import { convertToNaira, formatToNaira } from "@utils/money";
+import { selectIsFetchingProfile, selectUser } from "@store/selectors/auth";
+import { accountTransactionsApi, useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
 import { format } from "date-fns";
 import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";
 import TransactionLoader from "@components/ui/loaders/transaction-loader";
-
-type RecentTransactionsProps = {
-  navigation: any;
-};
-
-const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
-  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery();
-
-  const { transactions } = queryData || {};
-
-  const dynamicContent = useMemo(() => {
-    if (isLoading) {
-      return <TransactionLoader groups={["Today"]} />;
-    }
-
-    if (!transactions) {
-      return <TransactionEmptyState />;
-    }
-
-    return Object.entries(transactions).map(([group, transactions]) => (
-      <View key={group}>
-        <Text variant="titleMedium" style={tw`text-gray-900`}>
-          {group}
-        </Text>
-
-        <View>
-          {transactions.map((transaction, index) => (
-            <Fragment key={transaction.id}>
-              <TouchableOpacity
-                key={transaction.id}
-                onPress={() => {}}
-                style={tw`flex-row items-center justify-between gap-2 p-2 my-2`}>
-                <Fragment>
-                  <Avatar.Image
-                    size={40}
-                    source={{
-                      uri: "url",
-                    }}
-                    style={tw`bg-gray-300`}
-                  />
-                  <View style={tw`flex-1 mx-3`}>
-                    <Text style={tw`text-gray-900 text-sm`}>{transaction.meta.description}</Text>
-                    <Text style={tw`text-gray-500 text-xs`}>
-                      {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
-                    </Text>
-                  </View>
-                  <Text style={tw`text-gray-900 font-semibold`}>₦{transaction.amount}</Text>
-                </Fragment>
-              </TouchableOpacity>
-              {index !== transactions.length - 1 && <Divider />}
-            </Fragment>
-          ))}
-        </View>
-      </View>
-    ));
-  }, [transactions, isLoading]);
-
-  return (
-    <View style={tw`mt-4 mb-20`}>
-      <View style={tw`flex-row justify-between items-center mb-5`}>
-        <Text style={tw`text-base font-medium text-gray-600`}>Recent Transactions</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Transaction History")}>
-          <View style={tw`flex-row items-center gap-1`}>
-            <Text style={tw`text-primary text-xs`}>See More</Text>
-            <ArrowRight width={20} />
-          </View>
-        </TouchableOpacity>
-      </View>
-      {dynamicContent}
-    </View>
-  );
-};
+import { useChannel } from "ably/react";
+import * as Ably from "ably";
+import { AccountUpdateEventPayload } from "@type/event";
+import { authSliceActions } from "@store/slice/auth";
 
 const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
+
   const user = useTypedSelector(selectUser);
+  const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
+  const toggleBalance = () => setBalanceVisible(!balanceVisible);
+  const dispatch = useTypedDispatch();
 
   const balanceNaira = useMemo(() => {
     return balanceVisible ? formatToNaira(user?.wallet_balance) : "₦***.**";
   }, [user?.wallet_balance, balanceVisible]);
 
-  const toggleBalance = () => setBalanceVisible(!balanceVisible);
+  useChannel(`private:user-updates.${user?.id}`, (message: Ably.Message) => {
+    const { name, data } = message;
+
+    if (name === "account.updated") {
+      const { payload } = data as AccountUpdateEventPayload;
+      const { refreshFlags, account } = payload;
+
+      if (account?.user) {
+        dispatch(authSliceActions.updateUser({ ...account.user }));
+      }
+
+      if (refreshFlags?.transactions) {
+        dispatch(accountTransactionsApi.util.invalidateTags(["Transactions Summary"]));
+      }
+    }
+  });
+
+  const onRefresh = async () => {
+    try {
+      await dispatch(authSliceActions.fetchUserProfile());
+    } catch (error) {}
+  };
 
   return (
     <Screen>
+      {isFetchingProfile && <ProgressBar indeterminate />}
       <UserAppbar />
-      <ScrollableView style={tw`px-3 flex flex-1 py-6`}>
+      <ScrollableView
+        style={tw`px-3 flex flex-1 py-6`}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} />}>
         {/* Balance */}
         <Card mode="contained" style={tw`bg-primary-50 py-2`}>
           <Card.Content style={tw`items-center`}>
@@ -212,6 +172,78 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
         <RecentTransactions navigation={navigation} />
       </ScrollableView>
     </Screen>
+  );
+};
+
+type RecentTransactionsProps = {
+  navigation: any;
+};
+
+const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
+  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery();
+
+  const { transactions } = queryData || {};
+
+  const dynamicContent = useMemo(() => {
+    if (isLoading) {
+      return <TransactionLoader groups={["Today"]} />;
+    }
+
+    if (!transactions) {
+      return <TransactionEmptyState />;
+    }
+
+    return Object.entries(transactions).map(([group, transactions]) => (
+      <View key={group}>
+        <Text variant="titleMedium" style={tw`text-gray-900`}>
+          {group}
+        </Text>
+
+        <View>
+          {transactions.map((transaction, index) => (
+            <Fragment key={transaction.id}>
+              <TouchableOpacity
+                key={transaction.id}
+                onPress={() => {}}
+                style={tw`flex-row items-center justify-between gap-2 p-2 my-2`}>
+                <Fragment>
+                  <Avatar.Image
+                    size={40}
+                    source={{
+                      uri: "url",
+                    }}
+                    style={tw`bg-gray-300`}
+                  />
+                  <View style={tw`flex-1 mx-3`}>
+                    <Text style={tw`text-gray-900 text-sm`}>{transaction.meta.description}</Text>
+                    <Text style={tw`text-gray-500 text-xs`}>
+                      {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
+                    </Text>
+                  </View>
+                  <Text style={tw`text-gray-900 font-semibold`}>{convertToNaira(transaction.amount, true)}</Text>
+                </Fragment>
+              </TouchableOpacity>
+              {index !== transactions.length - 1 && <Divider />}
+            </Fragment>
+          ))}
+        </View>
+      </View>
+    ));
+  }, [transactions, isLoading]);
+
+  return (
+    <View style={tw`mt-4 mb-20`}>
+      <View style={tw`flex-row justify-between items-center mb-5`}>
+        <Text style={tw`text-base font-medium text-gray-600`}>Recent Transactions</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Transaction History")}>
+          <View style={tw`flex-row items-center gap-1`}>
+            <Text style={tw`text-primary text-xs`}>See More</Text>
+            <ArrowRight width={20} />
+          </View>
+        </TouchableOpacity>
+      </View>
+      {dynamicContent}
+    </View>
   );
 };
 

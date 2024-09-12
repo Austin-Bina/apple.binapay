@@ -14,6 +14,7 @@ import NoNetworkBar from "@components/ui/widgets/no-network-bar";
 import { Alert, BackHandler } from "react-native";
 // import ErrorHelper from "@helpers/errors";
 import { RootSiblingParent as ToastRootSiblingParent } from "react-native-root-siblings";
+import AblyProviderWrapper from "@providers/ably-root-provider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -87,8 +88,10 @@ function Binapay() {
           <Provider store={store}>
             <PersistGate loading={<ActivityIndicator size="small" />} persistor={persistor}>
               <PaperProvider theme={defaultTheme}>
-                <NoNetworkBar />
-                <Router />
+                <AblyProviderWrapper>
+                  <NoNetworkBar />
+                  <Router />
+                </AblyProviderWrapper>
               </PaperProvider>
             </PersistGate>
           </Provider>

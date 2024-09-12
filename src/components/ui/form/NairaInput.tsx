@@ -9,9 +9,10 @@ import { HelperText, TextInput } from "react-native-paper";
 interface Props {
   control: Control<any>;
   name: string;
+  isDisabled?: boolean;
 }
 
-const NairaInput: React.FC<Props> = ({ control, name }) => {
+const NairaInput: React.FC<Props> = ({ control, name, isDisabled }) => {
   const {
     field: { onChange, onBlur, value },
     fieldState: { error },
@@ -43,6 +44,7 @@ const NairaInput: React.FC<Props> = ({ control, name }) => {
             keyboardType="numeric"
             cursorColor={Colors.primary[600]}
             selectionColor={Colors.primary[400]}
+            disabled={isDisabled}
             {...props}
           />
           {error && <HelperText type="error">{error.message}</HelperText>}

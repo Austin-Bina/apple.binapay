@@ -1,7 +1,7 @@
 import React from "react";
 import Swiper from "react-native-swiper";
 import { RegistrationStackScreenProps } from "@navigators/types";
-import { RegistrationFormProvider } from "src/contexts/complete-registration";
+import { RegistrationFormProvider } from "@providers/complete-registration";
 import CreatePassword from "./CreatePassword";
 import CreateTransactionPin from "./CreateTransactionPin";
 import ChooseAvatar from "./ChooseAvatar";

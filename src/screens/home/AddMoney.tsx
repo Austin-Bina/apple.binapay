@@ -65,7 +65,7 @@ export default function AddMoneyScreen(props: Props) {
             ...tw`px-4 py-8`,
             opacity: fadeAnim,
           }}>
-          {value === "bank" ? <BankView accounts={user?.accounts || []} /> : <CardView {...props} />}
+          {value === "bank" ? <BankView accounts={user?.accounts || []} /> : <CardView {...props} comingSoon />}
         </Animated.View>
       </ScrollableView>
     </Screen>

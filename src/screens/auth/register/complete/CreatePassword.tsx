@@ -5,7 +5,7 @@ import { Button, Text, TextInput } from "react-native-paper";
 import { RegistrationStackScreenProps } from "@navigators/types";
 import { Controller, useFormContext } from "react-hook-form";
 import Screen from "@components/ui/shared/Screen";
-import { passwordFields, RegistrationFormValues, useCompleteRegisterForm } from "@contexts/complete-registration";
+import { passwordFields, RegistrationFormValues, useCompleteRegisterForm } from "@providers/complete-registration";
 import tw from "@lib/tailwind";
 
 type ResetPasswordProps = RegistrationStackScreenProps<"Complete Registration">;

@@ -1,11 +1,14 @@
-import { RegistrationFormValues } from "@contexts/complete-registration";
+import { RegistrationFormValues } from "src/providers/complete-registration";
 import { route } from "@helpers/route";
 import { showToast } from "@helpers/toast";
 import API from "@lib/api";
 import { saveAuthToken } from "@lib/security";
-import { createSlice, createAsyncThunk, createEntityAdapter, PayloadAction, EntityState } from "@reduxjs/toolkit";
+import { createSlice, createEntityAdapter, PayloadAction, EntityState } from "@reduxjs/toolkit";
 import { DVA, User } from "@type/user";
 import { AxiosError } from "axios";
+import { Transaction } from "@type/transaction";
+import { accountTransactionsApi } from "@store/redux-api/accountTransactionsApi";
+import { createTypedAsyncThunk } from "@store/common";
 
 interface AuthMetaInfo {
   access_token: string;
@@ -16,6 +19,7 @@ interface AuthState extends EntityState<User, string> {
   user: User | null;
   meta: AuthMetaInfo | null;
   isLoggingIn: boolean;
+  isFetchingProfile: boolean;
 }
 
 interface LoginResponse {
@@ -30,11 +34,19 @@ interface LoginPayload {
 
 type RegisterPayload = RegistrationFormValues;
 
+type UserProfile = {
+  user: User;
+  transactions: {
+    [group: string]: Transaction[];
+  };
+};
+
 export const authAdapter = createEntityAdapter<User>();
 export const initialState: AuthState = authAdapter.getInitialState({
   user: null,
   meta: null,
   isLoggingIn: false,
+  isFetchingProfile: false,
 });
 
 export const authSlice = createSlice({
@@ -47,16 +59,11 @@ export const authSlice = createSlice({
     resetAuth: (state) => {
       state.isLoggingIn = false;
     },
-    updateUserAccounts(
-      state,
-      action: PayloadAction<{
-        accounts: DVA[];
-      }>,
-    ) {
+    updateUser(state, action: PayloadAction<Partial<User>>) {
       if (state.user) {
         state.user = {
           ...state.user,
-          accounts: action.payload.accounts,
+          ...action.payload,
         };
       }
     },
@@ -66,7 +73,7 @@ export const authSlice = createSlice({
       .addCase(doLogin.pending, (state) => {
         state.isLoggingIn = true;
       })
-      .addCase(doLogin.fulfilled, (state, { payload }: PayloadAction<LoginResponse>) => {
+      .addCase(doLogin.fulfilled, (state, { payload }) => {
         state.user = payload.user;
         state.meta = payload.meta;
         state.isLoggingIn = false;
@@ -77,18 +84,69 @@ export const authSlice = createSlice({
       .addCase(doCompleteRegister.pending, (state) => {
         state.isLoggingIn = true;
       })
-      .addCase(doCompleteRegister.fulfilled, (state, { payload }: PayloadAction<LoginResponse>) => {
+      .addCase(doCompleteRegister.fulfilled, (state, { payload }) => {
         state.user = payload.user;
         state.meta = payload.meta;
         state.isLoggingIn = false;
       })
       .addCase(doCompleteRegister.rejected, (state) => {
         state.isLoggingIn = false;
+      })
+      // Fetch user profile async actions
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.isFetchingProfile = true;
+      })
+      .addCase(fetchUserProfile.fulfilled, (state, { payload }) => {
+        state.user = payload.user;
+        state.isFetchingProfile = false;
+      })
+      .addCase(fetchUserProfile.rejected, (state) => {
+        state.isFetchingProfile = false;
       });
   },
 });
 
-const doCompleteRegister = createAsyncThunk<LoginResponse, RegisterPayload>(
+const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
+  "auth/fetchUserProfile",
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await API.get(route("account.getProfile"));
+      const { profile, account_summary } = response.data;
+
+      const transactions = account_summary.recent_transactions as UserProfile["transactions"];
+
+      dispatch(
+        accountTransactionsApi.util.updateQueryData("fetchRecentTransactions", undefined, (draft) => {
+          draft.transactions = transactions;
+        }),
+      );
+
+      return {
+        user: profile,
+      };
+    } catch (error: any) {
+      const axiosError = error as AxiosError<any>;
+      const { response } = axiosError;
+
+      if (response) {
+        const { message } = response.data;
+
+        if (message && typeof message === "string") {
+          showToast({ message });
+        } else {
+          showToast({ message: "An error occurred. Please try again." });
+        }
+
+        return rejectWithValue(response.data);
+      }
+
+      showToast({ message: "An error occurred. Please try again." });
+      return rejectWithValue(error.response?.data);
+    }
+  },
+);
+
+const doCompleteRegister = createTypedAsyncThunk<LoginResponse, RegisterPayload>(
   "auth/doRegister",
   async (form, { rejectWithValue }) => {
     try {
@@ -129,7 +187,7 @@ const doCompleteRegister = createAsyncThunk<LoginResponse, RegisterPayload>(
   },
 );
 
-const doLogin = createAsyncThunk<LoginResponse, LoginPayload>(
+const doLogin = createTypedAsyncThunk<LoginResponse, LoginPayload>(
   "auth/doLogin",
   async ({ email, password }, { rejectWithValue }) => {
     try {
@@ -174,4 +232,4 @@ const doLogin = createAsyncThunk<LoginResponse, LoginPayload>(
   },
 );
 
-export const authSliceActions = { ...authSlice.actions, doLogin, doCompleteRegister };
+export const authSliceActions = { ...authSlice.actions, doLogin, doCompleteRegister, fetchUserProfile };

@@ -50,7 +50,7 @@ export default function VerifyAccountScreen() {
       const response = await API.post(route("account.reserveAccount"), form);
       const { accounts } = response.data;
 
-      dispatch(authSliceActions.updateUserAccounts({ accounts }));
+      dispatch(authSliceActions.updateUser({ accounts }));
 
       const { reset } = await getNavigate();
       reset({ routes: [{ name: "Main" }] });

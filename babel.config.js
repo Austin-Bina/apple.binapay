@@ -23,6 +23,7 @@ module.exports = function (api) {
             "@hooks": "./src/hooks",
             "@env": "./src/env",
             "@contexts": "./src/contexts",
+            "@providers": "./src/providers",
           },
         },
       ],

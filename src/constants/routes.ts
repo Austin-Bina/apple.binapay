@@ -12,6 +12,7 @@ export const routes = {
         resetPassword: "/api/v1/auth/reset-password",
         changePassword: "/api/v1/auth/change-password",
         logout: "/api/v1/auth/logout",
+        getAblyToken: "/api/v1/auth/get-ably-token",
       },
       account: {
         setTransactionPin: "/api/v1/account/set-transaction-pin",

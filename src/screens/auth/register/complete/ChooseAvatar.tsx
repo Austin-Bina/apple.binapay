@@ -20,7 +20,7 @@ import {
   RegistrationFormValues,
   transactionPinFields,
   useCompleteRegisterForm,
-} from "@contexts/complete-registration";
+} from "@providers/complete-registration";
 import { Controller, useFormContext } from "react-hook-form";
 import { showToast } from "@helpers/toast";
 import { authSliceActions } from "@store/slice/auth";

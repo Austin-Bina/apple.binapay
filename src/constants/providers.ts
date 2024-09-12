@@ -81,29 +81,71 @@ export const serviceProvidersMap: ServiceProvidersMap = {
     },
   },
   electricity: {
-    aedc: {
+    ikedc: {
+      id: 1,
+      label: "Ikeja Electric Distribution Company (IKEDC)",
+      key: "ikedc",
+      logo: "",
+    },
+    ekedc: {
       id: 2,
+      label: "Eko Electricity Distribution Company (EKEDC)",
+      key: "ekedc",
+      logo: "",
+    },
+    aedc: {
+      id: 3,
       label: "Abuja Electricity Distribution Company (AEDC)",
       key: "aedc",
       logo: require("@assets/images/services/aedc.png"),
     },
-    ikejaElectric: {
-      id: 2,
-      label: "Ikeja Electric Distribution Company",
-      key: "ikejaElectric",
-      logo: require("@assets/images/services/aedc.png"),
-    },
-    kanoDisco: {
-      id: 2,
+    kedco: {
+      id: 4,
       label: "Kano Electricity Distribution Company (KEDCO)",
-      key: "kanoDisco",
-      logo: require("@assets/images/services/aedc.png"),
+      key: "kedco",
+      logo: "",
+    },
+    eedc: {
+      id: 5,
+      label: "Enugu Electricity Distribution Company (EEDC)",
+      key: "eedc",
+      logo: "",
     },
     phed: {
-      id: 2,
+      id: 6,
       label: "Port Harcourt Electricity Distribution Company (PHED)",
       key: "phed",
-      logo: require("@assets/images/services/aedc.png"),
+      logo: "",
+    },
+    ibedc: {
+      id: 7,
+      label: "Ibadan Electricity Distribution Company (IBEDC)",
+      key: "ibedc",
+      logo: "",
+    },
+    kaedco: {
+      id: 8,
+      label: "Kaduna Electric Distribution Company (KAEDCO)",
+      key: "kaedco",
+      logo: "",
+    },
+    jed: {
+      id: 9,
+      label: "Jos Electricity Distribution Company (JED)",
+      key: "jed",
+      logo: "",
+    },
+    bedc: {
+      id: 10,
+      label: "Benin Electricity Distribution Company (BEDC)",
+      key: "bedc",
+      logo: "",
+    },
+    yedc: {
+      id: 11,
+      label: "Yola Electricity Distribution Company (YEDC)",
+      key: "yedc",
+      logo: "",
     },
   },
 };

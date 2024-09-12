@@ -5,7 +5,7 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
 import { Image } from "react-native-element-image";
@@ -32,17 +32,11 @@ import { showToast } from "@helpers/toast";
 
 type Props = ServicesStackScreenProps<"Electricity Bill">;
 
-const MAX_METER_NUMBER = 11;
 const MIN_PAYMENT_AMOUNT = 49;
 const schema = z.object({
   provider: z.string(),
   meter_type: z.nativeEnum(METER_TYPE),
-  meter_number: z
-    .string()
-    .transform((val) => val.replace(/\D/g, ""))
-    .refine((val) => val.length === MAX_METER_NUMBER && !isNaN(Number(val)), {
-      message: `Must be a ${MAX_METER_NUMBER}-digit number`,
-    }),
+  meter_number: z.string().transform((val) => val.replace(/\D/g, "")),
   amount: z
     .string()
     .optional()
@@ -122,6 +116,14 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
 
   const values = watch();
   const isPrepaidType = values.meter_type === METER_TYPE.PREPAID;
+
+  useEffect(() => {
+    if (readyToPay && values.meter_number) {
+      setReadyToPay(false);
+      setValue("customer_name", "");
+      setValue("customer_address", "");
+    }
+  }, [values.meter_number]);
 
   const validateMeter = useCallback(async () => {
     const { provider, meter_type, meter_number } = values;
@@ -218,7 +220,7 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
     };
 
     dispatch(addPendingTransaction(transaction));
- 
+
     navigation.navigate("Confirm Transaction", {
       transactionId: transaction.id,
     });

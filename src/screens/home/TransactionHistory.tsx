@@ -6,6 +6,7 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import { useFetchCompleteTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
+import { convertToNaira } from "@utils/money";
 import { format } from "date-fns";
 import React, { Fragment, useMemo } from "react";
 import {  TouchableOpacity, View } from "react-native";
@@ -58,7 +59,7 @@ export default function TransactionHistoryScreen({}: Props) {
                         {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
                       </Text>
                     </View>
-                    <Text style={tw`text-gray-900 font-semibold`}>₦{transaction.amount}</Text>
+                    <Text style={tw`text-gray-900 font-semibold`}>{convertToNaira(transaction.amount, true)}</Text>
                   </Fragment>
                 </TouchableOpacity>
                 {index !== transactions.length - 1 && <Divider />}
