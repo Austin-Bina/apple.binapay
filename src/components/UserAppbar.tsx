@@ -4,9 +4,10 @@ import { getNavigate } from "@utils/navigation";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Text } from "react-native-paper";
+import { selectUser } from "@store/selectors/auth";
 
 export default function UserAppbar() {
-  const { user: currentUser } = useTypedSelector((state) => state.auth);
+  const user = useTypedSelector(selectUser);
 
   return (
     <Appbar.Header style={tw`bg-white`}>
@@ -27,17 +28,10 @@ export default function UserAppbar() {
             style={tw`rounded-full bg-gray-200`}
             source={require("@assets/draft/male-avatar-circle.png")}
           />
-          {/*                 
-          <Avatar.Image
-            size={48}
-            style={tw`rounded-full bg-gray-200`}
-            source={{
-              uri: currentUser?.avatar,
-            }}
-          /> */}
+          {/* <AvatarImage avatar={} /> */}
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
-          <Text style={tw`text-zinc-500 text-sm font-normal`}>Hi, {currentUser?.name} 👋🏽</Text>
+          <Text style={tw`text-zinc-500 text-sm font-normal`}>Hi, {user?.name} 👋🏽</Text>
           <Text style={tw`text-zinc-800 text-lg font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
         </View>
       </TouchableOpacity>

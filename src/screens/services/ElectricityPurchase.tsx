@@ -32,7 +32,7 @@ import { showToast } from "@helpers/toast";
 
 type Props = ServicesStackScreenProps<"Electricity Bill">;
 
-const MIN_PAYMENT_AMOUNT = 49;
+const MIN_PAYMENT_AMOUNT = 50;
 const schema = z.object({
   provider: z.string(),
   meter_type: z.nativeEnum(METER_TYPE),

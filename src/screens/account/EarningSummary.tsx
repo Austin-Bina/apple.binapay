@@ -1,100 +1,95 @@
+import { AvatarImage } from "@components/avatar";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import CopyReferralCode from "@components/ui/widgets/CopyReferralCode";
 import tw from "@lib/tailwind";
 import { AccountStackScreenProps } from "@navigators/types";
-import React from "react";
-import { View } from "react-native";
-import { Image } from "react-native-element-image";
-import { Card, Chip, Text } from "react-native-paper";
+import { FlashList } from "@shopify/flash-list";
+import { useTypedSelector } from "@store/common";
+import { useGetReferralRewardsQuery } from "@store/redux-api/referralQueryApi";
+import { selectUser } from "@store/selectors/auth";
+import { ReferralReward } from "@type/user";
+import { formatToNaira } from "@utils/money";
+import React, { useMemo, useState } from "react";
+import { RefreshControl, View } from "react-native";
+import { ActivityIndicator, Card, Chip, Text } from "react-native-paper";
 
 type Props = AccountStackScreenProps<"Earning Summary">;
 
 export default function EarningSummaryScreen({}: Props) {
-  const referralCode = "ASD1FR32-ABDUL";
+  const [page, setPage] = useState(1);
+
+  const user = useTypedSelector(selectUser);
+  const { data: queryData, error, isFetching, refetch } = useGetReferralRewardsQuery({ page, per_page: 10 });
+
+  const summary = useMemo(() => {
+    if (!queryData) {
+      return {
+        data: [],
+        meta: {
+          has_more: false,
+          total_earnings: 0,
+        },
+      };
+    }
+
+    return queryData;
+  }, [queryData]);
+
+  const loadMore = () => {
+    if (!isFetching && summary.meta.has_more) {
+      setPage((prevPage) => prevPage + 1);
+    }
+  };
+
+  const renderErrorScreen = () => (
+    <View style={tw`flex-1 items-center justify-center p-4`}>
+      <Text style={{ color: "red", textAlign: "center", fontSize: 16 }}>
+        Oops! We could't fetch some of your data, Please try again later.
+      </Text>
+    </View>
+  );
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-10`}>
+      <ScrollableView refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />} style={tw`px-4 pt-5`}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           View Your Earnings
         </Text>
+        {error && !isFetching && renderErrorScreen()}
         <Card mode="contained" style={tw`bg-primary-50 py-2 my-8`}>
           <Card.Content style={tw`items-center`}>
             <Text style={tw`text-gray-900 font-bold text-xl text-center mb-1`}>
-              ₦200.00
+              {formatToNaira(summary.meta.total_earnings)}
             </Text>
             <Text style={tw`text-center text-gray-600`}>Total Earnings</Text>
           </Card.Content>
         </Card>
-        <CopyReferralCode referralCode={referralCode} />
+        {user?.affiliate_id && <CopyReferralCode referralCode={user.affiliate_id} />}
         <View>
           <Text variant="titleMedium" style={tw`text-gray-800 mb-5`}>
             Earnings Summary
           </Text>
-          <View
-            style={tw`my-1.5 px-2 py-1 rounded-2xl border border-gray-100 flex-row justify-between items-center`}
-          >
-            <View style={tw`flex-row items-center gap-2`}>
-              <Image
-                source={require("@assets/draft/male-avatar-circle.png")}
-                width={48}
-              />
-              <Text variant="titleSmall" style={tw`font-bold text-gray-900`}>
-                John Doe
-              </Text>
+          {summary.data.length === 0 && (
+            <View style={tw`flex-1 items-center justify-center p-4`}>
+              <Text style={{ textAlign: "center", fontSize: 16 }}>No earnings available at the moment.</Text>
             </View>
-            <Chip
-              icon=""
-              mode="flat"
-              style={tw`bg-green-50`}
-              textStyle={tw`text-green-600`}
-            >
-              ₦50.00
-            </Chip>
-          </View>
-          <View
-            style={tw`my-1.5 px-2 py-1 rounded-2xl border border-gray-100 flex-row justify-between items-center`}
-          >
-            <View style={tw`flex-row items-center gap-2`}>
-              <Image
-                source={require("@assets/draft/male-avatar-circle.png")}
-                width={48}
-              />
-              <Text variant="titleSmall" style={tw`font-bold text-gray-900`}>
-                Jane Doe
-              </Text>
+          )}
+          {summary.data.map((item) => (
+            <View
+              key={item.id}
+              style={tw`my-1.5 px-2 py-1 rounded-2xl border border-gray-100 flex-row justify-between items-center`}>
+              <View style={tw`flex-row items-center gap-2`}>
+                <AvatarImage avatar={item.referee.avatar} size={48} />
+                <Text variant="titleSmall" style={tw`font-bold text-gray-900`}>
+                  {item.referee.name}
+                </Text>
+              </View>
+              <Chip icon="" mode="flat" style={tw`bg-green-50`} textStyle={tw`text-green-600`}>
+                {formatToNaira(item.reward_amount)}
+              </Chip>
             </View>
-            <Chip
-              icon=""
-              mode="flat"
-              style={tw`bg-green-50`}
-              textStyle={tw`text-green-600`}
-            >
-              ₦100.50
-            </Chip>
-          </View>
-          <View
-            style={tw`my-1.5 px-2 py-1 rounded-2xl border border-gray-100 flex-row justify-between items-center`}
-          >
-            <View style={tw`flex-row items-center gap-2`}>
-              <Image
-                source={require("@assets/draft/male-avatar-circle.png")}
-                width={48}
-              />
-              <Text variant="titleSmall" style={tw`font-bold text-gray-900`}>
-                Simon Paul
-              </Text>
-            </View>
-            <Chip
-              icon=""
-              mode="flat"
-              style={tw`bg-green-50`}
-              textStyle={tw`text-green-600`}
-            >
-              ₦49.50
-            </Chip>
-          </View>
+          ))}
         </View>
       </ScrollableView>
     </Screen>

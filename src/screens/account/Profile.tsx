@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import tw from "twrnc";
-import { View, Platform } from "react-native";
+import { View } from "react-native";
 import { Appbar, Button } from "react-native-paper";
 import { Country, CountryCode } from "react-native-country-picker-modal";
 import { AccountStackScreenProps } from "@navigators/types";
@@ -15,19 +14,7 @@ import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 import { Asset } from "react-native-image-picker";
 import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
-
-const buildImageObj = (attachment: Asset) => {
-  const uri = attachment.uri;
-
-  if (!uri) {
-    return null;
-  }
-  return {
-    uri: Platform.OS === "android" ? uri : uri.replace("file://", ""),
-    name: attachment.fileName,
-    type: attachment.type,
-  };
-};
+import tw from "@lib/tailwind";
 
 const schema = z.object({
   name: z.string().min(2, "Too Short").nonempty("Required").trim(),

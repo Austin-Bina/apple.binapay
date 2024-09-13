@@ -41,8 +41,6 @@ const schema = z.object({
 });
 
 export default function DataPurchaseScreen({ navigation }: Props) {
-  const [fetching, setFetching] = useState(false);
-
   const { data, isLoading } = useGetDataPlansQuery();
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
@@ -55,7 +53,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       phone: user?.phone,
       data_bundle: "",
       data_amount: "",
-      amount: 0,
+      amount: "0",
       ported_number: false,
       type: "",
     },
@@ -111,10 +109,10 @@ export default function DataPurchaseScreen({ navigation }: Props) {
               key={provider.key}
               onPress={() => setValue("provider", provider.key)}
               style={[
-                tw`p-3 mx-1 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key && tw`border-blue-500 border-2`,
+                tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
+                values.provider === provider.key && tw`border-blue-500`,
               ]}>
-              <Image source={provider.logo} width={scale(50)} />
+              <Image source={provider.logo} width={scale(45)} />
             </TouchableOpacity>
           )}
           horizontal
@@ -203,7 +201,6 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           style={tw`w-full rounded-full`}
           contentStyle={tw`py-2`}
           labelStyle={tw`text-white text-center text-base font-bold`}
-          disabled={fetching}
           onPress={openBottomSheet}
           mode="contained">
           Proceed

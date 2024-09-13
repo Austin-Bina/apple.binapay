@@ -23,7 +23,7 @@ const schema = z.object({
   name: z.string().min(3, "Too Short").trim(),
   phone: phoneValidation,
   email: z.string().email("Invalid email").trim(),
-  referralCode: z.string().min(7, "Too Short").trim(),
+  referral_code: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -35,10 +35,10 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
   const { control, clearErrors, setError, setValue, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: "Abdul Amos",
-      phone: ["09121738252", "NG"],
-      email: "ttebify@gmail.com",
-      referralCode: "12345678",
+      name: "",
+      phone: ["", "NG"],
+      email: "",
+      referral_code: "",
     },
   });
 
@@ -147,10 +147,11 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
         <View style={tw`mt-2`}>
           <Controller
             control={control}
-            name="referralCode"
+            name="referral_code"
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <CustomTextInput
                 label="Referral Code (Optional, if applicable)"
+                placeholder="X5ATNH24-WOODR"
                 mode="outlined"
                 onBlur={onBlur}
                 value={value}

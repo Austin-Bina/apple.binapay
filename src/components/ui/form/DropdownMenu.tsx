@@ -24,7 +24,7 @@ type Props = {
 export default function DropdownMenuField({
   control,
   name,
-  data,
+  data = [],
   placeholder,
   label,
   search = false,
@@ -41,6 +41,7 @@ export default function DropdownMenuField({
             data={data}
             labelField="label"
             valueField="id"
+            disable={data.length === 0}
             value={value}
             placeholder={placeholder}
             searchPlaceholder="Search..."

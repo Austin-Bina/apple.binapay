@@ -51,6 +51,7 @@ const schema = z
     pin: z.string().min(4, "Too short").trim(),
     pin_confirmation: z.string().min(4, "Too short").trim(),
     avatar: z.string().min(2, "Too short").trim(),
+    gender: z.enum(["male", "female"]),
   })
   .refine((data) => data.password === data.password_confirmation, {
     message: "Passwords don't match",
@@ -77,6 +78,7 @@ export const RegistrationFormProvider: React.FC<ProviderProps> = ({ children, de
       pin: "",
       pin_confirmation: "",
       avatar: "male-avatar-1",
+      gender: "male",
     },
   });
 

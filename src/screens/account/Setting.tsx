@@ -1,14 +1,8 @@
 import Screen from "@components/ui/shared/Screen";
 import tw from "@lib/tailwind";
 import React, { Fragment } from "react";
-import { View } from "react-native";
-import {
-  Appbar,
-  Avatar,
-  Divider,
-  Text,
-  TouchableRipple,
-} from "react-native-paper";
+import { Linking, View } from "react-native";
+import { Appbar, Avatar, Divider, Text, TouchableRipple } from "react-native-paper";
 import { SvgProps } from "react-native-svg";
 import AngledRightArrow from "@assets/icons/angled-right-arrow.svg";
 import SpeechBubbleIcon from "@assets/icons/speech-bubble-check.svg";
@@ -20,12 +14,19 @@ import { Colors } from "@constants/theme";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
 import { authSliceActions } from "@store/slice/auth";
-import { useTypedDispatch } from "@store/common";
+import { useTypedDispatch, useTypedSelector } from "@store/common";
+import { selectIsLoggingIn } from "@store/selectors/auth";
+import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
 
 type Props = AccountStackScreenProps<"Settings">;
 
 export default function SettingScreen({ navigation }: Props) {
+  const isLoggingIn = useTypedSelector(selectIsLoggingIn);
   const dispatch = useTypedDispatch();
+
+  const handleLogout = () => {
+    dispatch(authSliceActions.doLogout());
+  };
 
   return (
     <Screen>
@@ -37,8 +38,7 @@ export default function SettingScreen({ navigation }: Props) {
           style={tw`px-4 mb-10`}
           onPress={() => {
             navigation.navigate("Profile");
-          }}
-        >
+          }}>
           <Fragment>
             <View style={tw`flex-row items-center justify-between py-3.5`}>
               <View style={tw`flex-row items-center gap-2.5`}>
@@ -63,9 +63,7 @@ export default function SettingScreen({ navigation }: Props) {
           onPress={() => {}}
           badgeElement={
             <View style={tw`bg-secondary-50 rounded-full py-1 px-5`}>
-              <Text style={tw`text-secondary-500 text-xs font-medium`}>
-                Upgrade to Tier 2
-              </Text>
+              <Text style={tw`text-secondary-500 text-xs font-medium`}>Upgrade to Tier 2</Text>
             </View>
           }
         />
@@ -79,26 +77,24 @@ export default function SettingScreen({ navigation }: Props) {
         <Action
           title="Help & Support"
           ItemIcon={SupportIcon}
-          onPress={() => {}}
+          onPress={() => {
+            Linking.openURL("https://binapay.co/help");
+          }}
         />
         <Action
           title="Privacy Policy"
           ItemIcon={PrivacyIcon}
-          onPress={() => {}}
-        />
-        <View style={tw`my-5`} />
-        <Action
-          title="Logout"
-          backgroundColor="#FEF2F2"
-          ItemIcon={LogoutIcon}
           onPress={() => {
-            dispatch(authSliceActions.logout());
+            Linking.openURL("https://binapay.co/privacy");
           }}
         />
+        <View style={tw`my-5`} />
+        <Action title="Logout" backgroundColor="#FEF2F2" ItemIcon={LogoutIcon} onPress={handleLogout} />
         <Text variant="bodyMedium" style={tw`text-gray-400 text-center mt-10`}>
           BinaPay v1.0.0.0
         </Text>
       </ScrollableView>
+      <PleaseWaitModal visible={isLoggingIn} />
     </Screen>
   );
 }
@@ -110,13 +106,7 @@ interface ActionProps {
   badgeElement?: React.ReactNode;
   backgroundColor?: string;
 }
-const Action = ({
-  onPress,
-  title,
-  ItemIcon,
-  badgeElement,
-  backgroundColor = Colors.primary[50],
-}: ActionProps) => {
+const Action = ({ onPress, title, ItemIcon, badgeElement, backgroundColor = Colors.primary[50] }: ActionProps) => {
   return (
     <TouchableRipple onPress={onPress} style={tw`my-1`}>
       <View style={tw`flex-row justify-between items-center px-4 my-1`}>
@@ -127,8 +117,7 @@ const Action = ({
               {
                 backgroundColor,
               },
-            ]}
-          >
+            ]}>
             <ItemIcon width={24} height={24} />
           </View>
           <Text style={tw`text-base font-medium`}>{title}</Text>

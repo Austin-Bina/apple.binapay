@@ -25,6 +25,7 @@ export const routes = {
         reserveAccount: "/api/v1/account/reserve-account",
         recentTransactions: "/api/v1/account/recent-transactions",
         transactions: "/api/v1/account/transactions",
+        referralActivities: "/api/v1/account/referral-activities",
       },
       bank: {
         list: "/api/v1/banks",

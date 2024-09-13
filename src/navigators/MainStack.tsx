@@ -39,11 +39,7 @@ function Router() {
                 <View style={tw`mr-2.5 overflow-hidden p-0.5`}>
                   <TouchableRipple
                     onPress={() => {
-                      if (navigation.canGoBack()) {
-                        navigation.goBack();
-                      } else {
-                        navigation.reset({ routes: [{ name: "Main" }] });
-                      }
+                      navigation.reset({ routes: [{ name: "Main" }] });
                     }}>
                     <LeftArrowIcon width={38} height={38} />
                   </TouchableRipple>

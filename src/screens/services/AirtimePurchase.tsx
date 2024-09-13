@@ -27,7 +27,7 @@ import { selectUser } from "@store/selectors/auth";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
 
-const MIN_PAYMENT_AMOUNT = 49;
+const MIN_PAYMENT_AMOUNT = 50;
 
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
@@ -127,10 +127,10 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
               key={provider.key}
               onPress={() => setValue("provider", provider.key as any)}
               style={[
-                tw`p-3 mx-1 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key && tw`border-blue-500 border-2`,
+                tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
+                values.provider === provider.key && tw`border-blue-500`,
               ]}>
-              <Image source={provider.logo} width={scale(50)} />
+              <Image source={provider.logo} width={scale(45)} />
             </TouchableOpacity>
           )}
           horizontal

@@ -9,6 +9,7 @@ import devToolsEnhancer from "redux-devtools-expo-dev-plugin";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
 import { utilityBillsQueryApi } from "./redux-api/utilityBillsQueryApi";
 import { accountTransactionsApi } from "./redux-api/accountTransactionsApi";
+import { referralQueryApi } from "./redux-api/referralQueryApi";
 
 const defaultReducer = combineReducers({
   auth: authSlice.reducer,
@@ -16,6 +17,7 @@ const defaultReducer = combineReducers({
   transaction: transactionSlice.reducer,
   [utilityBillsQueryApi.reducerPath]: utilityBillsQueryApi.reducer,
   [accountTransactionsApi.reducerPath]: accountTransactionsApi.reducer,
+  [referralQueryApi.reducerPath]: referralQueryApi.reducer,
 });
 
 const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, UnknownAction>(
@@ -34,6 +36,7 @@ const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, Unkno
         transaction: initialTransactionState,
         [utilityBillsQueryApi.reducerPath]: {} as any,
         [accountTransactionsApi.reducerPath]: {} as any,
+        [referralQueryApi.reducerPath]: {} as any,
       };
     }
 
@@ -62,6 +65,7 @@ export const store = createStore(
   createLogMiddleware(),
   utilityBillsQueryApi.middleware,
   accountTransactionsApi.middleware,
+  referralQueryApi.middleware,
 );
 
 export const persistor = persistStore(store);

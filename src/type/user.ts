@@ -18,7 +18,8 @@ export interface User {
   phone: string;
   birthdate: string;
   gender: string | null;
-  referral_code: string;
+  affiliate_id: string;
+  referred_by: string | null;
   email_verified_at: string;
   onboarding_step: string;
   account_tier: AccountTier;
@@ -26,4 +27,17 @@ export interface User {
   accounts: DVA[];
   wallet_balance: number;
   created_at: string;
+}
+
+export interface ReferralReward {
+  id: string;
+  referrer_id: string;
+  referee_id: string;
+  registration_date: string;
+  reward_amount: number;
+  referee: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
 }

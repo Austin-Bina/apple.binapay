@@ -22,7 +22,7 @@ interface CableResponse {
 }
 
 export const utilityBillsQueryApi = createApi({
-  reducerPath: "dataApi",
+  reducerPath: "utilityBillsApi",
   baseQuery: fetchBaseQuery({
     baseUrl: env.BASE_URL,
     prepareHeaders: async (headers) => {

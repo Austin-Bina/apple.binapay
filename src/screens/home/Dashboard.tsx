@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
 import { Avatar, Button, Card, Divider, IconButton, ProgressBar, Text } from "react-native-paper";
@@ -21,10 +21,11 @@ import { accountTransactionsApi, useFetchRecentTransactionsQuery } from "@store/
 import { format } from "date-fns";
 import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";
 import TransactionLoader from "@components/ui/loaders/transaction-loader";
-import { useChannel } from "ably/react";
 import * as Ably from "ably";
 import { AccountUpdateEventPayload } from "@type/event";
 import { authSliceActions } from "@store/slice/auth";
+import API from "@lib/api";
+import { route } from "@helpers/route";
 
 const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -38,27 +39,79 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
     return balanceVisible ? formatToNaira(user?.wallet_balance) : "₦***.**";
   }, [user?.wallet_balance, balanceVisible]);
 
-  useChannel(`private:user-updates.${user?.id}`, (message: Ably.Message) => {
-    const { name, data } = message;
+  const isVerified = user?.accounts && user?.accounts.length > 0;
 
-    if (name === "account.updated") {
-      const { payload } = data as AccountUpdateEventPayload;
-      const { refreshFlags, account } = payload;
+  useEffect(() => {
+    if (!user?.id) return;
 
-      if (account?.user) {
-        dispatch(authSliceActions.updateUser({ ...account.user }));
-      }
+    const client = new Ably.Realtime({
+      authCallback: async (tokenParams, callback) => {
+        let tokenRequest: Ably.TokenRequest;
 
-      if (refreshFlags?.transactions) {
-        dispatch(accountTransactionsApi.util.invalidateTags(["Transactions Summary"]));
-      }
-    }
-  });
+        try {
+          const response = await API.get(route("auth.getAblyToken"), {
+            params: tokenParams,
+          });
+          const { token } = response.data;
+
+          tokenRequest = token;
+        } catch (err: any) {
+          callback(err, null);
+
+          if (err.response?.status === 401) {
+            dispatch(authSliceActions.logout());
+          }
+          return;
+        }
+
+        callback(null, tokenRequest);
+      },
+      authParams: { client: "mobile" },
+    });
+
+    const channel = client.channels.get(`private:user-updates.${user.id}`);
+
+    channel
+      .attach()
+      .then(() => {
+        channel.subscribe((message: Ably.Message) => {
+          const { name, data } = message;
+
+          if (name === "account.updated") {
+            const { payload } = data as AccountUpdateEventPayload;
+            const { refreshFlags, account } = payload;
+
+            if (account?.user) {
+              dispatch(authSliceActions.updateUser({ ...account.user }));
+            }
+
+            if (refreshFlags?.transactions) {
+              dispatch(accountTransactionsApi.util.invalidateTags(["Transactions Summary"]));
+            }
+          }
+        });
+      })
+      .catch((error) => console.log("Ably Caught error: ", error));
+  }, [user?.id]);
 
   const onRefresh = async () => {
     try {
       await dispatch(authSliceActions.fetchUserProfile());
     } catch (error) {}
+  };
+
+  const handleVerifyAccount = async () => {
+    const { navigate } = await getNavigate();
+    navigate("Main", {
+      screen: "Menu",
+      params: {
+        screen: "Verify Account",
+      },
+    });
+  };
+
+  const handleFundWallet = async () => {
+    navigation.navigate("Add Money");
   };
 
   return (
@@ -77,32 +130,20 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
             </View>
             <Text style={tw`text-center text-gray-400`}>Current Balance</Text>
             <Button
-              icon="wallet"
+              icon={isVerified ? "wallet" : "shield-alert"}
               mode="outlined"
               style={tw`border-primary mt-2`}
-              onPress={() => {
-                navigation.navigate("Add Money");
-              }}>
-              Fund Wallet
+              onPress={isVerified ? handleFundWallet : handleVerifyAccount}>
+              {isVerified ? "Fund Wallet" : "Verify Account"}
             </Button>
           </Card.Content>
         </Card>
 
-        {user?.accounts?.length === 0 && (
-          <Pressable
-            onPress={async () => {
-              const { navigate } = await getNavigate();
-              navigate("Main", {
-                screen: "Menu",
-                params: {
-                  screen: "Verify Account",
-                },
-              });
-            }}
-            style={tw`mt-6 mb-5`}>
+        {!isVerified && (
+          <Pressable onPress={handleVerifyAccount} style={tw`mt-6 mb-5`}>
             <Banner
               title="Account Verification"
-              message="You are yet to verify your account, you will not be able to access some services on BinaPay. Complete Verification Now."
+              message="You are yet to verify your account, you will not be able to access some services on BinaPay. Click to complete verification now."
             />
           </Pressable>
         )}
@@ -189,7 +230,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) =
       return <TransactionLoader groups={["Today"]} />;
     }
 
-    if (!transactions) {
+    if (!transactions || Object.entries(transactions).length === 0) {
       return <TransactionEmptyState />;
     }
 

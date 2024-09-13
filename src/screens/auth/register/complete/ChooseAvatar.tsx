@@ -44,9 +44,7 @@ const AVATARS = {
   ],
 };
 
-const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
-  const [avatarType, setAvatarType] = useState("male");
-
+const ChooseAvatar: React.FC<Props> = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const { dispatch } = useCompleteRegisterForm();
   const storeDispatch = useTypedDispatch();
@@ -60,9 +58,7 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
     formState: { errors },
   } = useFormContext<RegistrationFormValues>();
 
-  const { avatar: selectedAvatar } = watch();
-
-  console.log("Errors", errors);
+  const { avatar: selectedAvatar, gender } = watch();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -70,7 +66,7 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
       duration: 1000,
       useNativeDriver: true,
     }).start();
-  }, [avatarType]);
+  }, [gender]);
 
   const handleValidate = useCallback(
     async function () {
@@ -124,7 +120,7 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
   });
 
   const renderAvatars = () => {
-    const avatars = AVATARS[avatarType as keyof typeof AVATARS];
+    const avatars = AVATARS[gender as keyof typeof AVATARS];
 
     return (
       <Controller
@@ -158,19 +154,25 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
           <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>
             Select an avatar that represents you best from the options below.
           </Text>
-          <SegmentedButtons
-            value={avatarType}
-            onValueChange={setAvatarType}
-            buttons={[
-              { value: "male", label: "Male" },
-              { value: "female", label: "Female" },
-            ]}
-            theme={{
-              colors: {
-                secondaryContainer: Colors.gray[700],
-                onSecondaryContainer: "white",
-              },
-            }}
+          <Controller
+            name="gender"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <SegmentedButtons
+                value={value}
+                onValueChange={onChange}
+                buttons={[
+                  { value: "male", label: "Male" },
+                  { value: "female", label: "Female" },
+                ]}
+                theme={{
+                  colors: {
+                    secondaryContainer: Colors.gray[700],
+                    onSecondaryContainer: "white",
+                  },
+                }}
+              />
+            )}
           />
           <Animated.View
             style={{

@@ -27,7 +27,7 @@ export default function TransactionHistoryScreen({}: Props) {
       return <TransactionLoader />;
     }
 
-    if (!transactions) {
+    if (!transactions || Object.entries(transactions).length === 0) {
       return <TransactionEmptyState />;
     }
 

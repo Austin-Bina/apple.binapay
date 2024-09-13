@@ -81,6 +81,15 @@ export const authSlice = createSlice({
       .addCase(doLogin.rejected, (state) => {
         state.isLoggingIn = false;
       })
+      .addCase(doLogout.pending, (state) => {
+        state.isLoggingIn = true;
+      })
+      .addCase(doLogout.fulfilled, (state) => {
+        state.isLoggingIn = false;
+      })
+      .addCase(doLogout.rejected, (state) => {
+        state.isLoggingIn = false;
+      })
       .addCase(doCompleteRegister.pending, (state) => {
         state.isLoggingIn = true;
       })
@@ -134,13 +143,13 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
         if (message && typeof message === "string") {
           showToast({ message });
         } else {
-          showToast({ message: "An error occurred. Please try again." });
+          showToast({ message: "We had issues processing your request. Please try again." });
         }
 
         return rejectWithValue(response.data);
       }
 
-      showToast({ message: "An error occurred. Please try again." });
+      showToast({ message: "We had issues processing your request. Please try again." });
       return rejectWithValue(error.response?.data);
     }
   },
@@ -232,4 +241,9 @@ const doLogin = createTypedAsyncThunk<LoginResponse, LoginPayload>(
   },
 );
 
-export const authSliceActions = { ...authSlice.actions, doLogin, doCompleteRegister, fetchUserProfile };
+const doLogout = createTypedAsyncThunk("auth/doLogout", async (_, { dispatch }) => {
+  await API.post(route("auth.logout"));
+  dispatch(authSliceActions.logout());
+});
+
+export const authSliceActions = { ...authSlice.actions, doLogin, doCompleteRegister, fetchUserProfile, doLogout };
