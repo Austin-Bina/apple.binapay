@@ -16,7 +16,7 @@ import { AccountStackScreenProps } from "@navigators/types";
 import { authSliceActions } from "@store/slice/auth";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { selectIsLoggingIn } from "@store/selectors/auth";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 
 type Props = AccountStackScreenProps<"Settings">;
 

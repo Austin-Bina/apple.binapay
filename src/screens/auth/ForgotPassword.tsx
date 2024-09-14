@@ -6,7 +6,7 @@ import { StackScreenProps } from "@navigators/types";
 import { Controller, useForm } from "react-hook-form";
 import Screen from "@components/ui/shared/Screen";
 import CustomTextInput from "@components/ui/form/TextInput";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -14,7 +14,7 @@ const schema = z.object({
   email: z.string().email("Invalid email"),
 });
 
-const ForgetPassword: React.FC<StackScreenProps<"Forget Password">> = ({
+const ForgetPassword: React.FC<StackScreenProps<"Forgot Password">> = ({
   navigation,
   route,
 }) => {

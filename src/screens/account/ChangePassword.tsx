@@ -7,7 +7,7 @@ import * as Yup from "yup";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Screen from "@components/ui/shared/Screen";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import tw from "@lib/tailwind";
 import ScrollableView from "@components/ui/shared/ScrollableView";

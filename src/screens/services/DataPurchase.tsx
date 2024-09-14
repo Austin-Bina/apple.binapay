@@ -24,7 +24,7 @@ import { selectUser } from "@store/selectors/auth";
 import { TransactionForm } from "@enum/transaction";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { useGetDataPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { InternetProviders } from "@type/app";
 import { formatToNaira } from "@utils/money";
 

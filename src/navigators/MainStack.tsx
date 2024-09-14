@@ -6,7 +6,7 @@ import { StackParamList } from "./types";
 import Busy from "@screens/Busy";
 import Onboarding from "@screens/onboarding/Onboarding";
 import AuthStack from "./stacks/authentication";
-import ForgetPassword from "@screens/auth/ForgetPassword";
+import ForgetPassword from "@screens/auth/ForgotPassword";
 import ResetPassword from "@screens/auth/ResetPassword";
 import { TouchableRipple } from "react-native-paper";
 import ResetPasswordSuccessScreen from "@screens/auth/ResetPasswordSuccess";
@@ -17,12 +17,14 @@ import { navigationRef } from "@utils/navigation";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useTypedSelector } from "@store/common";
-import { selectLoggedIn } from "@store/selectors/auth";
+import { selectIsFetchingProfile, selectLoggedIn } from "@store/selectors/auth";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 
 const Stack = createNativeStackNavigator<StackParamList>();
 
 function Router() {
   const isLoggedIn = useTypedSelector(selectLoggedIn);
+  const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
 
   return (
     <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
@@ -55,7 +57,7 @@ function Router() {
               <React.Fragment>
                 <Stack.Screen name="Auth" component={AuthStack} options={{ headerShown: false }} />
                 <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} />
-                <Stack.Screen name="Forget Password" component={ForgetPassword} />
+                <Stack.Screen name="Forgot Password" component={ForgetPassword} />
                 <Stack.Screen
                   name="Reset Password Successful"
                   options={{ headerShown: false }}
@@ -69,6 +71,7 @@ function Router() {
           </Stack.Navigator>
         </BottomSheetModalProvider>
       </NavigationContainer>
+      <PleaseWaitModal visible={isFetchingProfile} />
     </KeyboardAvoidingView>
   );
 }

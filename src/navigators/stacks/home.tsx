@@ -9,8 +9,8 @@ import HomeScreen from "@screens/home/Dashboard";
 import AddMoneyScreen from "@screens/home/AddMoney";
 import CardDetailsScreen from "@screens/home/CardDetails";
 import PaymentSuccessScreen from "@screens/home/PaymentSuccess";
-import NotificationScreen from "@screens/home/Notification";
 import TransactionHistoryScreen from "@screens/home/TransactionHistory";
+import NotificationStack from "./notification";
 
 const Stack = createNativeStackNavigator<HomeParamList>();
 
@@ -33,31 +33,18 @@ function HomeStack() {
                   navigation.reset({ routes: [{ name: "Onboarding" }] });
                 }
               }}
-              style={tw`pb-2.5`}
-            >
+              style={tw`pb-2.5`}>
               <LeftArrowIcon width={38} height={38} />
             </TouchableRipple>
           </View>
         ),
-      })}
-    >
-      <Stack.Screen
-        name="Dashboard"
-        component={HomeScreen}
-        options={{ headerShown: false }}
-      />
+      })}>
+      <Stack.Screen name="Dashboard" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Add Money" component={AddMoneyScreen} />
       <Stack.Screen name="Card Details" component={CardDetailsScreen} />
-      <Stack.Screen
-        name="Payment Success"
-        options={{ headerShown: false }}
-        component={PaymentSuccessScreen}
-      />
-      <Stack.Screen name="Notification" component={NotificationScreen} />
-      <Stack.Screen
-        name="Transaction History"
-        component={TransactionHistoryScreen}
-      />
+      <Stack.Screen name="Payment Success" options={{ headerShown: false }} component={PaymentSuccessScreen} />
+      <Stack.Screen options={{ headerShown: false }} name="Notification" component={NotificationStack} />
+      <Stack.Screen name="Transaction History" component={TransactionHistoryScreen} />
     </Stack.Navigator>
   );
 }

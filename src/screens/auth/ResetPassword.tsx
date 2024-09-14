@@ -8,7 +8,7 @@ import * as Yup from "yup";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Screen from "@components/ui/shared/Screen";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 
 type ResetPasswordProps = StackScreenProps<"Reset Password">;
 

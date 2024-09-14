@@ -5,7 +5,7 @@ import { View, Keyboard } from "react-native";
 import { Text } from "react-native-paper";
 import Screen from "@components/ui/shared/Screen";
 import OtpInput from "@components/ui/form/OtpInput";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { z } from "zod";
 import { TransactionForm } from "@enum/transaction";
 import { route } from "@helpers/route";

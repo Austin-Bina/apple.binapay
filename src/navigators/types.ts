@@ -9,7 +9,7 @@ export type StackParamList = {
   Busy: undefined;
   Auth: NavigatorScreenParams<AuthParamList>;
   "One Time Password": { email: string };
-  "Forget Password": { email: string };
+  "Forgot Password": { email: string };
   "Reset Password": { email: string };
   "Reset Password Successful": undefined;
 };
@@ -53,7 +53,7 @@ export type TabNavScreenProps<T extends keyof TabParamList> = BottomTabScreenPro
 
 export type HomeParamList = {
   Dashboard: undefined;
-  Notification: undefined;
+  Notification: NavigatorScreenParams<NotificationParamList>;
   "Add Money": undefined;
   "Card Details": undefined;
   "Payment Success": undefined;
@@ -61,6 +61,12 @@ export type HomeParamList = {
   "Transaction Details": undefined;
 };
 export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScreenProps<HomeParamList, T>;
+
+export type NotificationParamList = {
+  "List Notifications": undefined;
+  "View Notification": { id: string };
+};
+export type NotificationStackScreenProps<T extends keyof NotificationParamList> = NativeStackScreenProps<NotificationParamList, T>;
 
 export type ServicesParamList = {
   List: undefined;

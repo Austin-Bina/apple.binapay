@@ -27,7 +27,7 @@ import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import Fuse from "fuse.js";
 import { CablePlan } from "@type/app";
 import { formatToNaira } from "@utils/money";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { showToast } from "@helpers/toast";
 import { AxiosError } from "axios";
 

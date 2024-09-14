@@ -74,7 +74,7 @@ export default function TransactionHistoryScreen({}: Props) {
   return (
     <Screen>
       <ScrollableView style={tw`px-4`} showsVerticalScrollIndicator={false}>
-        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold mt-10 `}>
+        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold mt-5 `}>
           Transaction History
         </Text>
         {dynamicContent}

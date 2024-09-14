@@ -8,7 +8,7 @@ import { StackActions } from "@react-navigation/native";
 import { Controller, useForm } from "react-hook-form";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
@@ -37,8 +37,8 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: "ttebify@gmail.com",
-      password: "password",
+      email: "",
+      password: "",
     },
   });
 
@@ -106,7 +106,7 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
         <Text
           onPress={() => {
             navigation.dispatch(
-              StackActions.push("Forget Password", {
+              StackActions.push("Forgot Password", {
                 email: "",
               })
             );

@@ -1,5 +1,5 @@
 import CustomTextInput from "@components/ui/form/TextInput";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import Screen from "@components/ui/shared/Screen";
 import { route } from "@helpers/route";
 import { showToast } from "@helpers/toast";

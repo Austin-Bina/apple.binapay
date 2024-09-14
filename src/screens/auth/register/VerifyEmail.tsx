@@ -12,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import API from "@lib/api";
 import { route } from "@helpers/route";
 import { showToast } from "@helpers/toast";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { AxiosError } from "axios";
 
 type Props = RegistrationStackScreenProps<"Verify Email">;

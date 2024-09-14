@@ -8,7 +8,10 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BINAPAY_BASE_URL": "https://binapay.co"
+      }
     },
     "production": {}
   },

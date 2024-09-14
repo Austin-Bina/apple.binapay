@@ -10,7 +10,7 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import ImageInput from "@components/ui/shared/ImageInput";
 import { phoneValidation } from "@utils/phone";
 import { PhoneInput } from "@components/ui/form/PhoneInput";
-import PleaseWaitModal from "@components/ui/modals/PleaseWaitModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { Asset } from "react-native-image-picker";
 import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";

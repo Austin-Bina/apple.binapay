@@ -27,6 +27,13 @@ export const routes = {
         transactions: "/api/v1/account/transactions",
         referralActivities: "/api/v1/account/referral-activities",
       },
+      notification: {
+        index: "/api/v1/notifications",
+        view: "/api/v1/notifications/:id",
+        read: "/api/v1/notifications/read",
+        markAllAsRead: "/api/v1/notifications/read_all",
+        clearDeviceDetails: "/api/v1/notifications/clear_device_details",
+      },
       bank: {
         list: "/api/v1/banks",
         resolveAccount: "/api/v1/bank/resolve-account",

@@ -3,11 +3,14 @@ import { useTypedSelector } from "@store/common";
 import { getNavigate } from "@utils/navigation";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Appbar, Avatar, Text } from "react-native-paper";
+import { Appbar, Avatar, Badge, Text } from "react-native-paper";
 import { selectUser } from "@store/selectors/auth";
+import { selectUnreadCount } from "@store/selectors/notifications";
+import { Colors } from "@constants/theme";
 
 export default function UserAppbar() {
   const user = useTypedSelector(selectUser);
+  const unreadCount = useTypedSelector(selectUnreadCount);
 
   return (
     <Appbar.Header style={tw`bg-white`}>
@@ -36,19 +39,36 @@ export default function UserAppbar() {
         </View>
       </TouchableOpacity>
       <Appbar.Content title="" />
-      <Appbar.Action
-        icon="bell"
-        size={30}
-        onPress={async () => {
-          const { navigate } = await getNavigate();
-          navigate("Main", {
-            screen: "Home",
-            params: {
-              screen: "Notification",
+      <View style={tw`relative`}>
+        <Appbar.Action
+          icon="bell"
+          size={30}
+          onPress={async () => {
+            const { navigate } = await getNavigate();
+            navigate("Main", {
+              screen: "Home",
+              params: {
+                screen: "Notification",
+                params: {
+                  screen: "List Notifications",
+                },
+              },
+            });
+          }}
+        />
+        <Badge
+          style={tw`absolute top-2 right-2`}
+          theme={{
+            colors: {
+              error: Colors.primary.DEFAULT,
+              onError: "white",
             },
-          });
-        }}
-      />
+          }}
+          size={18}
+          visible={unreadCount > 0}>
+          {unreadCount}
+        </Badge>
+      </View>
     </Appbar.Header>
   );
 }

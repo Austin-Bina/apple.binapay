@@ -1,11 +1,11 @@
-import {createNavigationContainerRef} from '@react-navigation/native';
-import {setInterval} from './setTimeout';
-import {StackParamList} from '@navigators/types';
+import { createNavigationContainerRef } from "@react-navigation/native";
+import { setInterval } from "./setTimeout";
+import { StackParamList } from "@navigators/types";
 
 export const navigationRef = createNavigationContainerRef<StackParamList>();
 
 export async function getNavigate() {
-  await new Promise<void>(resolve => {
+  await new Promise<void>((resolve) => {
     const poll = (): boolean => {
       if (navigationRef.isReady()) {
         clearInterval(intervalId);
@@ -22,4 +22,8 @@ export async function getNavigate() {
   });
 
   return navigationRef;
+}
+
+export function getCurrentRouteName() {
+  return navigationRef.current?.getCurrentRoute()?.name;
 }

@@ -9,11 +9,22 @@ import { AxiosError } from "axios";
 import { Transaction } from "@type/transaction";
 import { accountTransactionsApi } from "@store/redux-api/accountTransactionsApi";
 import { createTypedAsyncThunk } from "@store/common";
+import { notificationsActions } from "./notificationSlice";
 
 interface AuthMetaInfo {
   access_token: string;
   pubsub_token: string;
 }
+
+type AccountSummary = {
+  profile: User;
+  account_summary: {
+    recent_transactions: {
+      [group: string]: Transaction[];
+    };
+    unread_notifications: number;
+  };
+};
 
 interface AuthState extends EntityState<User, string> {
   user: User | null;
@@ -120,15 +131,17 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
   async (_, { rejectWithValue, dispatch }) => {
     try {
       const response = await API.get(route("account.getProfile"));
-      const { profile, account_summary } = response.data;
+      const { profile, account_summary } = response.data as AccountSummary;
 
-      const transactions = account_summary.recent_transactions as UserProfile["transactions"];
+      const { recent_transactions, unread_notifications } = account_summary;
 
       dispatch(
         accountTransactionsApi.util.updateQueryData("fetchRecentTransactions", undefined, (draft) => {
-          draft.transactions = transactions;
+          draft.transactions = recent_transactions;
         }),
       );
+      
+      dispatch(notificationsActions.updateBadgeCount(unread_notifications));
 
       return {
         user: profile,

@@ -56,3 +56,18 @@ export interface CustomPagination<T> {
   per_page: number;
   total: number;
 }
+
+export interface Notification {
+  id: string;
+  type: "deposit" | "service_purchase" | "marketing";
+  notifiable_id: string;
+  notifiable_type: string;
+  data: {
+    title: string;
+    message: string;
+    details: { [key: string]: string | number };
+  };
+  read_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

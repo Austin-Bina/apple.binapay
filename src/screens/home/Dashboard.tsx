@@ -31,7 +31,6 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const user = useTypedSelector(selectUser);
-  const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
   const toggleBalance = () => setBalanceVisible(!balanceVisible);
   const dispatch = useTypedDispatch();
 
@@ -116,7 +115,6 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
 
   return (
     <Screen>
-      {isFetchingProfile && <ProgressBar indeterminate />}
       <UserAppbar />
       <ScrollableView
         style={tw`px-3 flex flex-1 py-6`}
