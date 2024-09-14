@@ -80,7 +80,7 @@ export default function VerifyAccountScreen() {
 
   return (
     <Screen>
-      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>BVN Verification</Text>
           <Text style={tw`w-full text-gray-500 text-base font-normal leading-snug mb-10`}>

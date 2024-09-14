@@ -82,7 +82,9 @@ export default function ListServicesScreen({ navigation }: Props) {
             size={24}
             label="Education+Payments"
             onPress={() => {
-              navigation.navigate("Select Educational Payment");
+              navigation.navigate("Education", {
+                screen: "Select Educational Payment",
+              });
             }}
           />
           <IconButtonWithLabel
@@ -115,34 +117,13 @@ export default function ListServicesScreen({ navigation }: Props) {
             label="Airtime Swap"
             onPress={openBottomSheet}
             isDisabled
-            
           />
-          <IconButtonWithLabel
-            RenderIcon={AgentIcon}
-            size={24}
-            label="Agent"
-            onPress={openBottomSheet}
-          />
+          <IconButtonWithLabel RenderIcon={AgentIcon} size={24} label="Agent" onPress={openBottomSheet} />
         </View>
         <View style={tw`flex-row justify-around my-5`}>
-          <IconButtonWithLabel
-            RenderIcon={FlightIcon}
-            size={24}
-            label="Flight"
-            onPress={openBottomSheet}
-          />
-          <IconButtonWithLabel
-            RenderIcon={GiftIcon}
-            size={24}
-            label="GiftCard"
-            onPress={openBottomSheet}
-          />
-          <IconButtonWithLabel
-            RenderIcon={TicketIcon}
-            size={24}
-            label="Tickets"
-            onPress={openBottomSheet}
-          />
+          <IconButtonWithLabel RenderIcon={FlightIcon} size={24} label="Flight" onPress={openBottomSheet} />
+          <IconButtonWithLabel RenderIcon={GiftIcon} size={24} label="GiftCard" onPress={openBottomSheet} />
+          <IconButtonWithLabel RenderIcon={TicketIcon} size={24} label="Tickets" onPress={openBottomSheet} />
         </View>
         <BottomSheetModal
           ref={bottomSheet}
@@ -150,28 +131,19 @@ export default function ListServicesScreen({ navigation }: Props) {
           closeFilter={closeBottomSheet}
           children={
             <View style={tw`flex-1 items-center px-2.5`}>
-              <Image
-                source={require("@assets/images/oops.png")}
-                width={scale(240)}
-                style={tw`mb-6`}
-              />
+              <Image source={require("@assets/images/oops.png")} width={scale(240)} style={tw`mb-6`} />
               <Text variant="titleLarge" style={tw`font-bold mb-2`}>
                 Service Coming Soon
               </Text>
-              <Text
-                variant="bodyMedium"
-                style={tw`text-center text-gray-500 mb-10`}
-              >
-                This service is not available yet. We're actively working to add
-                more features and services to improve your experience. Please
-                check back later for updates.
+              <Text variant="bodyMedium" style={tw`text-center text-gray-500 mb-10`}>
+                This service is not available yet. We're actively working to add more features and services to improve
+                your experience. Please check back later for updates.
               </Text>
               <Button
                 mode="contained"
                 onPress={closeBottomSheet}
                 style={tw`w-full rounded-full`}
-                contentStyle={tw`py-2`}
-              >
+                contentStyle={tw`py-2`}>
                 Back
               </Button>
             </View>

@@ -10,7 +10,7 @@ interface Props {
 }
 const Screen = ({ children, style }: Props) => {
   const iosEdges = ["right", "left"] as const;
-  const otherEdges = ["right", "left", "top"] as const;
+  const otherEdges = ["right", "left"] as const;
   const edges = Platform.OS === "ios" ? iosEdges : otherEdges;
 
   return (

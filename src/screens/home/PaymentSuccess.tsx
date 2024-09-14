@@ -15,7 +15,7 @@ export default function PaymentSuccessScreen({ navigation }: Props) {
     <ImageBackground
       source={require("@assets/images/background-with-logo.png")}
     >
-      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View style={tw`flex-1 justify-center`}>
           <View style={tw`p-4 h-1/2 justify-end`}>
             <View>

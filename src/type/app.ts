@@ -1,7 +1,7 @@
 type ProviderDetails = {
   id: number;
-  key: string;
-  label: string;
+  serviceId: string;
+  name: string;
   logo: any;
 };
 
@@ -44,6 +44,35 @@ export interface CablePlan {
   id: number;
   package: string;
   plan_amount: string;
+}
+export interface EducationPlan {
+  id: string;
+  serviceId: string;
+  name: string;
+  description: string;
+  minimum_amount: string;
+  maximum_amount: string;
+  convinience_fee: string;
+  product_type: string;
+  logo: string;
+}
+
+export interface ServiceDetails {
+  title: string;
+  description: string;
+  banner?: string;
+  convinienceFee: string;
+  inputFields: {
+    label: string;
+    name: string;
+    placeholder?: string;
+    options?: {
+      name: string;
+      variation_code: string;
+      variation_amount: string;
+      fixedPrice: "Yes" | "No";
+    }[];
+  }[];
 }
 
 export type InternetProviders = "mtn" | "airtel" | "9mobile" | "glo";

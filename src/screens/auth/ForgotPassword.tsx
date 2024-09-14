@@ -32,13 +32,12 @@ const ForgetPassword: React.FC<StackScreenProps<"Forgot Password">> = ({
   });
 
   const onSubmit = handleSubmit(async function (values) {
-    console.log(values);
     navigation.navigate("One Time Password", { email: values.email });
   });
 
   return (
     <Screen>
-      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>
             Forgot Your Password?

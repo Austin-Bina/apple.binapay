@@ -15,6 +15,7 @@ import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
 import { selectIsLoggingIn } from "@store/selectors/auth";
 import { showToast } from "@helpers/toast";
+import { AxiosError } from "axios";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -50,6 +51,12 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
     try {
       await dispatch(authSliceActions.doLogin(values)).unwrap();
     } catch (error: any) {
+      // const axiosError = error as AxiosError<any>
+      // const {response} = axiosError;
+
+      // if(response) {
+      //   const {message, }
+      // }
       if (error.message) {
         showToast({ message: error.message as string });
       }
@@ -58,7 +65,7 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
 
   return (
     <Screen>
-      <ScrollableView style={tw`pt-10 px-4`}>
+      <ScrollableView style={tw`pt-5 px-4`}>
         <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>
           Welcome Back to BinaPay
         </Text>
@@ -75,6 +82,7 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({
               label="Email Address"
               mode="outlined"
               onBlur={onBlur}
+              left={<TextInput.Icon icon="email-outline" color="#71717A" />}
               value={value}
               onChangeText={onChange}
             />

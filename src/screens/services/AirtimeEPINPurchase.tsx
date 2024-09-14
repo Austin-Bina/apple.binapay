@@ -77,7 +77,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`flex-1 px-4 pt-10`}>
+      <ScrollableView style={tw`flex-1 px-4 pt-5`}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           Airtime EPIN Purchase & Printing
         </Text>
@@ -88,11 +88,11 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
         <View style={tw`flex-row items-center justify-around my-5`}>
           {Object.values(serviceProvidersMap.internet).map((provider) => (
             <TouchableOpacity
-              key={provider.key}
-              onPress={() => setValue("provider", provider.key)}
+              key={provider.serviceId}
+              onPress={() => setValue("provider", provider.serviceId)}
               style={[
                 tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key &&
+                values.provider === provider.serviceId &&
                   tw`border-blue-500 border-2`,
               ]}
             >

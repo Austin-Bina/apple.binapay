@@ -56,7 +56,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
 
   return (
     <Screen>
-      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>
             Create Password

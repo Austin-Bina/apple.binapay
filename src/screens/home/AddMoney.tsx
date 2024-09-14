@@ -37,7 +37,7 @@ export default function AddMoneyScreen(props: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`pt-10`}>
+      <ScrollableView style={tw`pt-5`}>
         <SegmentedButtons
           value={value}
           onValueChange={setValue}

@@ -46,6 +46,10 @@ export const routes = {
         cable: "/api/v1/trx/process/cable",
         resolveMeter: "/api/v1/services/resolve-meter",
         resolveCable: "/api/v1/services/resolve-cable",
+        education: {
+          purchase: "/api/v1/education/purchase",
+          serviceDetails: "/api/v1/education/service-details",
+        },
       },
     },
   },

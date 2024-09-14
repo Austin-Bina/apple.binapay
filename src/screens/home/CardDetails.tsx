@@ -19,7 +19,7 @@ export default function CardDetailsScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View>
           <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
             Enter Card Details

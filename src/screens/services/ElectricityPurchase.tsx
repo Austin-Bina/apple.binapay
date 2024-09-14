@@ -230,7 +230,7 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-10`}>
+      <ScrollableView style={tw`px-4 pt-5`}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           Pay Electricity Bill
         </Text>
@@ -244,8 +244,8 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
           control={control}
           search
           data={Object.values(serviceProvidersMap.electricity).map((provider) => ({
-            label: provider.label,
-            id: provider.key,
+            label: provider.name,
+            id: provider.serviceId,
             image: provider.logo,
           }))}
         />

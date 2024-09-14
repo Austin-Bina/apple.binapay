@@ -133,7 +133,7 @@ const VerifyEmail: React.FC<Props> = (props) => {
 
   return (
     <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-10`}>
+      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Verify Your Email Address</Text>
           <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>

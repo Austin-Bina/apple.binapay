@@ -148,7 +148,7 @@ const ChooseAvatar: React.FC<Props> = () => {
 
   return (
     <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-10`}>
+      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Choose Your Avatar</Text>
           <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>

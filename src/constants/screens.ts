@@ -9,6 +9,7 @@ export const SCREENS = {
   AIRTIME_EPIN_PURCHASE: "Airtime EPIN Purchase",
   DATA_PURCHASE: "Data Purchase",
   CONFIRM_TRANSACTION: "Confirm Transaction",
+  EDUCATION: 'Education',
   SELECT_EDUCATIONAL_PAYMENT: "Select Educational Payment",
   EDUCATIONAL_PAYMENT: "Educational Payment",
   TV_SUBSCRIPTION: "TV Subscription",

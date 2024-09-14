@@ -2,7 +2,7 @@ import { env } from "@env";
 import { route } from "@helpers/route";
 import { getAuthToken } from "@lib/security";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { CablePlan, DataPlan } from "@type/app";
+import { CablePlan, DataPlan, EducationPlan, ServiceDetails } from "@type/app";
 
 interface DataResponse {
   service: "data" | "airtime" | "cable-tv" | "electricity" | "education";
@@ -21,6 +21,17 @@ interface CableResponse {
   };
 }
 
+interface EducationResponse {
+  service: "education";
+  education_plans: EducationPlan[];
+}
+
+export type ServiceDetailsResponse = ServiceDetails;
+
+export interface DetailsBody {
+  service_id: string;
+}
+
 export const utilityBillsQueryApi = createApi({
   reducerPath: "utilityBillsApi",
   baseQuery: fetchBaseQuery({
@@ -33,7 +44,7 @@ export const utilityBillsQueryApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Data", "Cable"],
+  tagTypes: ["Data", "Cable", "Education", "Education Service Details"],
   endpoints: (builder) => ({
     getDataPlans: builder.query<DataResponse, void>({
       query: () => ({
@@ -49,7 +60,26 @@ export const utilityBillsQueryApi = createApi({
       }),
       providesTags: ["Cable"],
     }),
+    getEducationPlans: builder.query<EducationResponse, void>({
+      query: () => ({
+        url: route("services.fetch"),
+        params: { service: "education" },
+      }),
+      providesTags: ["Education"],
+    }),
+    getEducationServiceDetails: builder.query<ServiceDetailsResponse, DetailsBody>({
+      query: (params) => ({
+        url: route("services.education.serviceDetails"),
+        params,
+      }),
+      providesTags: ["Education Service Details"],
+    }),
   }),
 });
 
-export const { useGetDataPlansQuery, useGetCablePlansQuery } = utilityBillsQueryApi;
+export const {
+  useGetDataPlansQuery,
+  useGetCablePlansQuery,
+  useGetEducationPlansQuery,
+  useGetEducationServiceDetailsQuery,
+} = utilityBillsQueryApi;

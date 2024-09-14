@@ -41,7 +41,7 @@ function Router() {
                 <View style={tw`mr-2.5 overflow-hidden p-0.5`}>
                   <TouchableRipple
                     onPress={() => {
-                      navigation.reset({ routes: [{ name: "Main" }] });
+                      navigation.goBack();
                     }}>
                     <LeftArrowIcon width={38} height={38} />
                   </TouchableRipple>
@@ -65,7 +65,6 @@ function Router() {
                 />
               </React.Fragment>
             )}
-
             <Stack.Screen name="Busy" options={{ headerShown: false }} component={Busy} />
             <Stack.Screen name="Reset Password" component={ResetPassword} />
           </Stack.Navigator>

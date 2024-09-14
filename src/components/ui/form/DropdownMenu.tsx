@@ -6,6 +6,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { HelperText, Text } from "react-native-paper";
 import ArrowDown from "@assets/icons/arrow-down.svg";
 import { Image } from "react-native-element-image";
+import { AvatarImage } from "@components/avatar";
 
 type Props = {
   control: Control<any>;
@@ -56,11 +57,7 @@ export default function DropdownMenuField({
               return (
                 selectedData &&
                 selectedData.image && (
-                  <Image
-                    source={selectedData.image}
-                    width={40}
-                    style={tw`rounded-full border border-primary-100 mr-1`}
-                  />
+                  <AvatarImage avatar={selectedData.image} size={30} style={tw`rounded-full border-primary-100`} />
                 )
               );
             }}

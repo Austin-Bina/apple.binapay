@@ -30,7 +30,7 @@ const CreatePassword: React.FC<ResetPasswordProps> = () => {
 
   return (
     <Screen>
-      <View style={tw`flex flex-col px-4 pt-10 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Create Password</Text>
           <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>

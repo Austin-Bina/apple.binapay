@@ -66,17 +66,17 @@ export type NotificationParamList = {
   "List Notifications": undefined;
   "View Notification": { id: string };
 };
-export type NotificationStackScreenProps<T extends keyof NotificationParamList> = NativeStackScreenProps<NotificationParamList, T>;
+export type NotificationStackScreenProps<T extends keyof NotificationParamList> = NativeStackScreenProps<
+  NotificationParamList,
+  T
+>;
 
 export type ServicesParamList = {
   List: undefined;
   "Airtime Purchase": undefined;
   "Data Purchase": undefined;
   "Electricity Bill": undefined;
-  "Select Educational Payment": undefined;
-  "Educational Payment": {
-    provider: string;
-  };
+  Education: NavigatorScreenParams<EducationParamList>;
   "Airtime EPIN Purchase": undefined;
   "Airtime Swap": undefined;
   "Service Purchase Success": {
@@ -88,6 +88,17 @@ export type ServicesParamList = {
   "TV Subscription": undefined;
 };
 export type ServicesStackScreenProps<T extends keyof ServicesParamList> = NativeStackScreenProps<ServicesParamList, T>;
+
+export type EducationParamList = {
+  "Select Educational Payment": undefined;
+  "Educational Payment": {
+    provider: string;
+  };
+};
+export type EducationStackScreenProps<T extends keyof EducationParamList> = NativeStackScreenProps<
+  EducationParamList,
+  T
+>;
 
 export type StackNavigationProp<T extends keyof StackParamList> = CompositeNavigationProp<
   NativeStackNavigationProp<StackParamList, T>,

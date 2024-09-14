@@ -13,7 +13,7 @@ export default function UserAppbar() {
   const unreadCount = useTypedSelector(selectUnreadCount);
 
   return (
-    <Appbar.Header style={tw`bg-white`}>
+    <Appbar.Header style={tw`bg-white py-2 mt-2`}>
       <TouchableOpacity
         onPress={async () => {
           const { navigate } = await getNavigate();

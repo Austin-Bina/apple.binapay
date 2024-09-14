@@ -87,7 +87,7 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-10`}>
+      <ScrollableView style={tw`px-4 pt-5`}>
         <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Get Started with BinaPay</Text>
         <Text style={tw`w-full mb-[30px] text-zinc-500 text-lg font-normal leading-snug`}>
           Join our community! Let's get you started with a few quick steps.

@@ -95,7 +95,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-10`}>
+      <ScrollableView style={tw`px-4 pt-5`}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           Buy Data Bundle
         </Text>
@@ -106,11 +106,11 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           data={Object.values(serviceProvidersMap.internet)}
           renderItem={({ item: provider }) => (
             <TouchableOpacity
-              key={provider.key}
-              onPress={() => setValue("provider", provider.key)}
+              key={provider.serviceId}
+              onPress={() => setValue("provider", provider.serviceId)}
               style={[
                 tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key && tw`border-blue-500`,
+                values.provider === provider.serviceId && tw`border-blue-500`,
               ]}>
               <Image source={provider.logo} width={scale(45)} />
             </TouchableOpacity>
@@ -220,7 +220,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
                 <Text variant="bodyLarge">Network:</Text>
                 <View style={tw`flex-row items-center gap-2.5`}>
                   <Image width={30} source={serviceProvidersMap.internet[values.provider].logo} />
-                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.internet[values.provider].label}</Text>
+                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.internet[values.provider].name}</Text>
                 </View>
               </View>
               <View style={tw`flex-row justify-between my-2`}>

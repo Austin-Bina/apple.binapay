@@ -19,7 +19,6 @@ import { AxiosError } from "axios";
 type Props = ServicesStackScreenProps<"Confirm Transaction">;
 
 const maximumLength = 4;
-
 const schema = z.object({
   pin: z
     .string()
@@ -36,11 +35,8 @@ const sources = {
   [TransactionForm.Airtime]: route("services.airtime"),
   [TransactionForm.Data]: route("services.data"),
   [TransactionForm.Electricity]: route("services.electricity"),
-  [TransactionForm.FUNDING]: "",
-  [TransactionForm.TV_SUBSCRIPTION_CHANGE]: "",
   [TransactionForm.CableTv]: route("services.cable"),
-  [TransactionForm.EDUCATION]: "",
-  [TransactionForm.VIRTUAL_ACCOUNT]: "",
+  [TransactionForm.Education]: route("services.education.purchase"),
 } as const;
 
 export default function TransactionConfirmationScreen({ navigation, route }: Props) {
@@ -103,7 +99,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
               reset({
                 pin: "",
               });
-              setError("pin", { message: result.errors.pin[0] });
+              return setError("pin", { message: result.errors.pin[0] });
             } else if (result?.transaction_data) {
               const { remark, description, status, code } = result.transaction_data;
               dispatch(setTransactionError({ code, status, title: remark, description }));
@@ -131,7 +127,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
 
   return (
     <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-10`}>
+      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
         <View>
           <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Enter PIN</Text>
           <Text style={tw`w-full text-gray-500 font-normal`}>Enter your 4 digit transaction PIN to continue.</Text>

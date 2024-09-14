@@ -33,5 +33,10 @@ export const AvatarImage: React.FC<Props> = ({ avatar, style, ...props }) => {
   const localAvatar = AVATAR_MAP[avatar as keyof typeof AVATAR_MAP];
   if (localAvatar) return localAvatar;
 
+  // ImageRequireSource
+  if (typeof avatar === "number") {
+    return <Avatar.Image source={avatar} style={[tw`bg-gray-400`, style]} {...props} />;
+  }
+
   return <Avatar.Image source={{ uri: avatar }} style={[tw`bg-gray-400`, style]} {...props} />;
 };

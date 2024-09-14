@@ -226,7 +226,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`flex-1 px-4 pt-10`}>
+      <ScrollableView style={tw`flex-1 px-4 pt-5`}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           TV Subscription
         </Text>
@@ -236,11 +236,11 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
         <View style={tw`flex-row items-center justify-around my-5`}>
           {Object.values(serviceProvidersMap.entertainment).map((provider) => (
             <TouchableOpacity
-              key={provider.key}
-              onPress={() => setValue("provider", provider.key)}
+              key={provider.serviceId}
+              onPress={() => setValue("provider", provider.serviceId)}
               style={[
                 tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.key && tw`border-blue-500 border-2`,
+                values.provider === provider.serviceId && tw`border-blue-500 border-2`,
               ]}>
               <Image source={provider.logo} width={60} height={60} />
             </TouchableOpacity>
@@ -339,7 +339,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
                 <Text variant="bodyLarge">Network:</Text>
                 <View style={tw`flex-row items-center gap-2.5`}>
                   <Image width={30} source={serviceProvidersMap.entertainment[values.provider].logo} />
-                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.entertainment[values.provider].label}</Text>
+                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.entertainment[values.provider].name}</Text>
                 </View>
               </View>
               <View style={tw`flex-row justify-between my-2`}>
