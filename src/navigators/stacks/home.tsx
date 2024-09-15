@@ -30,7 +30,16 @@ function HomeStack() {
                 if (navigation.canGoBack()) {
                   navigation.goBack();
                 } else {
-                  navigation.reset({ routes: [{ name: "Onboarding" }] });
+                  navigation.reset({
+                    routes: [
+                      {
+                        name: "Home",
+                        params: {
+                          screen: "Dashboard",
+                        },
+                      },
+                    ],
+                  });
                 }
               }}
               style={tw`pb-2.5`}>

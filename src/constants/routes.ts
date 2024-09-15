@@ -43,6 +43,7 @@ export const routes = {
         data: "/api/v1/trx/process/data",
         airtime: "/api/v1/trx/process/airtime",
         electricity: "/api/v1/trx/process/electricity",
+        epins: "/api/v1/trx/process/epins",
         cable: "/api/v1/trx/process/cable",
         resolveMeter: "/api/v1/services/resolve-meter",
         resolveCable: "/api/v1/services/resolve-cable",

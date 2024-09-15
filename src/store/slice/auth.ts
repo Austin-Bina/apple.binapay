@@ -31,6 +31,7 @@ interface AuthState extends EntityState<User, string> {
   meta: AuthMetaInfo | null;
   isLoggingIn: boolean;
   isFetchingProfile: boolean;
+  newUser: boolean;
 }
 
 interface LoginResponse {
@@ -58,6 +59,7 @@ export const initialState: AuthState = authAdapter.getInitialState({
   meta: null,
   isLoggingIn: false,
   isFetchingProfile: false,
+  newUser: false,
 });
 
 export const authSlice = createSlice({
@@ -77,6 +79,9 @@ export const authSlice = createSlice({
           ...action.payload,
         };
       }
+    },
+    completeOnboarding(state) {
+      state.newUser = false;
     },
   },
   extraReducers: (builder) => {
@@ -108,6 +113,7 @@ export const authSlice = createSlice({
         state.user = payload.user;
         state.meta = payload.meta;
         state.isLoggingIn = false;
+        state.newUser = true;
       })
       .addCase(doCompleteRegister.rejected, (state) => {
         state.isLoggingIn = false;
@@ -140,7 +146,7 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
           draft.transactions = recent_transactions;
         }),
       );
-      
+
       dispatch(notificationsActions.updateBadgeCount(unread_notifications));
 
       return {

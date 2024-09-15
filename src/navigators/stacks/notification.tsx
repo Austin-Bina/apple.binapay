@@ -26,7 +26,16 @@ function NotificationStack() {
                 if (navigation.canGoBack()) {
                   navigation.goBack();
                 } else {
-                  navigation.reset({ routes: [{ name: "Main" }] });
+                  navigation.reset({
+                    routes: [
+                      {
+                        name: "Home",
+                        params: {
+                          screen: "Dashboard",
+                        },
+                      },
+                    ],
+                  });
                 }
               }}>
               <LeftArrowIcon width={38} height={38} />

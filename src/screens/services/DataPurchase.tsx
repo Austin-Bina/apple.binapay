@@ -8,7 +8,7 @@ import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import React, { Fragment, useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FlatList, Keyboard, TouchableOpacity, View } from "react-native";
+import { FlatList, Keyboard, RefreshControl, TouchableOpacity, View } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Checkbox, Text, TouchableRipple } from "react-native-paper";
 import { z } from "zod";
@@ -41,7 +41,7 @@ const schema = z.object({
 });
 
 export default function DataPurchaseScreen({ navigation }: Props) {
-  const { data, isLoading } = useGetDataPlansQuery();
+  const { data, isLoading, refetch } = useGetDataPlansQuery();
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
@@ -69,7 +69,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         bottomSheet.current?.present();
       }, 100);
     }
-  }, [values]);
+  }, [trigger]);
 
   const closeBottomSheet = useCallback(() => {
     bottomSheet.current?.dismiss();
@@ -95,7 +95,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-5`}>
+      <ScrollableView style={tw`px-4 pt-5`} refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           Buy Data Bundle
         </Text>

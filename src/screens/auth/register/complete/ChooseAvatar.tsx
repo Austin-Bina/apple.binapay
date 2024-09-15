@@ -44,7 +44,7 @@ const AVATARS = {
   ],
 };
 
-const ChooseAvatar: React.FC<Props> = () => {
+const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const { dispatch } = useCompleteRegisterForm();
   const storeDispatch = useTypedDispatch();
@@ -83,7 +83,8 @@ const ChooseAvatar: React.FC<Props> = () => {
 
   const onSubmit = handleSubmit(async function (values) {
     try {
-      await storeDispatch(authSliceActions.doCompleteRegister(values)).unwrap();
+      await storeDispatch(authSliceActions.doCompleteRegister(values));
+      navigation.navigate("Register Success");
     } catch (error: any) {
       if (error.errors) {
         const { errors } = error;

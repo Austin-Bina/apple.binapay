@@ -7,6 +7,7 @@ import { Appbar, Avatar, Badge, Text } from "react-native-paper";
 import { selectUser } from "@store/selectors/auth";
 import { selectUnreadCount } from "@store/selectors/notifications";
 import { Colors } from "@constants/theme";
+import { AvatarImage } from "./avatar";
 
 export default function UserAppbar() {
   const user = useTypedSelector(selectUser);
@@ -26,12 +27,7 @@ export default function UserAppbar() {
         }}
         style={tw`flex flex-row gap-3 mx-2`}>
         <View style={tw`flex flex-col items-center justify-center rounded-full border border-emerald-100`}>
-          <Avatar.Image
-            size={48}
-            style={tw`rounded-full bg-gray-200`}
-            source={require("@assets/draft/male-avatar-circle.png")}
-          />
-          {/* <AvatarImage avatar={} /> */}
+          <AvatarImage avatar={user?.avatar} size={48} svgProps={{ width: 48, height: 48 }} />
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
           <Text style={tw`text-zinc-500 text-sm font-normal`}>Hi, {user?.name} 👋🏽</Text>

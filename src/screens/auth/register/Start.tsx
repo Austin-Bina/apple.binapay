@@ -21,7 +21,7 @@ import { showToast } from "@helpers/toast";
 
 const schema = z.object({
   name: z.string().min(3, "Too Short").trim(),
-  phone: phoneValidation,
+  phone: z.string().min(11),
   email: z.string().email("Invalid email").trim(),
   referral_code: z.string().optional(),
 });
@@ -29,31 +29,22 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navigation }) => {
-  const [countryCode, setCountryCode] = useState<CountryCode>("NG");
   const [isLoading, setIsLoading] = useState(false);
 
   const { control, clearErrors, setError, setValue, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
-      phone: ["", "NG"],
+      phone: "",
       email: "",
       referral_code: "",
     },
   });
 
-  const handleChangeCountry = (country: Country) => {
-    setCountryCode(country.cca2);
-  };
-
   const onSubmit = handleSubmit(async function (data) {
     setIsLoading(true);
     try {
-      const form = {
-        ...data,
-        phone: formatPhone(data.phone[0], data.phone[1] as any),
-      };
-      await API.post(route("auth.register"), form);
+      await API.post(route("auth.register"), data);
       navigation.navigate("Verify Email", { email: data.email });
     } catch (error) {
       const axiosError = error as AxiosError<any>;
@@ -123,23 +114,20 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
             />
           )}
         />
+
         <Controller
           control={control}
           name="phone"
-          render={({ field: { value }, fieldState: { error } }) => (
-            <PhoneInput
-              identifier="phone"
-              label="Phone"
-              phone={value?.[0] || ""}
-              onChangePhone={(phone) => {
-                setValue("phone", [phone, countryCode]);
-              }}
-              countryCode={countryCode}
-              onChangeCountry={handleChangeCountry}
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <CustomTextInput
+              label="Phone Number"
+              placeholder="+234 000 000 0000"
+              mode="outlined"
+              onBlur={onBlur}
+              value={value}
+              onChangeText={onChange}
               error={!!error}
               errorMessage={error?.message}
-              preferredCountries={["NG"]}
-              clearErrorMessage={() => clearErrors("phone")}
             />
           )}
         />

@@ -19,7 +19,7 @@ import { selectUser } from "@store/selectors/auth";
 import { addPendingTransaction, setTransactionError } from "@store/slice/transactionSlice";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View, TouchableOpacity, Keyboard } from "react-native";
+import { View, TouchableOpacity, Keyboard, RefreshControl } from "react-native";
 import { Image } from "react-native-element-image";
 import { ActivityIndicator, Button, Text } from "react-native-paper";
 import { z } from "zod";
@@ -36,7 +36,7 @@ type Props = ServicesStackScreenProps<"TV Subscription">;
 const MAX_CARD_NUMBER = 10;
 const schema = z.object({
   provider: z.string(),
-  amount: z.string(),
+  amount: z.string().trim(),
   smart_card_number: z
     .string()
     .transform((val) => val.replace(/\D/g, ""))
@@ -65,7 +65,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   const [showProgress, setShowProgress] = useState(false);
   const [cablePackages, setCablePackages] = useState<CablePlan[]>([]);
 
-  const { data, isLoading } = useGetCablePlansQuery();
+  const { data, isLoading, refetch } = useGetCablePlansQuery();
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
@@ -226,7 +226,9 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`flex-1 px-4 pt-5`}>
+      <ScrollableView
+        style={tw`flex-1 px-4 pt-5`}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           TV Subscription
         </Text>

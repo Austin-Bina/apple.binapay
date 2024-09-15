@@ -37,6 +37,7 @@ const sources = {
   [TransactionForm.Electricity]: route("services.electricity"),
   [TransactionForm.CableTv]: route("services.cable"),
   [TransactionForm.Education]: route("services.education.purchase"),
+  [TransactionForm.Epins]: route("services.epins"),
 } as const;
 
 export default function TransactionConfirmationScreen({ navigation, route }: Props) {

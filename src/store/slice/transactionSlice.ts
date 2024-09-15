@@ -46,8 +46,8 @@ export const transactionSlice = createSlice({
       transactionAdapter.addOne(state, action.payload);
       state.error = null;
     },
-    removePendingTransaction: (state, action: PayloadAction<{ id: TransactionForm }>) => {
-      transactionAdapter.removeOne(state, action.payload.id);
+    removePendingTransaction: (state) => {
+      transactionAdapter.removeAll(state);
       state.error = null;
     },
     updatePendingTransaction: (state, action: PayloadAction<Transaction>) => {

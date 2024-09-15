@@ -22,7 +22,7 @@ type Props = AccountStackScreenProps<"Verify Account">;
 const schema = z.object({
   bvn: z
     .string()
-    .length(11, 'Must be 11 digits')
+    .length(11, "Must be 11 digits")
     .transform((val) => {
       const numericValue = val.slice(0, 11);
       return numericValue;
@@ -53,7 +53,16 @@ export default function VerifyAccountScreen() {
       dispatch(authSliceActions.updateUser({ accounts }));
 
       const { reset } = await getNavigate();
-      reset({ routes: [{ name: "Main" }] });
+      reset({
+        routes: [
+          {
+            name: "Home",
+            params: {
+              screen: "Dashboard",
+            },
+          },
+        ],
+      });
     } catch (error) {
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;

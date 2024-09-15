@@ -1,6 +1,6 @@
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
-import { clearTransactionError } from "@store/slice/transactionSlice";
+import { clearTransactionError, removePendingTransaction } from "@store/slice/transactionSlice";
 import React, { useCallback, useEffect, useRef } from "react";
 import { Keyboard, View } from "react-native";
 import BottomSheetModal from "./BottomSheet/BottomSheet";
@@ -16,6 +16,7 @@ const TransactionErrorSheet = () => {
 
   const handleDismiss = useCallback(() => {
     dispatch(clearTransactionError());
+    dispatch(removePendingTransaction())
   }, [dispatch]);
 
   useEffect(() => {

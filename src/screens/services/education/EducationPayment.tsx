@@ -75,7 +75,7 @@ export default function EducationPaymentScreen({ route }: Props) {
       profile_code: "",
       phone: user?.phone,
       quantity: "1",
-      amount: "",
+      amount: "0",
     },
   });
 

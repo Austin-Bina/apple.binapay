@@ -2,110 +2,129 @@ import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import NairaInput from "@components/ui/form/NairaInput";
 import CustomTextInput from "@components/ui/form/TextInput";
 import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
-import { INTERNET_PROVIDERS, serviceProvidersMap } from "@constants/providers";
+import { serviceProvidersMap } from "@constants/providers";
+import { TransactionForm } from "@enum/transaction";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
+import { useTypedDispatch, useTypedSelector } from "@store/common";
+import { useGetEpinPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
+import { selectUser } from "@store/selectors/auth";
+import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { formatToNaira } from "@utils/money";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, FlatList, Keyboard, RefreshControl } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
+import { scale } from "react-native-size-matters";
 import { z } from "zod";
 
 type Props = ServicesStackScreenProps<"Airtime EPIN Purchase">;
 
 const schema = z.object({
-  provider: z.enum(INTERNET_PROVIDERS),
-  amount: z.string(),
-  value: z.string(),
-  quantity: z.string(),
+  provider: z.string(),
+  amount: z.number().min(100),
+  quantity: z.number().min(1),
   business_name: z.string(),
 });
 
-const priceOptions = [
-  { label: "N200", id: "200" },
-  { label: "N500", id: "500" },
-  { label: "N1,000", id: "1000" },
-  { label: "N2,500", id: "2500" },
-  { label: "N5,000", id: "5000" },
-];
-
-const quantityOptions = [
-  { label: "10", id: "10" },
-  { label: "30", id: "30" },
-  { label: "60", id: "60" },
-  { label: "100", id: "100" },
-  { label: "200", id: "200" },
-];
+type FormData = z.infer<typeof schema>;
 
 export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
-  const [fetching, setFetching] = useState(false);
-
-  const { control, watch, setValue, handleSubmit } = useForm({
+  const user = useTypedSelector(selectUser);
+  const dispatch = useTypedDispatch();
+  const { data: queryData, isFetching, refetch } = useGetEpinPlansQuery();
+  const { control, watch, setValue, trigger, reset, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
-      amount: "13,464.00",
-      value: "200",
-      quantity: "10",
-      business_name: "JBMobileService",
+      amount: 100,
+      quantity: 1,
+      business_name: user?.name,
     },
   });
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const values = watch();
 
-  const openBottomSheet = useCallback(() => {
-    bottomSheet.current?.present();
-  }, []);
+  const epinPlans = queryData?.epins_plans || [];
+  const quantityOptions = queryData?.quantity_options || [];
+
+  const openBottomSheet = useCallback(async () => {
+    const valid = await trigger();
+    if (valid) {
+      Keyboard.dismiss();
+      setTimeout(() => {
+        bottomSheet.current?.present();
+      }, 100);
+    }
+  }, [trigger]);
 
   const closeBottomSheet = useCallback(() => {
     bottomSheet.current?.dismiss();
   }, []);
 
   const handleMakePayment = handleSubmit((values) => {
-    console.log(values);
+    const transaction = {
+      id: TransactionForm.Epins,
+      data: values,
+    };
+
+    dispatch(addPendingTransaction(transaction));
+
     navigation.navigate("Confirm Transaction", {
-      transactionId: "airtime_epin_purchase",
+      transactionId: transaction.id,
     });
+
     closeBottomSheet();
   });
 
   return (
     <Screen>
-      <ScrollableView style={tw`flex-1 px-4 pt-5`}>
+      <ScrollableView
+        style={tw`flex-1 px-4 pt-5`}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           Airtime EPIN Purchase & Printing
         </Text>
         <Text variant="bodySmall" style={tw`text-gray-500`}>
-          Easily purchase airtime EPIN and print them for distribution. Enter
-          the details below to proceed.
+          Easily purchase airtime EPIN and print them for distribution. Enter the details below to proceed.
         </Text>
-        <View style={tw`flex-row items-center justify-around my-5`}>
-          {Object.values(serviceProvidersMap.internet).map((provider) => (
+        <FlatList
+          data={Object.values(serviceProvidersMap.internet)}
+          renderItem={({ item: provider }) => (
             <TouchableOpacity
               key={provider.serviceId}
               onPress={() => setValue("provider", provider.serviceId)}
               style={[
-                tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.serviceId &&
-                  tw`border-blue-500 border-2`,
-              ]}
-            >
-              <Image source={provider.logo} width={60} />
+                tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
+                values.provider === provider.serviceId && tw`border-blue-500`,
+              ]}>
+              <Image source={provider.logo} width={scale(45)} />
             </TouchableOpacity>
-          ))}
-        </View>
+          )}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={tw`items-center`}
+          style={tw`my-5`}
+        />
         <DropdownMenuField
           label="Value (Denomination)"
           placeholder="Select Price Options"
-          name="value"
+          name="amount"
           control={control}
-          data={priceOptions}
+          data={epinPlans}
+          onDataSelect={(plan) => {
+            reset({
+              ...values,
+              amount: plan.plan_amount,
+            });
+          }}
         />
         <DropdownMenuField
           label="Quantity"
@@ -117,10 +136,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
         <Controller
           control={control}
           name="business_name"
-          render={({
-            fieldState: { error },
-            field: { onChange, onBlur, value },
-          }) => (
+          render={({ fieldState: { error }, field: { onChange, onBlur, value } }) => (
             <CustomTextInput
               label="Business Name"
               mode="outlined"
@@ -133,19 +149,13 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
           )}
         />
         <View>
-          <NairaInput name="amount" control={control} />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-            Wallet Balance: ₦20,000.00
-          </Text>
+          <NairaInput name="amount" control={control} isDisabled />
+          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
         </View>
         <View style={tw`p-4 border relative mt-5 mb-12`}>
           <View>
             <Text variant="titleMedium">
-              {[
-                values.provider.toUpperCase(),
-                formatToNaira(values.value),
-                values.business_name,
-              ].join(" | ")}
+              {[values.provider.toUpperCase(), formatToNaira(values.amount), values.business_name].join(" | ")}
             </Text>
             <View style={tw`flex-row items-center gap-2`}>
               <Text variant="titleMedium">PIN:</Text>
@@ -162,11 +172,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
           <View style={tw`absolute inset-0 justify-center items-center`}>
             <Text
               variant="displayLarge"
-              style={[
-                tw`font-black text-[#FF0000] opacity-60`,
-                { transform: [{ rotate: "10.88deg" }] },
-              ]}
-            >
+              style={[tw`font-black text-[#FF0000] opacity-60`, { transform: [{ rotate: "10.88deg" }] }]}>
               SAMPLE
             </Text>
           </View>
@@ -177,10 +183,8 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
           style={tw`w-full rounded-full`}
           contentStyle={tw`py-2`}
           labelStyle={tw`text-white text-center text-base font-bold`}
-          disabled={fetching}
           onPress={openBottomSheet}
-          mode="contained"
-        >
+          mode="contained">
           Proceed
         </Button>
       </View>
@@ -197,10 +201,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
               <View style={tw`flex-row justify-between my-2`}>
                 <Text variant="bodyLarge">Product Name:</Text>
                 <View style={tw`flex-row items-center gap-2.5`}>
-                  <Image
-                    width={30}
-                    source={serviceProvidersMap.internet[values.provider].logo}
-                  />
+                  <Image width={30} source={serviceProvidersMap.internet[values.provider].logo} />
                   <Text style={tw`text-lg font-bold`}>ePIN</Text>
                 </View>
               </View>
@@ -210,9 +211,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
               </View>
               <View style={tw`flex-row items-center justify-between my-2`}>
                 <Text variant="bodyLarge">Business Name:</Text>
-                <Text style={tw`text-lg font-bold`}>
-                  {values.business_name}
-                </Text>
+                <Text style={tw`text-lg font-bold`}>{values.business_name}</Text>
               </View>
             </View>
             <Button
@@ -220,13 +219,14 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
               onPress={handleMakePayment}
               style={tw`w-full rounded-full mt-[20%]`}
               contentStyle={tw`py-2`}
-              labelStyle={tw`text-base`}
-            >
+              labelStyle={tw`text-base`}>
               Make Payment
             </Button>
           </View>
         }
       />
+      <TransactionErrorSheet />
+      <PleaseWaitModal visible={isFetching} />
     </Screen>
   );
 }

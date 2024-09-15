@@ -57,11 +57,18 @@ export interface EducationPlan {
   logo: string;
 }
 
+export interface EpinPlan {
+  id: string;
+  name: string;
+  plan_amount: string;
+  label: string;
+}
+
 export interface ServiceDetails {
   title: string;
   description: string;
   banner?: string;
-  convinienceFee: string;
+  convenience_fee: string;
   inputFields: {
     label: string;
     name: string;

@@ -28,21 +28,24 @@ function AccountStack() {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.reset({ routes: [{ name: "Onboarding" }] });
+                navigation.reset({
+                  routes: [
+                    {
+                      name: "Home",
+                      params: {
+                        screen: "Dashboard",
+                      },
+                    },
+                  ],
+                });
               }
             }}
-            style={tw`mr-2.5 overflow-hidden p-0.5`}
-          >
+            style={tw`mr-2.5 overflow-hidden p-0.5`}>
             <LeftArrowIcon width={38} height={38} />
           </TouchableRipple>
         ),
-      })}
-    >
-      <Stack.Screen
-        name="Settings"
-        component={SettingScreen}
-        options={{ headerShown: false }}
-      />
+      })}>
+      <Stack.Screen name="Settings" component={SettingScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="BinaPay Rewards" component={BinaRewardsScreen} />
       <Stack.Screen name="Earning Summary" component={EarningSummaryScreen} />

@@ -34,7 +34,7 @@ const schema = z.object({
   phone: z.string().min(11),
   amount: z
     .string()
-    .optional()
+    .trim()
     .transform((val) => {
       const numericValue = val ? parseFloat(val.replace(/[₦,]/g, "")) : 0;
       return numericValue;

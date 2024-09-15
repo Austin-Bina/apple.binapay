@@ -17,15 +17,17 @@ import { navigationRef } from "@utils/navigation";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useTypedSelector } from "@store/common";
-import { selectIsFetchingProfile, selectLoggedIn } from "@store/selectors/auth";
+import { selectIsFetchingProfile, selectLoggedIn, selectNewUser } from "@store/selectors/auth";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 
 const Stack = createNativeStackNavigator<StackParamList>();
 
 function Router() {
   const isLoggedIn = useTypedSelector(selectLoggedIn);
+  const isNewUser = useTypedSelector(selectNewUser);
   const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
 
+  const isAuthenticated = isLoggedIn && !isNewUser;
   return (
     <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
       <NavigationContainer ref={navigationRef}>
@@ -48,7 +50,7 @@ function Router() {
                 </View>
               ),
             })}>
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <React.Fragment>
                 <Stack.Screen name="Main" component={TabBar} options={{ headerShown: false }} />
                 <Stack.Screen name="One Time Password" component={VerifyOTPScreen} />
@@ -58,15 +60,15 @@ function Router() {
                 <Stack.Screen name="Auth" component={AuthStack} options={{ headerShown: false }} />
                 <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} />
                 <Stack.Screen name="Forgot Password" component={ForgetPassword} />
-                <Stack.Screen
-                  name="Reset Password Successful"
-                  options={{ headerShown: false }}
-                  component={ResetPasswordSuccessScreen}
-                />
               </React.Fragment>
             )}
             <Stack.Screen name="Busy" options={{ headerShown: false }} component={Busy} />
             <Stack.Screen name="Reset Password" component={ResetPassword} />
+            <Stack.Screen
+              name="Reset Password Successful"
+              options={{ headerShown: false }}
+              component={ResetPasswordSuccessScreen}
+            />
           </Stack.Navigator>
         </BottomSheetModalProvider>
       </NavigationContainer>

@@ -15,12 +15,15 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
 import { authSliceActions } from "@store/slice/auth";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
-import { selectIsLoggingIn } from "@store/selectors/auth";
+import { selectIsLoggingIn, selectUser } from "@store/selectors/auth";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import { AvatarImage } from "@components/avatar";
+import { scale } from "react-native-size-matters";
 
 type Props = AccountStackScreenProps<"Settings">;
 
 export default function SettingScreen({ navigation }: Props) {
+  const user = useTypedSelector(selectUser);
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
   const dispatch = useTypedDispatch();
 
@@ -42,13 +45,9 @@ export default function SettingScreen({ navigation }: Props) {
           <Fragment>
             <View style={tw`flex-row items-center justify-between py-3.5`}>
               <View style={tw`flex-row items-center gap-2.5`}>
-                <Avatar.Image
-                  size={60}
-                  style={tw`rounded-full bg-gray-200`}
-                  source={require("@assets/draft/male-avatar-circle.png")}
-                />
+                <AvatarImage avatar={user?.avatar} size={scale(60)} svgProps={{ width: scale(60), height: scale(60) }} />
                 <View>
-                  <Text variant="titleMedium">Abdul Amos</Text>
+                  <Text variant="titleMedium">{user?.name}</Text>
                   <Text variant="bodySmall">Personal Information</Text>
                 </View>
               </View>
