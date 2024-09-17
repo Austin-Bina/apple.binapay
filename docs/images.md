@@ -1,0 +1,9 @@
+```py
+images(
+    'credit',
+    'debit',
+    'deposit-approved',
+    'deposit-rejected',
+    'deposit-request',
+)
+```

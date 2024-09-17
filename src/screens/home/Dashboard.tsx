@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
-import { Avatar, Button, Card, Divider, IconButton, ProgressBar, Text } from "react-native-paper";
+import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
 import { HomeStackScreenProps } from "@navigators/types";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
@@ -16,7 +16,7 @@ import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { convertToNaira, formatToNaira } from "@utils/money";
-import { selectIsFetchingProfile, selectUser } from "@store/selectors/auth";
+import { selectUser } from "@store/selectors/auth";
 import { accountTransactionsApi, useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
 import { format } from "date-fns";
 import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";

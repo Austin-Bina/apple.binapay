@@ -6,7 +6,7 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import React, { Fragment, useCallback, useRef, useState } from "react";
+import React, { Fragment, useCallback, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FlatList, Keyboard, RefreshControl, TouchableOpacity, View } from "react-native";
 import { Image } from "react-native-element-image";
@@ -41,7 +41,7 @@ const schema = z.object({
 });
 
 export default function DataPurchaseScreen({ navigation }: Props) {
-  const { data, isLoading, refetch } = useGetDataPlansQuery();
+  const { data, isFetching, refetch } = useGetDataPlansQuery();
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
@@ -248,7 +248,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         }
       />
       <TransactionErrorSheet />
-      <PleaseWaitModal visible={isLoading} />
+      <PleaseWaitModal visible={isFetching} />
     </Screen>
   );
 }

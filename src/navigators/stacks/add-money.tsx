@@ -1,21 +1,22 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import tw from "@lib/tailwind";
-import { HomeParamList } from "@navigators/types";
-import { View } from "react-native";
 import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
-import HomeScreen from "@screens/home/Dashboard";
-import TransactionHistoryScreen from "@screens/home/TransactionHistory";
-import NotificationStack from "./notification";
-import AddMoneyStack from "./add-money";
+import { View } from "react-native";
+import { SCREENS } from "@constants/screens";
+import CardDetailsScreen from "@screens/home/CardDetails";
+import PaymentSuccessScreen from "@screens/home/PaymentSuccess";
+import AddMoneyScreen from "@screens/fund/AddMoney";
+import ManualFundScreen from "@screens/fund/ManualFund";
+import { AddMoneyParamList } from "@navigators/types";
 
-const Stack = createNativeStackNavigator<HomeParamList>();
+const Stack = createNativeStackNavigator<AddMoneyParamList>();
 
-function HomeStack() {
+function AddMoneyStack() {
   return (
     <Stack.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName={SCREENS.FUND_ACCOUNT_OPTIONS}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -39,18 +40,17 @@ function HomeStack() {
                     ],
                   });
                 }
-              }}
-              style={tw`pb-2.5`}>
+              }}>
               <LeftArrowIcon width={38} height={38} />
             </TouchableRipple>
           </View>
         ),
       })}>
-      <Stack.Screen name="Dashboard" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen options={{ headerShown: false }} name="Notification" component={NotificationStack} />
-      <Stack.Screen name="Transaction History" component={TransactionHistoryScreen} />
-      <Stack.Screen name="Add Money" component={AddMoneyStack} />
+      <Stack.Screen name={SCREENS.FUND_ACCOUNT_OPTIONS} component={AddMoneyScreen} />
+      <Stack.Screen name={SCREENS.MANUAL_FUND} component={ManualFundScreen} />
+      <Stack.Screen name={SCREENS.CARD_DETAILS} component={CardDetailsScreen} />
+      <Stack.Screen name={SCREENS.PAYMENT_SUCCESS} options={{ headerShown: false }} component={PaymentSuccessScreen} />
     </Stack.Navigator>
   );
 }
-export default HomeStack;
+export default AddMoneyStack;

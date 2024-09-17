@@ -43,7 +43,7 @@ export const TabBar = () => {
         tabBar={({ navigation, state, descriptors, insets }) => {
           const activeRoute = state.routes[state.index];
           const routeName = getFocusedRouteNameFromRoute(activeRoute) ?? "";
-          const hideTabBar = HIDE_TAB_LIST.includes(routeName);
+          const hideTabBar = HIDE_TAB_LIST.includes(routeName as any);
 
           return (
             <BottomNavigation.Bar

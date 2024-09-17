@@ -1,8 +1,11 @@
 export const SCREENS = {
   HOME: "Home",
+  DASHBOARD: "Dashboard",
   PROFILE: "Profile",
   CHANGE_PASSWORD: "Change Password",
   ADD_MONEY: "Add Money",
+  FUND_ACCOUNT_OPTIONS: "Fund Account Options",
+  MANUAL_FUND: "Manual Fund",
   CARD_DETAILS: "Card Details",
   PAYMENT_SUCCESS: "Payment Success",
   AIRTIME_PURCHASE: "Airtime Purchase",
@@ -37,4 +40,4 @@ export const SCREENS = {
   TRANSACTION_DETAILS: "Transaction Details",
   SETTINGS: "Settings",
   VIEW_NOTIFICATION: "View Notification",
-};
+} as const;

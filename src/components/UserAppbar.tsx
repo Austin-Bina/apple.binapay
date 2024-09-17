@@ -3,7 +3,7 @@ import { useTypedSelector } from "@store/common";
 import { getNavigate } from "@utils/navigation";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Appbar, Avatar, Badge, Text } from "react-native-paper";
+import { Appbar, Badge, Text } from "react-native-paper";
 import { selectUser } from "@store/selectors/auth";
 import { selectUnreadCount } from "@store/selectors/notifications";
 import { Colors } from "@constants/theme";
@@ -31,7 +31,7 @@ export default function UserAppbar() {
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
           <Text style={tw`text-zinc-500 text-sm font-normal`}>Hi, {user?.name} 👋🏽</Text>
-          <Text style={tw`text-zinc-800 text-lg font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
+          <Text style={tw`text-zinc-800 text-base font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
         </View>
       </TouchableOpacity>
       <Appbar.Content title="" />

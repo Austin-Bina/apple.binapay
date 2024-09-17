@@ -2,6 +2,7 @@ import { NavigatorScreenParams, type CompositeNavigationProp } from "@react-navi
 import { type NativeStackScreenProps, type NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { type BottomTabScreenProps, type BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { TransactionForm } from "@enum/transaction";
+import { SCREENS } from "@constants/screens";
 
 export type StackParamList = {
   Main: NavigatorScreenParams<TabParamList>;
@@ -52,15 +53,21 @@ export type TabParamList = {
 export type TabNavScreenProps<T extends keyof TabParamList> = BottomTabScreenProps<TabParamList, T>;
 
 export type HomeParamList = {
-  Dashboard: undefined;
-  Notification: NavigatorScreenParams<NotificationParamList>;
-  "Add Money": undefined;
-  "Card Details": undefined;
-  "Payment Success": undefined;
-  "Transaction History": undefined;
-  "Transaction Details": undefined;
+  [SCREENS.DASHBOARD]: undefined;
+  [SCREENS.NOTIFICATION]: NavigatorScreenParams<NotificationParamList>;
+  [SCREENS.ADD_MONEY]: undefined;
+  [SCREENS.TRANSACTION_HISTORY]: undefined;
+  [SCREENS.TRANSACTION_DETAILS]: undefined;
 };
 export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScreenProps<HomeParamList, T>;
+
+export type AddMoneyParamList = {
+  [SCREENS.FUND_ACCOUNT_OPTIONS]: undefined;
+  [SCREENS.MANUAL_FUND]: undefined;
+  [SCREENS.CARD_DETAILS]: undefined;
+  [SCREENS.PAYMENT_SUCCESS]: undefined;
+};
+export type AddMoneyStackScreenProps<T extends keyof AddMoneyParamList> = NativeStackScreenProps<AddMoneyParamList, T>;
 
 export type NotificationParamList = {
   "List Notifications": undefined;
