@@ -49,14 +49,7 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
   const { dispatch } = useCompleteRegisterForm();
   const storeDispatch = useTypedDispatch();
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
-  const {
-    control,
-    watch,
-    trigger,
-    setError,
-    handleSubmit,
-    formState: { errors },
-  } = useFormContext<RegistrationFormValues>();
+  const { control, watch, trigger, setError, handleSubmit } = useFormContext<RegistrationFormValues>();
 
   const { avatar: selectedAvatar, gender } = watch();
 

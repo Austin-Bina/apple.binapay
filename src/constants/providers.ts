@@ -30,12 +30,6 @@ export const serviceProvidersMap: ServiceProvidersMap = {
       logo: require("@assets/images/services/airtel.png"),
       type: ["VTU"],
     },
-    // smile: {
-    //     id: 5,
-    //     key: "smile",
-    //     label: "Smile",
-    //     logo: require("@assets/images/services/smile.png")
-    // },
   },
   education: {
     jamb: {
