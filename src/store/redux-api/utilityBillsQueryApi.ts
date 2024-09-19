@@ -65,7 +65,7 @@ export const utilityBillsQueryApi = createApi({
     getCablePlans: builder.query<CableResponse, void>({
       query: () => ({
         url: route("services.fetch"),
-        params: { service: "cable-tv" },
+        params: { service: "cable" },
       }),
       providesTags: ["Cable"],
     }),
@@ -86,7 +86,7 @@ export const utilityBillsQueryApi = createApi({
     getEpinPlans: builder.query<EpinPurchaseResponse, void>({
       query: () => ({
         url: route("services.fetch"),
-        params: { service: "epins-nigeria" },
+        params: { service: "epin" },
       }),
       providesTags: ["Epin"],
     }),

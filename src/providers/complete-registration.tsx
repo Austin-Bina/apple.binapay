@@ -45,12 +45,16 @@ type ProviderProps = {
 
 const schema = z
   .object({
-    email: z.string().email("Invalid email").trim(),
-    password: z.string().min(8, "Too short").trim(),
-    password_confirmation: z.string().min(8, "Too short").trim(),
-    pin: z.string().min(4, "Too short").trim(),
-    pin_confirmation: z.string().min(4, "Too short").trim(),
-    avatar: z.string().min(2, "Too short").trim(),
+    email: z
+      .string()
+      .email("Please enter a valid email address")
+      .trim()
+      .transform((val) => val.toLowerCase()),
+    password: z.string().min(8, "Password too weak").trim(),
+    password_confirmation: z.string().min(8, "Password too weak").trim(),
+    pin: z.string().min(4, "Must be 4 digits").trim(),
+    pin_confirmation: z.string().min(4, "Must be 4 digits").trim(),
+    avatar: z.string().min(2, "Please select an avatar").trim(),
     gender: z.enum(["male", "female"]),
   })
   .refine((data) => data.password === data.password_confirmation, {

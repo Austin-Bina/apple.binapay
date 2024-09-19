@@ -6,7 +6,7 @@ import { ReferralReward } from "@type/user";
 
 type ReferralRewardsResponse = {
   data: ReferralReward[];
-  meta: { has_more: boolean, total_earnings: number };
+  meta: { has_more: boolean; total: number; total_earnings: number };
 };
 
 type ReferralRewardBody = {
@@ -36,17 +36,17 @@ export const referralQueryApi = createApi({
       serializeQueryArgs: ({ endpointName }) => {
         return endpointName;
       },
+      forceRefetch({ currentArg, previousArg }) {
+        return currentArg !== previousArg;
+      },
       transformResponse: (response: any) => ({
         data: response.data ?? [],
-        meta: response.meta ?? { has_more: false },
+        meta: response.meta ?? { has_more: false, total: 0, total_earnings: 0 },
       }),
       merge: (currentCache, newItems) => {
         return {
           ...newItems,
-          data: {
-            ...currentCache.data,
-            ...newItems.data,
-          },
+          data: [...currentCache.data, ...newItems.data],
         };
       },
     }),

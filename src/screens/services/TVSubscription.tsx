@@ -17,7 +17,7 @@ import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { useGetCablePlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { selectUser } from "@store/selectors/auth";
 import { addPendingTransaction, setTransactionError } from "@store/slice/transactionSlice";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, TouchableOpacity, Keyboard, RefreshControl } from "react-native";
 import { Image } from "react-native-element-image";
@@ -53,6 +53,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const gotvSubPeriods = [
+  { label: "All", id: "all" },
   { label: "Weekly", id: "week" },
   { label: "Monthly", id: "month" },
   { label: "Quarterly (3 Months)", id: "quarter" },
@@ -63,9 +64,8 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [readyToPay, setReadyToPay] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
-  const [cablePackages, setCablePackages] = useState<CablePlan[]>([]);
 
-  const { data, isLoading, refetch } = useGetCablePlansQuery();
+  const { data: queryData, isLoading, refetch } = useGetCablePlansQuery();
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
@@ -78,7 +78,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
       provider: "gotv",
       amount: "0",
       smart_card_number: "",
-      period: "month",
+      period: "all",
       package: "",
       customer_name: "",
       package_name: "",
@@ -96,31 +96,29 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
     }
   }, [values.smart_card_number]);
 
-  useEffect(() => {
-    if (!isLoading && data?.cable_plans) {
-      const initialPackages = data.cable_plans[provider] || [];
-      setCablePackages(initialPackages);
+  const cablePackages = useMemo(() => {
+    if (!queryData?.cable_plans) return [];
+
+    const selectedPeriod = values.period;
+    const cablePlans = queryData.cable_plans[provider] || [];
+
+    if (!selectedPeriod) {
+      return cablePlans;
     }
-  }, [data, provider, isLoading]);
 
-  const filterPlansByPeriod = useCallback(
-    (selectedPeriod: string) => {
-      const cablePlans = data?.cable_plans[provider] || [];
+    if (selectedPeriod === "all") {
+      return cablePlans;
+    }
 
-      if (!selectedPeriod) {
-        return setCablePackages(cablePlans);
-      }
+    const fuse = new Fuse(cablePlans, {
+      keys: ["package"],
+      threshold: 0.4,
+    });
 
-      const fuse = new Fuse(cablePlans, {
-        keys: ["package"],
-        threshold: 0.4,
-      });
+    const filteredPlans = fuse.search(selectedPeriod).map((result) => result.item);
 
-      const filteredPlans = fuse.search(selectedPeriod).map((result) => result.item);
-      setCablePackages(filteredPlans);
-    },
-    [values.period, data?.cable_plans],
-  );
+    return filteredPlans;
+  }, [queryData, values.period, provider]);
 
   const validateCard = async () => {
     const { provider, smart_card_number } = values;
@@ -289,7 +287,6 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
           name="period"
           control={control}
           data={gotvSubPeriods}
-          onDataSelect={(selectedPeriod) => filterPlansByPeriod(selectedPeriod.id)}
         />
         <DropdownMenuField
           label="Package"

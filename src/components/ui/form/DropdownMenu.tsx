@@ -5,7 +5,6 @@ import { View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { HelperText, Text } from "react-native-paper";
 import ArrowDown from "@assets/icons/arrow-down.svg";
-import { Image } from "react-native-element-image";
 import { AvatarImage } from "@components/avatar";
 
 type Props = {

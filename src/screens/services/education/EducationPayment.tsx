@@ -253,12 +253,12 @@ export default function EducationPaymentScreen({ route }: Props) {
                 </View>
                 <View style={tw`flex-row justify-between my-2`}>
                   <Text variant="bodyLarge">Amount:</Text>
-                  <Text style={tw`text-lg font-bold`}>{values.amount}</Text>
+                  <Text style={tw`text-lg font-bold`}>{formatToNaira(values.amount)}</Text>
                 </View>
-                <View style={tw`flex-row items-center justify-between my-2`}>
+                {/* <View style={tw`flex-row items-center justify-between my-2`}>
                   <Text variant="bodyLarge">Name:</Text>
                   <Text style={tw`text-lg font-bold`}>Abdul Amos</Text>
-                </View>
+                </View> */}
               </View>
               <Button
                 mode="contained"
