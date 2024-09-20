@@ -4,15 +4,13 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import CopyReferralCode from "@components/ui/widgets/CopyReferralCode";
 import tw from "@lib/tailwind";
 import { AccountStackScreenProps } from "@navigators/types";
-import { FlashList } from "@shopify/flash-list";
 import { useTypedSelector } from "@store/common";
 import { useGetReferralRewardsQuery } from "@store/redux-api/referralQueryApi";
 import { selectUser } from "@store/selectors/auth";
-import { ReferralReward } from "@type/user";
 import { formatToNaira } from "@utils/money";
 import React, { useMemo, useState } from "react";
 import { RefreshControl, View } from "react-native";
-import { ActivityIndicator, Card, Chip, Text } from "react-native-paper";
+import { Card, Chip, Text } from "react-native-paper";
 
 type Props = AccountStackScreenProps<"Earning Summary">;
 
@@ -56,7 +54,7 @@ export default function EarningSummaryScreen({}: Props) {
         <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
           View Your Earnings
         </Text>
-        {error && !isFetching && renderErrorScreen()}
+        {!!error && !isFetching && renderErrorScreen()}
         <Card mode="contained" style={tw`bg-primary-50 py-2 my-8`}>
           <Card.Content style={tw`items-center`}>
             <Text style={tw`text-gray-900 font-bold text-xl text-center mb-1`}>

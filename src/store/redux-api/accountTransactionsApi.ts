@@ -1,44 +1,30 @@
-import { env } from "@env";
 import { route } from "@helpers/route";
-import { getAuthToken } from "@lib/security";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { CustomPagination } from "@type/app";
-import { Transaction } from "@type/transaction";
+import { axiosBaseQuery } from "@lib/api";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { WalletTransaction } from "@type/transaction";
 
 type RecentTransactionsResponse = {
   transactions: {
-    [group: string]: Transaction[];
+    [group: string]: WalletTransaction[];
   };
 };
 
 type TransactionResponse = {
-  data: {
-    [group: string]: Transaction[];
+  transactions: {
+    [group: string]: WalletTransaction[];
   };
-  current_page: number;
-  from: number | null;
-  to: number | null;
-  per_page: number;
-  total: number;
+  meta: {
+    has_more: boolean;
+  };
 };
 
 type TransactionBody = {
   page: number;
-  per_page: number;
 };
 
 export const accountTransactionsApi = createApi({
   reducerPath: "accountTransactions",
-  baseQuery: fetchBaseQuery({
-    baseUrl: env.BASE_URL,
-    prepareHeaders: async (headers) => {
-      headers.set("Content-Type", "application/json");
-      headers.set("Accept", "application/json");
-      headers.set("Authorization", `Bearer ${await getAuthToken()}`);
-
-      return headers;
-    },
-  }),
+  baseQuery: axiosBaseQuery(),
   tagTypes: ["Transactions Summary", "Transactions"],
   endpoints: (builder) => ({
     fetchRecentTransactions: builder.query<RecentTransactionsResponse, void>({
@@ -55,14 +41,34 @@ export const accountTransactionsApi = createApi({
       serializeQueryArgs: ({ endpointName }) => {
         return endpointName;
       },
+      forceRefetch({ currentArg, previousArg }) {
+        return currentArg !== previousArg;
+      },
+      transformResponse: (response: TransactionResponse) => ({
+        transactions: response.transactions ?? {},
+        meta: response.meta ?? { has_more: false },
+      }),
       providesTags: ["Transactions"],
       merge: (currentCache, newItems) => {
+        const newGroupedTransactions = newItems.transactions;
+
+        const mergedTransactions = { ...currentCache.transactions };
+
+        Object.entries(newGroupedTransactions).forEach(([group, newTransactions]) => {
+          if (!mergedTransactions[group]) {
+            mergedTransactions[group] = [];
+          }
+          // Create a Set of existing transaction IDs in the current group
+          const existingTransactionIds = new Set(mergedTransactions[group].map((t) => t.id));
+          const uniqueNewTransactions = newTransactions.filter(
+            (newTransaction) => !existingTransactionIds.has(newTransaction.id),
+          );
+          mergedTransactions[group] = [...mergedTransactions[group], ...uniqueNewTransactions];
+        });
+
         return {
           ...newItems,
-          transactions: {
-            ...currentCache,
-            ...newItems,
-          },
+          transactions: mergedTransactions,
         };
       },
     }),

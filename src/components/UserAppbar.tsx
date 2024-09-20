@@ -5,13 +5,13 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Appbar, Badge, Text } from "react-native-paper";
 import { selectUser } from "@store/selectors/auth";
-import { selectUnreadCount } from "@store/selectors/notifications";
 import { Colors } from "@constants/theme";
 import { AvatarImage } from "./avatar";
+import { selectNotificationMeta } from "@store/selectors/notification";
 
 export default function UserAppbar() {
   const user = useTypedSelector(selectUser);
-  const unreadCount = useTypedSelector(selectUnreadCount);
+  const notificationInfo = useTypedSelector(selectNotificationMeta);
 
   return (
     <Appbar.Header style={tw`bg-white py-2 mt-2`}>
@@ -61,8 +61,8 @@ export default function UserAppbar() {
             },
           }}
           size={18}
-          visible={unreadCount > 0}>
-          {unreadCount}
+          visible={notificationInfo.unread_count > 0}>
+          {notificationInfo.unread_count}
         </Badge>
       </View>
     </Appbar.Header>

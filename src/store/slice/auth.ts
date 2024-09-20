@@ -6,10 +6,10 @@ import { saveAuthToken } from "@lib/security";
 import { createSlice, createEntityAdapter, PayloadAction, EntityState } from "@reduxjs/toolkit";
 import { DVA, User } from "@type/user";
 import { AxiosError } from "axios";
-import { Transaction } from "@type/transaction";
+import { WalletTransaction } from "@type/transaction";
 import { accountTransactionsApi } from "@store/redux-api/accountTransactionsApi";
 import { createTypedAsyncThunk } from "@store/common";
-import { notificationsActions } from "./notificationSlice";
+import { notificationsApi } from "@store/redux-api/notificationApi";
 
 interface AuthMetaInfo {
   access_token: string;
@@ -20,7 +20,7 @@ type AccountSummary = {
   profile: User;
   account_summary: {
     recent_transactions: {
-      [group: string]: Transaction[];
+      [group: string]: WalletTransaction[];
     };
     unread_notifications: number;
   };
@@ -49,7 +49,7 @@ type RegisterPayload = RegistrationFormValues;
 type UserProfile = {
   user: User;
   transactions: {
-    [group: string]: Transaction[];
+    [group: string]: WalletTransaction[];
   };
 };
 
@@ -147,7 +147,11 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
         }),
       );
 
-      dispatch(notificationsActions.updateBadgeCount(unread_notifications));
+      dispatch(
+        notificationsApi.util.updateQueryData("fetchNotifications", { page: 1 }, (draft) => {
+          draft.meta.unread_count = unread_notifications;
+        }),
+      );
 
       return {
         user: profile,

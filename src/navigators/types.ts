@@ -86,8 +86,9 @@ export type ServicesParamList = {
   Education: NavigatorScreenParams<EducationParamList>;
   "Airtime EPIN Purchase": undefined;
   "Airtime Swap": undefined;
-  "Service Purchase Success": {
+  [SCREENS.VIEW_TRANSACTION]: {
     transactionId: TransactionForm;
+    type?: "utility" | "wallet";
   };
   "Confirm Transaction": {
     transactionId: TransactionForm;

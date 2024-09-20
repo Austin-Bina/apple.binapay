@@ -15,6 +15,8 @@ import API from "@lib/api";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { getPendingTransaction, setTransactionError, updatePendingTransaction } from "@store/slice/transactionSlice";
 import { AxiosError } from "axios";
+import { TransactionResponse } from "@type/transaction";
+import { defaultTransactionResponse } from "@helpers/transaction";
 
 type Props = ServicesStackScreenProps<"Confirm Transaction">;
 
@@ -39,6 +41,7 @@ const sources = {
   [TransactionForm.Education]: route("services.education.purchase"),
   [TransactionForm.Epins]: route("services.epins"),
 } as const;
+
 
 export default function TransactionConfirmationScreen({ navigation, route }: Props) {
   const [fetching, setFetching] = useState(false);
@@ -73,22 +76,22 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
             pin,
           });
 
-          const result = response.data;
-          if (result?.transaction && "details" in result.transaction) {
-            dispatch(
-              updatePendingTransaction({
-                ...pendingTransaction,
-                data: {
-                  ...pendingTransaction.data,
-                  success: {
-                    ...result.transaction,
-                  },
-                },
-              }),
-            );
-          }
+          const result = response.data as TransactionResponse;
 
-          navigation.navigate("Service Purchase Success", route.params);
+          dispatch(
+            updatePendingTransaction({
+              ...pendingTransaction,
+              data: {
+                ...pendingTransaction.data,
+                response: {
+                  ...defaultTransactionResponse,
+                  ...result,
+                },
+              },
+            }),
+          );
+
+          navigation.navigate("View Transaction", route.params);
         } catch (error) {
           const axiosError = error as AxiosError<any>;
           const { response } = axiosError;
@@ -97,27 +100,18 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
             const result = response.data;
 
             if (result?.errors?.pin) {
-              reset({
-                pin: "",
-              });
               return setError("pin", { message: result.errors.pin[0] });
-            } else if (result?.transaction_data) {
-              const { remark, description, status, code } = result.transaction_data;
-              dispatch(setTransactionError({ code, status, title: remark, description }));
+            } else if (result?.transaction_info) {
+              const fullResponse = { ...defaultTransactionResponse, ...result };
+              dispatch(setTransactionError(fullResponse as TransactionResponse));
             } else {
-              dispatch(
-                setTransactionError({
-                  code: "500",
-                  status: "error",
-                  title: "Something went wrong",
-                  description: "We could not complete the request, please try again.",
-                }),
-              );
+              dispatch(setTransactionError(defaultTransactionResponse));
             }
           }
 
           navigation.goBack();
         } finally {
+          reset({ pin: "" });
           setFetching(false);
         }
       };

@@ -10,16 +10,16 @@ import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
 import { utilityBillsQueryApi } from "./redux-api/utilityBillsQueryApi";
 import { accountTransactionsApi } from "./redux-api/accountTransactionsApi";
 import { referralQueryApi } from "./redux-api/referralQueryApi";
-import { initialNotificationState, notificationSlice } from "./slice/notificationSlice";
+import { notificationsApi } from "./redux-api/notificationApi";
 
 const defaultReducer = combineReducers({
   auth: authSlice.reducer,
   settings: settingsSlice.reducer,
   transaction: transactionSlice.reducer,
-  notifications: notificationSlice.reducer,
   [utilityBillsQueryApi.reducerPath]: utilityBillsQueryApi.reducer,
   [accountTransactionsApi.reducerPath]: accountTransactionsApi.reducer,
   [referralQueryApi.reducerPath]: referralQueryApi.reducer,
+  [notificationsApi.reducerPath]: notificationsApi.reducer,
 });
 
 const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, UnknownAction>(
@@ -36,7 +36,7 @@ const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, Unkno
         settings: s.settings,
         auth: initialAuthState,
         transaction: initialTransactionState,
-        notifications: initialNotificationState,
+        [notificationsApi.reducerPath]: {} as any,
         [utilityBillsQueryApi.reducerPath]: {} as any,
         [accountTransactionsApi.reducerPath]: {} as any,
         [referralQueryApi.reducerPath]: {} as any,
@@ -69,6 +69,7 @@ export const store = createStore(
   utilityBillsQueryApi.middleware,
   accountTransactionsApi.middleware,
   referralQueryApi.middleware,
+  notificationsApi.middleware,
 );
 
 export const persistor = persistStore(store);

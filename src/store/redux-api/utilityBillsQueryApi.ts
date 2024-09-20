@@ -1,7 +1,6 @@
-import { env } from "@env";
 import { route } from "@helpers/route";
-import { getAuthToken } from "@lib/security";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "@lib/api";
+import { createApi } from "@reduxjs/toolkit/query/react";
 import { CablePlan, DataPlan, EducationPlan, EpinPlan, ServiceDetails } from "@type/app";
 
 interface DataResponse {
@@ -43,16 +42,7 @@ export interface DetailsBody {
 
 export const utilityBillsQueryApi = createApi({
   reducerPath: "utilityBillsApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: env.BASE_URL,
-    prepareHeaders: async (headers) => {
-      headers.set("Content-Type", "application/json");
-      headers.set("Accept", "application/json");
-      headers.set("Authorization", `Bearer ${await getAuthToken()}`);
-
-      return headers;
-    },
-  }),
+  baseQuery: axiosBaseQuery(),
   tagTypes: ["Data", "Cable", "Education", "Education Service Details", "Epin"],
   endpoints: (builder) => ({
     getDataPlans: builder.query<DataResponse, void>({

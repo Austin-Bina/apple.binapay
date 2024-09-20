@@ -1,4 +1,5 @@
 export const SCREENS = {
+  MAIN: "Main",
   HOME: "Home",
   DASHBOARD: "Dashboard",
   PROFILE: "Profile",
@@ -36,7 +37,7 @@ export const SCREENS = {
   VERIFY_EMAIL: "Verify Email",
   COMPLETE_REGISTRATION: "Complete Registration",
   START: "Start",
-  SERVICE_PURCHASE_SUCCESS: "Service Purchase Success",
+  VIEW_TRANSACTION: "View Transaction",
   TRANSACTION_DETAILS: "Transaction Details",
   SETTINGS: "Settings",
   VIEW_NOTIFICATION: "View Notification",

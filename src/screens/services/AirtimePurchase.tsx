@@ -31,17 +31,23 @@ const MIN_PAYMENT_AMOUNT = 50;
 
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
-  phone: z.string().min(11),
+  phone: z.string().length(11, "Invalid phone number"),
   amount: z
     .string()
     .trim()
     .transform((val) => {
       const numericValue = val ? parseFloat(val.replace(/[₦,]/g, "")) : 0;
-      return numericValue;
+      return `${numericValue}`;
     })
-    .refine((val) => !isNaN(val) && val >= MIN_PAYMENT_AMOUNT, {
-      message: `Amount must not be less than ${formatToNaira(MIN_PAYMENT_AMOUNT)}`,
-    }),
+    .refine(
+      (val) => {
+        const numericValue = parseFloat(val);
+        return numericValue >= MIN_PAYMENT_AMOUNT;
+      },
+      {
+        message: `Amount must not be less than ${formatToNaira(MIN_PAYMENT_AMOUNT)}`,
+      },
+    ),
   type: z.string(),
   ported_number: z.boolean(),
   pin: z.string().optional(),
@@ -72,7 +78,6 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
       type: "VTU",
       ported_number: false,
     },
-    mode: "onChange",
   });
 
   const values = watch();
@@ -144,7 +149,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
           render={({ field: { onChange, onBlur, value } }) => (
             <CustomTextInput
               label="Phone Number"
-              placeholder="+234 000 000 0000"
+              placeholder="08012345678"
               mode="outlined"
               onBlur={onBlur}
               value={value}

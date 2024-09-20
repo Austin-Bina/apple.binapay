@@ -93,7 +93,7 @@ export interface CustomPagination<T> {
   total: number;
 }
 
-export interface Notification {
+export interface BinaNotification {
   id: string;
   type: "deposit" | "service_purchase" | "marketing";
   notifiable_id: string;

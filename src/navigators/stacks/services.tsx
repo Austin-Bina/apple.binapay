@@ -8,7 +8,7 @@ import ListServicesScreen from "@screens/services/List";
 import AirtimePurchaseScreen from "@screens/services/AirtimePurchase";
 import DataPurchaseScreen from "@screens/services/DataPurchase";
 import TransactionConfirmationScreen from "@screens/services/TransactionConfirmation";
-import TransactionSuccessScreen from "@screens/services/TransactionSuccess";
+import ViewTransaction from "@screens/services/ViewTransaction";
 import ElectricityPurchaseScreen from "@screens/services/ElectricityPurchase";
 import AirtimeEPINPurchaseScreen from "@screens/services/AirtimeEPINPurchase";
 import TVSubscriptionScreen from "@screens/services/TVSubscription";
@@ -54,8 +54,8 @@ export default function ServicesStack() {
       <Stack.Screen name="Data Purchase" component={DataPurchaseScreen} />
       <Stack.Screen name="Confirm Transaction" component={TransactionConfirmationScreen} />
       <Stack.Screen
-        name="Service Purchase Success"
-        component={TransactionSuccessScreen}
+        name="View Transaction"
+        component={ViewTransaction}
         options={{ headerShown: false }}
       />
       <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen} />

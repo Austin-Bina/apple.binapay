@@ -1,12 +1,13 @@
-import { VerifiedBadge } from "@components/icons/svg";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { Colors } from "@constants/theme";
 import tw from "@lib/tailwind";
 import { NotificationStackScreenProps } from "@navigators/types";
 import { useTypedSelector } from "@store/common";
-import { notificationSelector } from "@store/selectors/notifications";
+import { useMarkAsReadMutation } from "@store/redux-api/notificationApi";
+import { selectNotificationById } from "@store/selectors/notification";
 import { formatDistanceToNow } from "date-fns";
+import { useEffect } from "react";
 import { View } from "react-native";
 import { Badge, Text } from "react-native-paper";
 
@@ -14,7 +15,15 @@ type Props = NotificationStackScreenProps<"View Notification">;
 
 export default function ViewNotificationScreen({ route }: Props) {
   const { id } = route.params;
-  const notification = useTypedSelector((state) => notificationSelector.selectById(state, id));
+
+  const [markAsRead] = useMarkAsReadMutation();
+  const notification = useTypedSelector(selectNotificationById(id));
+
+  useEffect(() => {
+    if (notification && !notification?.read_at) {
+      markAsRead({ notificationId: notification.id });
+    }
+  }, [notification]);
 
   if (!notification) {
     return (
@@ -47,7 +56,7 @@ export default function ViewNotificationScreen({ route }: Props) {
               <Text variant="labelSmall" style={tw`text-gray-600`}>
                 {key}:
               </Text>
-              <Text variant="bodySmall" style={tw`text-gray-800 text-right w-9/12`}>
+              <Text variant="bodySmall" style={tw`text-gray-800 text-right`}>
                 {String(value)}
               </Text>
             </View>

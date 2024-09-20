@@ -1,26 +1,16 @@
 import { TransactionForm } from "@enum/transaction";
 import { createSlice, createEntityAdapter, PayloadAction } from "@reduxjs/toolkit";
+import { TransactionResponse, UtilityTransaction, WalletTransaction } from "@type/transaction";
 
 interface Transaction {
   id: TransactionForm;
-  data: any & {
-    success?: {
-      title: string;
-      description?: string;
-      logo?: any;
-      details?: {
-        [index: string]: string;
-      };
-    };
+  data: object & {
+    response?: TransactionResponse;
   };
+  view?: WalletTransaction | UtilityTransaction;
 }
 
-interface ErrorState {
-  code: string;
-  status: string;
-  title: string;
-  description: string;
-}
+type ErrorState = TransactionResponse;
 
 interface TransactionState {
   ids: TransactionForm[];

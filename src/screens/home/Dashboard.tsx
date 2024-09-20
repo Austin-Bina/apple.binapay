@@ -26,6 +26,8 @@ import { AccountUpdateEventPayload } from "@type/event";
 import { authSliceActions } from "@store/slice/auth";
 import API from "@lib/api";
 import { route } from "@helpers/route";
+import { navigateToTransaction } from "@helpers/transaction";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 
 const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -219,9 +221,24 @@ type RecentTransactionsProps = {
 };
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const dispatch = useTypedDispatch();
   const { data: queryData, isLoading } = useFetchRecentTransactionsQuery();
 
   const { transactions } = queryData || {};
+
+  const onTransactionPress = async (transactionId: string | number) => {
+    navigateToTransaction({
+      transactionId: transactionId,
+      onStart: () => {
+        setIsProcessing(true);
+      },
+      onFinish: (result) => {
+        setIsProcessing(false);
+      },
+    });
+  };
 
   const dynamicContent = useMemo(() => {
     if (isLoading) {
@@ -243,7 +260,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) =
             <Fragment key={transaction.id}>
               <TouchableOpacity
                 key={transaction.id}
-                onPress={() => {}}
+                onPress={() => onTransactionPress(transaction.id)}
                 style={tw`flex-row items-center justify-between gap-2 p-2 my-2`}>
                 <Fragment>
                   <Avatar.Image
@@ -266,9 +283,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) =
             </Fragment>
           ))}
         </View>
+        <PleaseWaitModal visible={isProcessing} />
       </View>
     ));
-  }, [transactions, isLoading]);
+  }, [transactions, isLoading, isProcessing]);
 
   return (
     <View style={tw`mt-4 mb-20`}>

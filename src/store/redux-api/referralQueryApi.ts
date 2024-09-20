@@ -1,7 +1,6 @@
-import { env } from "@env";
 import { route } from "@helpers/route";
-import { getAuthToken } from "@lib/security";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "@lib/api";
+import { createApi } from "@reduxjs/toolkit/query/react";
 import { ReferralReward } from "@type/user";
 
 type ReferralRewardsResponse = {
@@ -16,16 +15,7 @@ type ReferralRewardBody = {
 
 export const referralQueryApi = createApi({
   reducerPath: "referralApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: env.BASE_URL,
-    prepareHeaders: async (headers) => {
-      headers.set("Content-Type", "application/json");
-      headers.set("Accept", "application/json");
-      headers.set("Authorization", `Bearer ${await getAuthToken()}`);
-
-      return headers;
-    },
-  }),
+  baseQuery: axiosBaseQuery(),
   tagTypes: ["Referral Rewards"],
   endpoints: (builder) => ({
     getReferralRewards: builder.query<ReferralRewardsResponse, ReferralRewardBody>({
@@ -44,11 +34,18 @@ export const referralQueryApi = createApi({
         meta: response.meta ?? { has_more: false, total: 0, total_earnings: 0 },
       }),
       merge: (currentCache, newItems) => {
+        const mergedData = [
+            ...currentCache.data,
+            ...newItems.data.filter(
+                (newItem) => !currentCache.data.some((existingItem) => existingItem.id === newItem.id),
+            ),
+        ];
+
         return {
-          ...newItems,
-          data: [...currentCache.data, ...newItems.data],
+            ...newItems,
+            data: mergedData,
         };
-      },
+    },
     }),
   }),
 });
