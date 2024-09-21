@@ -15,7 +15,7 @@ export default function BinaRewardsScreen({ navigation }: Props) {
   const user = useTypedSelector(selectUser);
 
   return (
-    <Screen style={tw`px-4 justify-between`}>
+    <Screen style={tw`px-4 pb-10 justify-between`}>
       <View>
         <Image source={require("@assets/images/money-and-coins.png")} width={245} style={tw`mx-auto mb-8`} />
         <Text variant="titleLarge" style={tw`text-center text-gray-800 font-bold`}>
@@ -27,7 +27,7 @@ export default function BinaRewardsScreen({ navigation }: Props) {
         </Text>
         {user?.affiliate_id && <CopyReferralCode referralCode={user.affiliate_id} />}
       </View>
-      <View style={tw`px-4 pb-4 pt-1`}>
+      <View style={tw`px-4`}>
         <Button
           style={tw`w-full rounded-full`}
           contentStyle={tw`py-2`}

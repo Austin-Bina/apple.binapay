@@ -22,7 +22,6 @@ export const routes = {
         getProfile: "/api/v1/account/profile",
         updateProfile: "/api/v1/account/profile",
         manageNotifications: "/api/v1/account/notifications",
-        reserveAccount: "/api/v1/account/reserve-account",
         recentTransactions: "/api/v1/account/recent-transactions",
         transactions: "/api/v1/account/transactions",
         referralActivities: "/api/v1/account/referral-activities",
@@ -34,9 +33,13 @@ export const routes = {
         markAllAsRead: "/api/v1/notifications/read_all",
         clearDeviceDetails: "/api/v1/notifications/clear_device_details",
       },
+      kyc: {
+        verifyBvn: "/api/v1/kyc/verify-bvn",
+      },
       bank: {
+        resolveAccount: "/api/v1/bank/resolve",
+        reserveAccount: "/api/v1/bank/reserve",
         list: "/api/v1/banks",
-        resolveAccount: "/api/v1/bank/resolve-account",
       },
       services: {
         fetch: "/api/v1/payment/fetch",
@@ -51,6 +54,11 @@ export const routes = {
           purchase: "/api/v1/education/purchase",
           serviceDetails: "/api/v1/education/service-details",
         },
+      },
+      funding: {
+        banks: "/api/v1/funding/banks",
+        initiate: "/api/v1/funding/initiate",
+        uploadProof: "/api/v1/funding/upload-proof",
       },
       transactions: {
         get: "/api/v1/transaction/:id",

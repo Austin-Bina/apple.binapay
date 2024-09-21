@@ -18,6 +18,7 @@ export interface User {
   phone: string;
   birthdate: string;
   gender: string | null;
+  support_id: string | null;
   affiliate_id: string;
   referred_by: string | null;
   email_verified_at: string;

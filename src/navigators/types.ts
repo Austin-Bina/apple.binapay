@@ -36,12 +36,12 @@ export type AuthParamList = {
 export type AuthStackScreenProps<T extends keyof AuthParamList> = NativeStackScreenProps<AuthParamList, T>;
 
 export type AccountParamList = {
-  Profile: undefined;
-  Settings: undefined;
-  "Change Password": undefined;
-  "BinaPay Rewards": undefined;
-  "Earning Summary": undefined;
-  "Verify Account": undefined;
+  [SCREENS.PROFILE]: undefined;
+  [SCREENS.SETTINGS]: undefined;
+  [SCREENS.CHANGE_PASSWORD]: undefined;
+  [SCREENS.BINAPAY_REWARDS]: undefined;
+  [SCREENS.EARNING_SUMMARY]: undefined;
+  [SCREENS.VERIFY_ACCOUNT]: NavigatorScreenParams<KYCParamList>;
 };
 export type AccountStackScreenProps<T extends keyof AccountParamList> = NativeStackScreenProps<AccountParamList, T>;
 
@@ -63,11 +63,24 @@ export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScr
 
 export type AddMoneyParamList = {
   [SCREENS.FUND_ACCOUNT_OPTIONS]: undefined;
-  [SCREENS.MANUAL_FUND]: undefined;
-  [SCREENS.CARD_DETAILS]: undefined;
+  [SCREENS.MANUAL_FUND_STACK]: NavigatorScreenParams<ManualFundParamList>;
   [SCREENS.PAYMENT_SUCCESS]: undefined;
 };
 export type AddMoneyStackScreenProps<T extends keyof AddMoneyParamList> = NativeStackScreenProps<AddMoneyParamList, T>;
+
+export type ManualFundParamList = {
+  [SCREENS.MANUAL_FUND]: {
+    amount: string;
+  };
+  [SCREENS.MANUAL_FUND_PROOF]: {
+    reference: string;
+  };
+  [SCREENS.MANUAL_FUND_WAIT]: undefined;
+};
+export type ManualFundStackScreenProps<T extends keyof ManualFundParamList> = NativeStackScreenProps<
+  ManualFundParamList,
+  T
+>;
 
 export type NotificationParamList = {
   "List Notifications": undefined;
@@ -111,4 +124,15 @@ export type EducationStackScreenProps<T extends keyof EducationParamList> = Nati
 export type StackNavigationProp<T extends keyof StackParamList> = CompositeNavigationProp<
   NativeStackNavigationProp<StackParamList, T>,
   BottomTabNavigationProp<TabParamList>
+>;
+
+export type KYCParamList = {
+  [SCREENS.ACCOUNT_VERIFICATION_OPTIONS]: undefined;
+  [SCREENS.NAME_CHECK_VERIFICATION]: undefined;
+  [SCREENS.BVN_VERIFICATION]: undefined;
+};
+
+export type KYCStackScreenProps<T extends keyof KYCParamList> = NativeStackScreenProps<
+  KYCParamList,
+  T
 >;

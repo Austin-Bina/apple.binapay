@@ -2,15 +2,13 @@ import Screen from "@components/ui/shared/Screen";
 import tw from "@lib/tailwind";
 import React, { Fragment } from "react";
 import { Linking, View } from "react-native";
-import { Appbar, Avatar, Divider, Text, TouchableRipple } from "react-native-paper";
-import { SvgProps } from "react-native-svg";
+import { Appbar, Divider, Text, TouchableRipple } from "react-native-paper";
 import AngledRightArrow from "@assets/icons/angled-right-arrow.svg";
 import SpeechBubbleIcon from "@assets/icons/speech-bubble-check.svg";
 import KeyIcon from "@assets/icons/key.svg";
 import SupportIcon from "@assets/icons/support-head.svg";
 import PrivacyIcon from "@assets/icons/privacy.svg";
 import LogoutIcon from "@assets/icons/logout.svg";
-import { Colors } from "@constants/theme";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
 import { authSliceActions } from "@store/slice/auth";
@@ -19,6 +17,9 @@ import { selectIsLoggingIn, selectUser } from "@store/selectors/auth";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { AvatarImage } from "@components/avatar";
 import { scale } from "react-native-size-matters";
+import { SCREENS } from "@constants/screens";
+import { Action } from "@components/screens/account";
+import { AccountTier } from "@enum/user";
 
 type Props = AccountStackScreenProps<"Settings">;
 
@@ -26,6 +27,11 @@ export default function SettingScreen({ navigation }: Props) {
   const user = useTypedSelector(selectUser);
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
   const dispatch = useTypedDispatch();
+
+  const tier1 = user?.account_tier === AccountTier.Tier1;
+  const tier2 = user?.account_tier === AccountTier.Tier2;
+
+  const verificationStatusText = tier1 ? "Upgrade to Tier 2" : "Verified";
 
   const handleLogout = () => {
     dispatch(authSliceActions.doLogout());
@@ -45,7 +51,11 @@ export default function SettingScreen({ navigation }: Props) {
           <Fragment>
             <View style={tw`flex-row items-center justify-between py-3.5`}>
               <View style={tw`flex-row items-center gap-2.5`}>
-                <AvatarImage avatar={user?.avatar} size={scale(60)} svgProps={{ width: scale(60), height: scale(60) }} />
+                <AvatarImage
+                  avatar={user?.avatar}
+                  size={scale(60)}
+                  svgProps={{ width: scale(60), height: scale(60) }}
+                />
                 <View>
                   <Text variant="titleMedium">{user?.name}</Text>
                   <Text variant="bodySmall">Personal Information</Text>
@@ -59,10 +69,14 @@ export default function SettingScreen({ navigation }: Props) {
         <Action
           title="Verification"
           ItemIcon={SpeechBubbleIcon}
-          onPress={() => {}}
+          onPress={() => {
+            navigation.navigate(SCREENS.VERIFY_ACCOUNT, {
+              screen: SCREENS.ACCOUNT_VERIFICATION_OPTIONS,
+            });
+          }}
           badgeElement={
             <View style={tw`bg-secondary-50 rounded-full py-1 px-5`}>
-              <Text style={tw`text-secondary-500 text-xs font-medium`}>Upgrade to Tier 2</Text>
+              <Text style={tw`text-secondary-500 text-xs font-medium`}>{verificationStatusText}</Text>
             </View>
           }
         />
@@ -77,7 +91,7 @@ export default function SettingScreen({ navigation }: Props) {
           title="Help & Support"
           ItemIcon={SupportIcon}
           onPress={() => {
-            Linking.openURL("https://binapay.co/help");
+            Linking.openURL("https://support.binapay.co/login");
           }}
         />
         <Action
@@ -97,35 +111,3 @@ export default function SettingScreen({ navigation }: Props) {
     </Screen>
   );
 }
-
-interface ActionProps {
-  onPress: () => void;
-  title: string;
-  ItemIcon: React.FC<SvgProps>;
-  badgeElement?: React.ReactNode;
-  backgroundColor?: string;
-}
-const Action = ({ onPress, title, ItemIcon, badgeElement, backgroundColor = Colors.primary[50] }: ActionProps) => {
-  return (
-    <TouchableRipple onPress={onPress} style={tw`my-1`}>
-      <View style={tw`flex-row justify-between items-center px-4 my-1`}>
-        <View style={tw`flex-row items-center gap-3`}>
-          <View
-            style={[
-              tw`justify-center h-12 w-12 items-center p-4 bg-primary-50 rounded-full`,
-              {
-                backgroundColor,
-              },
-            ]}>
-            <ItemIcon width={24} height={24} />
-          </View>
-          <Text style={tw`text-base font-medium`}>{title}</Text>
-        </View>
-        <View style={tw`flex-row items-center`}>
-          {badgeElement}
-          <AngledRightArrow width={20} />
-        </View>
-      </View>
-    </TouchableRipple>
-  );
-};

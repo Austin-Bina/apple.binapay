@@ -139,17 +139,11 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
       const response = await API.get(route("account.getProfile"));
       const { profile, account_summary } = response.data as AccountSummary;
 
-      const { recent_transactions, unread_notifications } = account_summary;
+      const { recent_transactions } = account_summary;
 
       dispatch(
         accountTransactionsApi.util.updateQueryData("fetchRecentTransactions", undefined, (draft) => {
           draft.transactions = recent_transactions;
-        }),
-      );
-
-      dispatch(
-        notificationsApi.util.updateQueryData("fetchNotifications", { page: 1 }, (draft) => {
-          draft.meta.unread_count = unread_notifications;
         }),
       );
 
@@ -159,6 +153,12 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
     } catch (error: any) {
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;
+
+      if (response?.status === 401) {
+        dispatch(authSliceActions.logout());
+        
+        return rejectWithValue(response.data);
+      }
 
       if (response) {
         const { message } = response.data;
@@ -240,21 +240,7 @@ const doLogin = createTypedAsyncThunk<LoginResponse, LoginPayload>(
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;
 
-      if (response && response.status === 401) {
-        const { message } = response.data;
-
-        const hasAuthErrorMsg = message && typeof message === "string";
-
-        if (hasAuthErrorMsg) {
-          showToast({ message: message });
-        } else {
-          showToast({ message: "Authentication error. Please try again." });
-        }
-
-        if (!message) {
-          throw message;
-        }
-
+      if (response) {
         return rejectWithValue(response.data);
       }
 

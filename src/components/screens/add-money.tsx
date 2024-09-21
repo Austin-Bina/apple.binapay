@@ -4,81 +4,55 @@ import tw from "@lib/tailwind";
 import { AddMoneyStackScreenProps } from "@navigators/types";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Dimensions, ImageBackground, View } from "react-native";
+import { ImageBackground, View } from "react-native";
 import { Button, IconButton, Text } from "react-native-paper";
-import { scale } from "react-native-size-matters";
 import { z } from "zod";
 import * as Clipboard from "expo-clipboard";
 import Banner from "@components/ui/banner";
-import { Image } from "react-native-element-image";
 import { DVA } from "@type/user";
+import { SCREENS } from "@constants/screens";
+import { zodAmountValidation } from "@utils/money";
 
-type CardViewProps = AddMoneyStackScreenProps<"Fund Account Options"> & {
+type ManualFundViewProps = AddMoneyStackScreenProps<"Fund Account Options"> & {
   comingSoon?: boolean;
 };
 
 const schema = z.object({
-  amount: z.string(),
+  amount: zodAmountValidation(2000),
 });
 
-const deviceWidth = Dimensions.get("window").width;
-
-const CardView: React.FC<CardViewProps> = ({ navigation, comingSoon }) => {
-  const { control, watch } = useForm({
+const ManualFundView: React.FC<ManualFundViewProps> = ({ navigation }) => {
+  const { control, handleSubmit } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      amount: "",
+      amount: "2000",
     },
   });
-  const values = watch();
 
-  const onSubmit = () => {
-    navigation.navigate("Card Details");
-  };
-
-  if (comingSoon) {
-    return (
-      <View style={tw`flex-1 justify-center items-center`}>
-        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-          Coming Soon
-        </Text>
-        <Text variant="bodyMedium" style={tw`text-gray-400`}>
-          This feature is not yet available.
-        </Text>
-      </View>
-    );
-  }
+  const onSubmit = handleSubmit(async ({ amount }) => {
+    navigation.navigate(SCREENS.MANUAL_FUND_STACK, {
+      screen: SCREENS.MANUAL_FUND,
+      params: {
+        amount: amount,
+      },
+    });
+  });
 
   return (
-    <View>
-      <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-        Fund with Card
-      </Text>
-      <Text variant="bodyMedium" style={tw`text-gray-400`}>
-        Use your card to conveniently add funds to your BinaPay wallet.
-      </Text>
-      <Banner style={tw`mt-6`} message="Funding wallet with card attracts additional charges of 4% only." />
-      <View>
+    <View style={tw`flex-1 justify-between`}>
+      <View style={tw`flex-1`}>
+        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
+          Manual Funding
+        </Text>
+        <Text variant="bodyMedium" style={tw`text-gray-400`}>
+          Fund your BinaPay wallet manually. The minimum amount is ₦2,000.
+        </Text>
+        <Banner style={tw`mt-6`} message="Manual funding requires a minimum of ₦2,000." />
         <NairaInput name="amount" control={control} />
-        <View style={tw`bg-green-50 mt-4 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full`}>
-          <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
-            You get ₦{values.amount}
-          </Text>
-        </View>
       </View>
-      <Button
-        style={tw`mt-10 mb-[30px] w-full rounded-full`}
-        contentStyle={tw`py-2`}
-        onPress={onSubmit}
-        mode="contained">
-        <Text style={tw`text-white text-center text-base font-bold`}>Continue</Text>
+      <Button style={tw`mt-10 w-full rounded-full`} contentStyle={tw`py-2`} onPress={onSubmit} mode="contained">
+        Continue
       </Button>
-
-      <Image
-        source={require("@assets/images/secured-by-paystack.png")}
-        width={scale(deviceWidth - 200)}
-        style={tw`mx-auto`}
-      />
     </View>
   );
 };
@@ -149,4 +123,4 @@ const BankCard: React.FC<BankCardProps> = ({ accountName, bankName, accountNumbe
   );
 };
 
-export { CardView, BankCard, BankView };
+export { ManualFundView, BankCard, BankView };

@@ -17,18 +17,17 @@ import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import { serviceProvidersMap } from "@constants/providers";
 import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import { METER_TYPE } from "@enum/providers";
-import { formatToNaira } from "@utils/money";
+import { formatToNaira, zodAmountValidation } from "@utils/money";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import API from "@lib/api";
 import { route } from "@helpers/route";
-import { addPendingTransaction, setTransactionError } from "@store/slice/transactionSlice";
+import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { TransactionForm } from "@enum/transaction";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import { Colors } from "@constants/theme";
 import { SelectCloseIcon, SelectOpenIcon } from "@components/icons/svg";
 import { AxiosError } from "axios";
-import { showToast } from "@helpers/toast";
 
 type Props = ServicesStackScreenProps<"Electricity Bill">;
 
@@ -37,16 +36,7 @@ const schema = z.object({
   provider: z.string(),
   meter_type: z.nativeEnum(METER_TYPE),
   meter_number: z.string().transform((val) => val.replace(/\D/g, "")),
-  amount: z
-    .string()
-    .optional()
-    .transform((val) => {
-      const numericValue = val ? parseFloat(val.replace(/[₦,]/g, "")) : 0;
-      return numericValue;
-    })
-    .refine((val) => !isNaN(val) && val >= MIN_PAYMENT_AMOUNT, {
-      message: `Amount must not be less than ${formatToNaira(MIN_PAYMENT_AMOUNT)}`,
-    }),
+  amount: zodAmountValidation(MIN_PAYMENT_AMOUNT),
   customer_name: z.string(),
   customer_address: z.string(),
   phone: z.string().min(11),
@@ -165,7 +155,7 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
           const { response } = axiosError;
 
           if (response) {
-            const { message, errors } = response.data;
+            const { errors } = response.data;
 
             if (errors) {
               for (const [field, fieldErrors] of Object.entries(errors)) {
@@ -175,19 +165,8 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
                   });
                 }
               }
-
-              return showToast({ message });
             }
           }
-
-          dispatch(
-            setTransactionError({
-              code: "500",
-              status: "error",
-              title: "Something went wrong",
-              description: "We had an error while trying to verify your meter number, please try again.",
-            }),
-          );
         } finally {
           setShowProgress(false);
           setIsProcessing(false);
@@ -230,91 +209,95 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-5`}>
-        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-          Pay Electricity Bill
-        </Text>
-        <Text variant="bodySmall" style={tw`text-gray-500 mb-5`}>
-          Effortlessly pay your electricity bill with BinaPay.
-        </Text>
-        <DropdownMenuField
-          label="Service Provider"
-          placeholder="Select Provider"
-          name="provider"
-          control={control}
-          search
-          data={Object.values(serviceProvidersMap.electricity).map((provider) => ({
-            label: provider.name,
-            id: provider.serviceId,
-            image: provider.logo,
-          }))}
-        />
-        <View style={tw`flex flex-row items-center gap-3 py-1`}>
-          <MeterTypeChip
-            isSelected={isPrepaidType}
-            label="Prepaid"
-            onPress={() => setValue("meter_type", METER_TYPE.PREPAID)}
-            icon={isPrepaidType ? <SelectOpenIcon /> : <SelectCloseIcon />}
-          />
-
-          <MeterTypeChip
-            isSelected={!isPrepaidType}
-            label="Postpaid"
-            onPress={() => setValue("meter_type", METER_TYPE.POSTPAID)}
-            icon={!isPrepaidType ? <SelectOpenIcon /> : <SelectCloseIcon />}
-          />
-        </View>
+      <ScrollableView contentContainerStyle={tw`px-4 py-5 justify-between`}>
         <View>
-          <Controller
+          <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
+            Pay Electricity Bill
+          </Text>
+          <Text variant="bodySmall" style={tw`text-gray-500 mb-5`}>
+            Effortlessly pay your electricity bill with BinaPay.
+          </Text>
+          <DropdownMenuField
+            label="Service Provider"
+            placeholder="Select Provider"
+            name="provider"
             control={control}
-            name="meter_number"
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-              <CustomTextInput
-                label="Meter Number"
-                placeholder="Enter meter number"
-                mode="outlined"
-                onBlur={onBlur}
-                value={value}
-                onChangeText={onChange}
-                error={!!error}
-                errorMessage={error?.message}
-              />
-            )}
+            search
+            data={Object.values(serviceProvidersMap.electricity).map((provider) => ({
+              label: provider.name,
+              id: provider.serviceId,
+              image: provider.logo,
+            }))}
           />
-          {showProgress && (
-            <View style={tw`flex-row items-center gap-2`}>
-              <ActivityIndicator animating size="small" aria-label="Reading meter number" />
-              <Text variant="labelSmall" style={tw`text-xs text-gray-500`}>
-                Verifying meter number
-              </Text>
-            </View>
-          )}
-          {values.customer_name && (
-            <View style={tw`flex-row items-center gap-1.5`}>
-              <VerifiedBadge />
-              <Text variant="titleSmall" style={tw`text-primary-600`}>
-                {values.customer_name}
-              </Text>
-            </View>
-          )}
-        </View>
+          <View style={tw`flex flex-row items-center gap-3 my-2 py-1`}>
+            <MeterTypeChip
+              isSelected={isPrepaidType}
+              label="Prepaid"
+              onPress={() => setValue("meter_type", METER_TYPE.PREPAID)}
+              icon={isPrepaidType ? <SelectOpenIcon /> : <SelectCloseIcon />}
+            />
 
-        <View style={tw`mb-5`}>
-          <NairaInput name="amount" control={control} />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
+            <MeterTypeChip
+              isSelected={!isPrepaidType}
+              label="Postpaid"
+              onPress={() => setValue("meter_type", METER_TYPE.POSTPAID)}
+              icon={!isPrepaidType ? <SelectOpenIcon /> : <SelectCloseIcon />}
+            />
+          </View>
+          <View>
+            <Controller
+              control={control}
+              name="meter_number"
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                <CustomTextInput
+                  label="Meter Number"
+                  placeholder="Enter meter number"
+                  mode="outlined"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!error}
+                  errorMessage={error?.message}
+                />
+              )}
+            />
+            {showProgress && (
+              <View style={tw`flex-row items-center gap-2`}>
+                <ActivityIndicator animating size="small" aria-label="Reading meter number" />
+                <Text variant="labelSmall" style={tw`text-xs text-gray-500`}>
+                  Verifying meter number
+                </Text>
+              </View>
+            )}
+            {values.customer_name && (
+              <View style={tw`flex-row items-center gap-1.5`}>
+                <VerifiedBadge />
+                <Text variant="titleSmall" style={tw`text-primary-600`}>
+                  {values.customer_name}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View style={tw`mb-5`}>
+            <NairaInput name="amount" control={control} />
+            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
+              Wallet Balance: {formatToNaira(user?.wallet_balance)}
+            </Text>
+          </View>
+        </View>
+        <View style={tw`px-4 pb-4 pt-1`}>
+          <Button
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
+            labelStyle={tw`text-white text-center text-base font-bold`}
+            disabled={isProcessing}
+            onPress={openBottomSheet}
+            mode="contained">
+            {!readyToPay ? "Verify" : "Proceed"}
+          </Button>
         </View>
       </ScrollableView>
-      <View style={tw`px-4 pb-4 pt-1`}>
-        <Button
-          style={tw`w-full rounded-full`}
-          contentStyle={tw`py-2`}
-          labelStyle={tw`text-white text-center text-base font-bold`}
-          disabled={isProcessing}
-          onPress={openBottomSheet}
-          mode="contained">
-          {!readyToPay ? "Verify" : "Proceed"}
-        </Button>
-      </View>
       <BottomSheetModal
         ref={bottomSheet}
         initialSnapPoints={["50%", "50%"]}

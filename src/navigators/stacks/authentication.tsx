@@ -23,23 +23,15 @@ function AuthStack() {
           <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5`}>
             <TouchableRipple
               onPress={() => {
-                navigation
-                  .getParent()
-                  .reset({ routes: [{ name: "Onboarding" }] });
-              }}
-            >
+                navigation.goBack();
+              }}>
               <LeftArrowIcon width={38} height={38} />
             </TouchableRipple>
           </View>
         ),
-      })}
-    >
+      })}>
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen
-        name="Register"
-        options={{ headerShown: false }}
-        component={RegistrationStack}
-      />
+      <Stack.Screen name="Register" options={{ headerShown: false }} component={RegistrationStack} />
     </Stack.Navigator>
   );
 }

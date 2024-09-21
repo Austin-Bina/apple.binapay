@@ -1,23 +1,20 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import tw from "@lib/tailwind";
-import { AccountParamList } from "@navigators/types";
-import SettingScreen from "@screens/account/Setting";
-import ProfileScreen from "@screens/account/Profile";
-import ChangePassword from "@screens/account/ChangePassword";
+import { KYCParamList } from "@navigators/types";
 import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
-import BinaRewardsScreen from "@screens/account/BinaRewards";
-import EarningSummaryScreen from "@screens/account/EarningSummary";
 import { SCREENS } from "@constants/screens";
-import KYCStack from "./verify-account";
+import KYCOptionsScreen from "@screens/kyc/KYCOptionsScreen";
+import NameVerificationScreen from "@screens/kyc/NameVerification";
+import BVNVerificationScreen from "@screens/kyc/BVNVerificationScreen";
 
-const Stack = createNativeStackNavigator<AccountParamList>();
+const Stack = createNativeStackNavigator<KYCParamList>();
 
-function AccountStack() {
+function KYCStack() {
   return (
     <Stack.Navigator
-      initialRouteName="Settings"
+      initialRouteName={SCREENS.ACCOUNT_VERIFICATION_OPTIONS}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -46,13 +43,10 @@ function AccountStack() {
           </TouchableRipple>
         ),
       })}>
-      <Stack.Screen name="Settings" component={SettingScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="BinaPay Rewards" component={BinaRewardsScreen} />
-      <Stack.Screen name="Earning Summary" component={EarningSummaryScreen} />
-      <Stack.Screen name="Change Password" component={ChangePassword} />
-      <Stack.Screen name={SCREENS.VERIFY_ACCOUNT} options={{ headerShown: false }} component={KYCStack} />
+        <Stack.Screen name={SCREENS.ACCOUNT_VERIFICATION_OPTIONS} component={KYCOptionsScreen} />
+        <Stack.Screen name={SCREENS.NAME_CHECK_VERIFICATION} component={NameVerificationScreen} />
+        <Stack.Screen name={SCREENS.BVN_VERIFICATION} component={BVNVerificationScreen} />
     </Stack.Navigator>
   );
 }
-export default AccountStack;
+export default KYCStack;

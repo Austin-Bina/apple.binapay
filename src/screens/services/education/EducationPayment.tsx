@@ -35,8 +35,20 @@ const schema = z.object({
   amount: z.string(),
   quantity: z
     .string()
-    .transform((val) => (val ? Number.parseInt(val) : 1))
-    .refine((val) => val > 0, { message: "Quantity must be greater than 0" }),
+    .transform((val) => {
+      const numericValue = parseInt(val);
+      const num = isNaN(numericValue) ? 0 : numericValue;
+      return `${numericValue}`;
+    })
+    .refine(
+      (val) => {
+        const num = parseInt(val);
+        return num > 0;
+      },
+      {
+        message: "Quantity must be greater than 0",
+      },
+    ),
   phone: z.string(),
   product_name: z.string(),
   profile_code: z.string().optional(),
@@ -83,7 +95,7 @@ export default function EducationPaymentScreen({ route }: Props) {
   const values = watch();
 
   useEffect(() => {
-    const quantity = values.quantity;
+    const quantity = parseInt(values.quantity);
     if (quantity && !isNaN(quantity)) {
       const amount = quantity * Number.parseFloat(values.amount);
       setValue("amount", String(amount));
@@ -207,33 +219,36 @@ export default function EducationPaymentScreen({ route }: Props) {
 
     return (
       <Fragment>
-        <ScrollableView style={tw`px-4`} refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
-          <Text variant="titleMedium" style={tw`text-gray-800 mb-2 font-bold`}>
-            {screenData.title}
-          </Text>
-          <Text variant="bodySmall" style={tw`text-gray-500`}>
-            {screenData.description}
-          </Text>
-          {screenData.banner && <Banner message={screenData.banner} style={tw`my-5`} />}
-          {generateFormFields()}
-          <View style={tw`mb-5`}>
-            <NairaInput name="amount" control={control} isDisabled />
-            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-              Wallet Balance: {formatToNaira(user?.wallet_balance)}
+        <ScrollableView contentContainerStyle={tw`px-4 py-5 justify-between`} refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
+          <View>
+            <Text variant="titleMedium" style={tw`text-gray-800 mb-2 font-bold`}>
+              {screenData.title}
             </Text>
+            <Text variant="bodySmall" style={tw`text-gray-500`}>
+              {screenData.description}
+            </Text>
+            {screenData.banner && <Banner message={screenData.banner} style={tw`my-5`} />}
+            {generateFormFields()}
+            <View style={tw`mb-5`}>
+              <NairaInput name="amount" control={control} isDisabled />
+              <Text style={tw`text-primary-900 text-sm mt-2.5`}>
+                Wallet Balance: {formatToNaira(user?.wallet_balance)}
+              </Text>
+            </View>
+          </View>
+          <View style={tw`px-4 pb-4 pt-1`}>
+            <Button
+              style={tw`w-full rounded-full`}
+              contentStyle={tw`py-2`}
+              labelStyle={tw`text-white text-center text-base font-bold`}
+              disabled={isProcessing}
+              onPress={openBottomSheet}
+              mode="contained">
+              Continue
+            </Button>
           </View>
         </ScrollableView>
-        <View style={tw`px-4 pb-4 pt-1`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            labelStyle={tw`text-white text-center text-base font-bold`}
-            disabled={isProcessing}
-            onPress={openBottomSheet}
-            mode="contained">
-            Continue
-          </Button>
-        </View>
+
         <BottomSheetModal
           ref={bottomSheet}
           initialSnapPoints={["50%", "50%"]}

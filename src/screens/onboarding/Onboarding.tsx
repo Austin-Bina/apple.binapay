@@ -121,7 +121,7 @@ const Onboarding: React.FC<StackScreenProps<"Onboarding">> = ({
         style={tw`absolute z-10 bottom-8 flex flex-col items-center w-full px-4`}
       >
         <Paginator
-          data={onboarding}
+          size={onboarding.length}
           scrollX={scrollX}
           scrollTo={scrollTo}
           currentIndex={currentIndex}

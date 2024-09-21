@@ -2,9 +2,9 @@ import { createNavigationContainerRef } from "@react-navigation/native";
 import { setInterval } from "./setTimeout";
 import { StackParamList } from "@navigators/types";
 
-export const navigationRef = createNavigationContainerRef<StackParamList>();
+const navigationRef = createNavigationContainerRef<StackParamList>();
 
-export async function getNavigate() {
+async function getNavigate() {
   await new Promise<void>((resolve) => {
     const poll = (): boolean => {
       if (navigationRef.isReady()) {
@@ -24,6 +24,21 @@ export async function getNavigate() {
   return navigationRef;
 }
 
-export function getCurrentRouteName() {
+function getCurrentRouteName() {
   return navigationRef.current?.getCurrentRoute()?.name;
 }
+
+function resetNavigationToDashboard() {
+  navigationRef.current?.reset({
+    routes: [
+      {
+        name: "Home",
+        params: {
+          screen: "Dashboard",
+        },
+      },
+    ],
+  });
+}
+
+export { navigationRef, getNavigate, getCurrentRouteName, resetNavigationToDashboard };

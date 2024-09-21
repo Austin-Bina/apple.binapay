@@ -10,6 +10,7 @@ import Screen from "@components/ui/shared/Screen";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import tw from "@lib/tailwind";
 import ScrollableView from "@components/ui/shared/ScrollableView";
+import { EyeOpen, PasswordLock } from "@components/icons/svg";
 
 type ResetPasswordProps = StackScreenProps<"Reset Password">;
 
@@ -76,11 +77,11 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
                   error={!!errors.password}
                   errorMessage={errors.password?.message}
                   mode="outlined"
-                  left={<TextInput.Icon icon="lock-outline" color="#71717A" />}
+                  left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
                       onPress={() => setPasswordVisible((prev) => !prev)}
-                      icon={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                      icon={passwordVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
                     />
@@ -101,11 +102,11 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
                   errorMessage={errors.password_confirmation?.message}
                   secureTextEntry={passwordConfirmationVisible}
                   mode="outlined"
-                  left={<TextInput.Icon icon="lock-outline" color="#71717A" />}
+                  left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
                       onPress={() => setPasswordConfirmationVisible((prev) => !prev)}
-                      icon={passwordConfirmationVisible ? "eye-off-outline" : "eye-outline"}
+                      icon={passwordConfirmationVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
                     />

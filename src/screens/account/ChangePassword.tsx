@@ -16,6 +16,7 @@ import { route } from "@helpers/route";
 import { showToast } from "@helpers/toast";
 import { AxiosError } from "axios";
 import { getNavigate } from "@utils/navigation";
+import { EyeOpen, PasswordLock } from "@components/icons/svg";
 
 type ResetPasswordProps = AccountStackScreenProps<"Change Password">;
 
@@ -105,11 +106,11 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
                   error={!!error}
                   errorMessage={error?.message}
                   mode="outlined"
-                  left={<TextInput.Icon icon="lock-outline" color="#71717A" />}
+                  left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
                       onPress={() => setCurrentPasswordVisible((prev) => !prev)}
-                      icon={currentPasswordVisible ? "eye-off-outline" : "eye-outline"}
+                      icon={currentPasswordVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
                     />
@@ -131,11 +132,11 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
                   error={!!error}
                   errorMessage={error?.message}
                   mode="outlined"
-                  left={<TextInput.Icon icon="lock-outline" color="#71717A" />}
+                  left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
                       onPress={() => setPasswordVisible((prev) => !prev)}
-                      icon={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                      icon={passwordVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
                     />
@@ -156,11 +157,11 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
                   errorMessage={error?.message}
                   secureTextEntry={passwordConfirmationVisible}
                   mode="outlined"
-                  left={<TextInput.Icon icon="lock-outline" color="#71717A" />}
+                  left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
                       onPress={() => setPasswordConfirmationVisible((prev) => !prev)}
-                      icon={passwordConfirmationVisible ? "eye-off-outline" : "eye-outline"}
+                      icon={passwordConfirmationVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
                     />

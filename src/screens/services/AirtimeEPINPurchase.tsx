@@ -87,107 +87,112 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
   return (
     <Screen>
       <ScrollableView
-        style={tw`flex-1 px-4 pt-5`}
+        contentContainerStyle={tw`px-4 py-5 justify-between`}
         refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
-        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-          Airtime EPIN Purchase & Printing
-        </Text>
-        <Text variant="bodySmall" style={tw`text-gray-500`}>
-          Easily purchase airtime EPIN and print them for distribution. Enter the details below to proceed.
-        </Text>
-        <FlatList
-          data={Object.values(serviceProvidersMap.internet)}
-          renderItem={({ item: provider }) => (
-            <TouchableOpacity
-              key={provider.serviceId}
-              onPress={() => setValue("provider", provider.serviceId)}
-              style={[
-                tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.serviceId && tw`border-blue-500`,
-              ]}>
-              <Image source={provider.logo} width={scale(45)} />
-            </TouchableOpacity>
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={tw`items-center`}
-          style={tw`my-5`}
-        />
-        <DropdownMenuField
-          label="Value (Denomination)"
-          placeholder="Select Price Options"
-          name="amount"
-          control={control}
-          data={epinPlans}
-          onDataSelect={(plan) => {
-            reset({
-              ...values,
-              amount: plan.plan_amount,
-            });
-          }}
-        />
-        <DropdownMenuField
-          label="Quantity"
-          placeholder="Select quantity"
-          name="quantity"
-          control={control}
-          data={quantityOptions}
-        />
-        <Controller
-          control={control}
-          name="business_name"
-          render={({ fieldState: { error }, field: { onChange, onBlur, value } }) => (
-            <CustomTextInput
-              label="Business Name"
-              mode="outlined"
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!error}
-              errorMessage={error?.message}
-            />
-          )}
-        />
         <View>
-          <NairaInput name="amount" control={control} isDisabled />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
-        </View>
-        <View style={tw`p-4 border relative mt-5 mb-12`}>
+          <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
+            Airtime EPIN Purchase & Printing
+          </Text>
+          <Text variant="bodySmall" style={tw`text-gray-500`}>
+            Easily purchase airtime EPIN and print them for distribution. Enter the details below to proceed.
+          </Text>
+          <FlatList
+            data={Object.values(serviceProvidersMap.internet)}
+            renderItem={({ item: provider }) => (
+              <TouchableOpacity
+                key={provider.serviceId}
+                onPress={() => setValue("provider", provider.serviceId)}
+                style={[
+                  tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
+                  values.provider === provider.serviceId && tw`border-blue-500`,
+                ]}>
+                <Image source={provider.logo} width={scale(45)} />
+              </TouchableOpacity>
+            )}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={tw`items-center`}
+            style={tw`my-5`}
+          />
+          <DropdownMenuField
+            label="Value (Denomination)"
+            placeholder="Select Price Options"
+            name="amount"
+            control={control}
+            data={epinPlans}
+            onDataSelect={(plan) => {
+              reset({
+                ...values,
+                amount: plan.plan_amount,
+              });
+            }}
+          />
+          <DropdownMenuField
+            label="Quantity"
+            placeholder="Select quantity"
+            name="quantity"
+            control={control}
+            data={quantityOptions}
+          />
+          <Controller
+            control={control}
+            name="business_name"
+            render={({ fieldState: { error }, field: { onChange, onBlur, value } }) => (
+              <CustomTextInput
+                label="Business Name"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
+                error={!!error}
+                errorMessage={error?.message}
+              />
+            )}
+          />
           <View>
-            <Text variant="titleMedium">
-              {[values.provider.toUpperCase(), formatToNaira(values.amount), values.business_name].join(" | ")}
+            <NairaInput name="amount" control={control} isDisabled />
+            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
+              Wallet Balance: {formatToNaira(user?.wallet_balance)}
             </Text>
-            <View style={tw`flex-row items-center gap-2`}>
-              <Text variant="titleMedium">PIN:</Text>
-              <Text variant="headlineMedium" style={tw`text-lg font-black`}>
-                1234-9856-2829-4561
+          </View>
+          <View style={tw`p-4 border relative mt-5 mb-12`}>
+            <View>
+              <Text variant="titleMedium">
+                {[values.provider.toUpperCase(), formatToNaira(values.amount), values.business_name].join(" | ")}
+              </Text>
+              <View style={tw`flex-row items-center gap-2`}>
+                <Text variant="titleMedium">PIN:</Text>
+                <Text variant="headlineMedium" style={tw`text-lg font-black`}>
+                  1234-9856-2829-4561
+                </Text>
+              </View>
+              <View style={tw`flex-row items-center gap-2`}>
+                <Text variant="titleMedium">Serial #:</Text>
+                <Text variant="titleMedium">4134186359470712</Text>
+              </View>
+              <Text variant="titleMedium">Dial *555*PIN#, then Send</Text>
+            </View>
+            <View style={tw`absolute inset-0 justify-center items-center`}>
+              <Text
+                variant="displayLarge"
+                style={[tw`font-black text-[#FF0000] opacity-60`, { transform: [{ rotate: "10.88deg" }] }]}>
+                SAMPLE
               </Text>
             </View>
-            <View style={tw`flex-row items-center gap-2`}>
-              <Text variant="titleMedium">Serial #:</Text>
-              <Text variant="titleMedium">4134186359470712</Text>
-            </View>
-            <Text variant="titleMedium">Dial *555*PIN#, then Send</Text>
-          </View>
-          <View style={tw`absolute inset-0 justify-center items-center`}>
-            <Text
-              variant="displayLarge"
-              style={[tw`font-black text-[#FF0000] opacity-60`, { transform: [{ rotate: "10.88deg" }] }]}>
-              SAMPLE
-            </Text>
           </View>
         </View>
+        <View style={tw`px-4 pb-4 pt-1`}>
+          <Button
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
+            labelStyle={tw`text-white text-center text-base font-bold`}
+            onPress={openBottomSheet}
+            mode="contained">
+            Proceed
+          </Button>
+        </View>
       </ScrollableView>
-      <View style={tw`px-4 pb-4 pt-1`}>
-        <Button
-          style={tw`w-full rounded-full`}
-          contentStyle={tw`py-2`}
-          labelStyle={tw`text-white text-center text-base font-bold`}
-          onPress={openBottomSheet}
-          mode="contained">
-          Proceed
-        </Button>
-      </View>
+
       <BottomSheetModal
         ref={bottomSheet}
         initialSnapPoints={["50%", "50%"]}

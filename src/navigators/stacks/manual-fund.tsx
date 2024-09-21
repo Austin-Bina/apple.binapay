@@ -5,17 +5,17 @@ import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import { View } from "react-native";
 import { SCREENS } from "@constants/screens";
-import PaymentSuccessScreen from "@screens/home/PaymentSuccess";
-import AddMoneyScreen from "@screens/fund/AddMoney";
-import { AddMoneyParamList } from "@navigators/types";
-import ManualFundStack from "./manual-fund";
+import ManualFundScreen from "@screens/fund/ManualFund";
+import { ManualFundParamList } from "@navigators/types";
+import ManualFundProofScreen from "@screens/fund/ManualFundProof";
+import ManualFundWaitScreen from "@screens/fund/ManualFundWait";
 
-const Stack = createNativeStackNavigator<AddMoneyParamList>();
+const Stack = createNativeStackNavigator<ManualFundParamList>();
 
-function AddMoneyStack() {
+function ManualFundStack() {
   return (
     <Stack.Navigator
-      initialRouteName={SCREENS.FUND_ACCOUNT_OPTIONS}
+      initialRouteName={SCREENS.MANUAL_FUND}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -45,10 +45,10 @@ function AddMoneyStack() {
           </View>
         ),
       })}>
-      <Stack.Screen name={SCREENS.FUND_ACCOUNT_OPTIONS} component={AddMoneyScreen} />
-      <Stack.Screen name={SCREENS.PAYMENT_SUCCESS} options={{ headerShown: false }} component={PaymentSuccessScreen} />
-      <Stack.Screen name={SCREENS.MANUAL_FUND_STACK} options={{ headerShown: false }} component={ManualFundStack} />
+      <Stack.Screen name={SCREENS.MANUAL_FUND} component={ManualFundScreen} />
+      <Stack.Screen name={SCREENS.MANUAL_FUND_PROOF} component={ManualFundProofScreen} />
+      <Stack.Screen name={SCREENS.MANUAL_FUND_WAIT} options={{ headerShown: false }} component={ManualFundWaitScreen} />
     </Stack.Navigator>
   );
 }
-export default AddMoneyStack;
+export default ManualFundStack;

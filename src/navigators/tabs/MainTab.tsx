@@ -15,7 +15,6 @@ const HIDE_TAB_LIST = [
   SCREENS.PROFILE,
   SCREENS.CHANGE_PASSWORD,
   SCREENS.ADD_MONEY,
-  SCREENS.CARD_DETAILS,
   SCREENS.PAYMENT_SUCCESS,
   SCREENS.AIRTIME_PURCHASE,
   SCREENS.AIRTIME_EPIN_PURCHASE,
@@ -31,6 +30,7 @@ const HIDE_TAB_LIST = [
   SCREENS.VERIFY_ACCOUNT,
   SCREENS.VIEW_NOTIFICATION,
   SCREENS.VIEW_TRANSACTION,
+  SCREENS.FUND_ACCOUNT_OPTIONS,
 ];
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -98,6 +98,7 @@ export const TabBar = () => {
         <Tab.Screen
           options={{
             tabBarLabel: "Services",
+            headerShown: false,
             tabBarIcon: ({ color, size }) => <Icon source="send" color={color} size={size} />,
           }}
           name="Services"

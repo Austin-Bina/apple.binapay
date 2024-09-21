@@ -13,7 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
-import { selectUser } from "@store/selectors/auth";
+import { selectIsAccountVerified, selectUser } from "@store/selectors/auth";
 import API from "@lib/api";
 import { route } from "@helpers/route";
 import { showToast } from "@helpers/toast";
@@ -24,7 +24,11 @@ import { phoneValidation } from "@utils/phone";
 
 const schema = z.object({
   name: z.string().min(2, "Too Short").trim(),
-  email: z.string().email("Invalid Email").trim(),
+  email: z
+    .string()
+    .email("Please enter a valid email")
+    .trim()
+    .transform((val) => val.toLowerCase()),
   phone: z.string(),
 });
 
@@ -36,6 +40,7 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
   const [initialImageSource, setInitialImageUri] = useState(require("@assets/draft/male-avatar-circle.png"));
 
   const user = useTypedSelector(selectUser);
+  const isVerified = useTypedSelector(selectIsAccountVerified);
   const dispatch = useTypedDispatch();
   const {
     control,
@@ -50,8 +55,6 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
     },
     resolver: zodResolver(schema),
   });
-
-  const isVerified = user?.accounts && user?.accounts.length > 0;
 
   const handleAddImage = (imageObj: Asset) => {
     setImageObject(imageObj);

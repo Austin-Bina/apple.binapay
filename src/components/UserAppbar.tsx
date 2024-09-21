@@ -1,18 +1,19 @@
 import tw from "@lib/tailwind";
 import { useTypedSelector } from "@store/common";
 import { getNavigate } from "@utils/navigation";
-import React from "react";
+import React, { memo } from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Appbar, Badge, Text } from "react-native-paper";
+import { Appbar, Text } from "react-native-paper";
 import { selectUser } from "@store/selectors/auth";
-import { Colors } from "@constants/theme";
 import { AvatarImage } from "./avatar";
 import { selectNotificationMeta } from "@store/selectors/notification";
+import { HasNotification, NoNotification } from "./icons/svg";
 
-export default function UserAppbar() {
+export default memo(function UserAppbar() {
   const user = useTypedSelector(selectUser);
   const notificationInfo = useTypedSelector(selectNotificationMeta);
 
+  const hasNotification = notificationInfo.unread_count > 0;
   return (
     <Appbar.Header style={tw`bg-white py-2 mt-2`}>
       <TouchableOpacity
@@ -30,15 +31,15 @@ export default function UserAppbar() {
           <AvatarImage avatar={user?.avatar} size={48} svgProps={{ width: 48, height: 48 }} />
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
-          <Text style={tw`text-zinc-500 text-sm font-normal`}>Hi, {user?.name} 👋🏽</Text>
-          <Text style={tw`text-zinc-800 text-base font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
+          <Text style={tw`text-gray-900 text-xl font-semibold`}>Hi, {user?.name} 👋🏽</Text>
+          <Text style={tw`text-gray-500 text-sm font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
         </View>
       </TouchableOpacity>
       <Appbar.Content title="" />
       <View style={tw`relative`}>
         <Appbar.Action
-          icon="bell"
-          size={30}
+          icon={(props) => (hasNotification ? <HasNotification {...props} /> : <NoNotification {...props} />)}
+          style={tw`bg-gray-100 rounded-xl justify-center items-center`}
           onPress={async () => {
             const { navigate } = await getNavigate();
             navigate("Main", {
@@ -51,20 +52,9 @@ export default function UserAppbar() {
               },
             });
           }}
+          rippleColor="transparent"
         />
-        <Badge
-          style={tw`absolute top-2 right-2`}
-          theme={{
-            colors: {
-              error: Colors.primary.DEFAULT,
-              onError: "white",
-            },
-          }}
-          size={18}
-          visible={notificationInfo.unread_count > 0}>
-          {notificationInfo.unread_count}
-        </Badge>
       </View>
     </Appbar.Header>
   );
-}
+});

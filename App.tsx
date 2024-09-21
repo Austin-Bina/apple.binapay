@@ -10,9 +10,7 @@ import { Provider } from "react-redux";
 import { persistor, store } from "@store/main";
 import { PersistGate } from "redux-persist/integration/react";
 import NoNetworkBar from "@components/ui/widgets/no-network-bar";
-// import * as Sentry from "@sentry/react-native";
 import { Alert, BackHandler } from "react-native";
-// import ErrorHelper from "@helpers/errors";
 import { RootSiblingParent as ToastRootSiblingParent } from "react-native-root-siblings";
 
 SplashScreen.preventAutoHideAsync();

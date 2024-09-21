@@ -19,7 +19,11 @@ import { showToast } from "@helpers/toast";
 const schema = z.object({
   name: z.string().min(3, "Too Short").trim(),
   phone: z.string().min(11),
-  email: z.string().email("Invalid email").trim(),
+  email: z
+    .string()
+    .email("Please enter a valid project")
+    .trim()
+    .transform((val) => val.toLowerCase()),
   referral_code: z.string().optional(),
 });
 
@@ -86,6 +90,7 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
           render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
             <CustomTextInput
               label="Full name"
+              placeholder="John Doe"
               mode="outlined"
               onBlur={onBlur}
               value={value}
@@ -102,6 +107,7 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
           render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
             <CustomTextInput
               label="Email Address"
+              placeholder="example@example.com"
               mode="outlined"
               onBlur={onBlur}
               value={value}

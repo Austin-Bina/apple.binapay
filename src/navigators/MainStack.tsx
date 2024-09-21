@@ -28,6 +28,7 @@ function Router() {
   const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
 
   const isAuthenticated = isLoggedIn && !isNewUser;
+  
   return (
     <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
       <NavigationContainer ref={navigationRef}>

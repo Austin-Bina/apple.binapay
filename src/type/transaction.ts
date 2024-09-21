@@ -32,7 +32,6 @@ export interface PaymentTransaction {
   balance_after: string;
 }
 
-
 export interface UtilityTransaction {
   id: string;
   user_id: string;
@@ -43,10 +42,10 @@ export interface UtilityTransaction {
   transaction_type: TransactionForm;
   provider_logo: string;
   response: {
-      [index: string]: string;
+    [index: string]: string;
   } | null;
   details: {
-      [index: string]: string;
+    [index: string]: string;
   } | null;
   created_at: string;
   updated_at: string;
@@ -71,4 +70,10 @@ export interface TransactionResponse {
     name: any;
     message: any;
   }[];
+}
+export interface BankAccount {
+  account_name: string;
+  bank_name: string;
+  account_number: string;
+  logo?: string;
 }

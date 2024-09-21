@@ -21,33 +21,18 @@ import { scale } from "react-native-size-matters";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { TransactionForm } from "@enum/transaction";
-import { formatToNaira } from "@utils/money";
+import { formatToNaira, zodAmountValidation } from "@utils/money";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import { selectUser } from "@store/selectors/auth";
+import { upperCaseFirst } from "@utils/index";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
 
 const MIN_PAYMENT_AMOUNT = 50;
-
 const schema = z.object({
   provider: z.enum(INTERNET_PROVIDERS),
   phone: z.string().length(11, "Invalid phone number"),
-  amount: z
-    .string()
-    .trim()
-    .transform((val) => {
-      const numericValue = val ? parseFloat(val.replace(/[₦,]/g, "")) : 0;
-      return `${numericValue}`;
-    })
-    .refine(
-      (val) => {
-        const numericValue = parseFloat(val);
-        return numericValue >= MIN_PAYMENT_AMOUNT;
-      },
-      {
-        message: `Amount must not be less than ${formatToNaira(MIN_PAYMENT_AMOUNT)}`,
-      },
-    ),
+  amount: zodAmountValidation(MIN_PAYMENT_AMOUNT),
   type: z.string(),
   ported_number: z.boolean(),
   pin: z.string().optional(),
@@ -78,9 +63,11 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
       type: "VTU",
       ported_number: false,
     },
+    mode: "onChange",
   });
 
   const values = watch();
+  const upperCaseProvider = upperCaseFirst(values.provider);
 
   const airtimeTypes = useMemo(() => {
     const selected = values.provider;
@@ -118,107 +105,112 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-5`}>
-        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-          Buy Airtime
-        </Text>
-        <Text variant="bodySmall" style={tw`text-gray-500`}>
-          Top up your mobile credit instantly! Enter the details below to purchase airtime for your mobile phone
-        </Text>
-        <FlatList
-          data={Object.values(serviceProvidersMap.internet)}
-          renderItem={({ item: provider }) => (
-            <TouchableOpacity
-              key={provider.serviceId}
-              onPress={() => setValue("provider", provider.serviceId as any)}
-              style={[
-                tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.serviceId && tw`border-blue-500`,
-              ]}>
-              <Image source={provider.logo} width={scale(45)} />
-            </TouchableOpacity>
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={tw`items-center`}
-          style={tw`my-5`}
-        />
-        <Controller
-          control={control}
-          name="phone"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <CustomTextInput
-              label="Phone Number"
-              placeholder="08012345678"
-              mode="outlined"
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!errors.phone}
-              errorMessage={errors.phone?.message}
-            />
-          )}
-        />
-
-        <View style={tw`flex-row justify-end`}>
-          <TouchableOpacity onPress={() => {}}>
-            <View style={tw`flex-row items-center gap-1`}>
-              <Text style={tw`text-primary text-xs`}>Select from Contact</Text>
-              <ArrowRight width={20} />
-            </View>
-          </TouchableOpacity>
-        </View>
-        <Controller
-          control={control}
-          name="ported_number"
-          render={({ field: { value, onChange }, fieldState: { error } }) => (
-            <View style={tw`border border-gray-300 rounded-xl w-[50%] overflow-hidden`}>
-              <TouchableRipple
-                onPress={() => {
-                  onChange(!value);
-                }}
-                style={tw`flex-row items-center `}>
-                <Fragment>
-                  <Checkbox status={value ? "checked" : "unchecked"} />
-                  <Text>Ported Number</Text>
-                </Fragment>
-              </TouchableRipple>
-            </View>
-          )}
-        />
-        <DropdownMenuField
-          label="Airtime Type"
-          placeholder="Select Airtime Type"
-          name="type"
-          control={control}
-          data={airtimeTypes.map((t) => ({
-            label: t,
-            id: t,
-          }))}
-        />
+      <ScrollableView contentContainerStyle={tw`justify-between px-4 py-5`}>
         <View>
-          <NairaInput name="amount" control={control} />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
-        </View>
-        <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
-          <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
-            You get ₦{values.amount || 0}
+          <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
+            Buy Airtime
           </Text>
-        </View>
+          <Text variant="bodySmall" style={tw`text-gray-500`}>
+            Top up your mobile credit instantly! Enter the details below to purchase airtime for your mobile phone
+          </Text>
+          <FlatList
+            data={Object.values(serviceProvidersMap.internet)}
+            renderItem={({ item: provider }) => (
+              <TouchableOpacity
+                key={provider.serviceId}
+                onPress={() => setValue("provider", provider.serviceId as any)}
+                style={[
+                  tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
+                  values.provider === provider.serviceId && tw`border-blue-500`,
+                ]}>
+                <Image source={provider.logo} width={scale(45)} />
+              </TouchableOpacity>
+            )}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={tw`items-center`}
+            style={tw`my-5`}
+          />
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <CustomTextInput
+                label="Phone Number"
+                placeholder="08012345678"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
+                error={!!errors.phone}
+                errorMessage={errors.phone?.message}
+              />
+            )}
+          />
 
-        <Banner style={tw`mb-20`} message="You get 10% off when you purchase airtime with us" />
+          <View style={tw`flex-row justify-end`}>
+            <TouchableOpacity onPress={() => {}}>
+              <View style={tw`flex-row items-center gap-1`}>
+                <Text style={tw`text-primary text-xs`}>Select from Contact</Text>
+                <ArrowRight width={20} />
+              </View>
+            </TouchableOpacity>
+          </View>
+          <Controller
+            control={control}
+            name="ported_number"
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
+              <View style={tw`border border-gray-300 rounded-xl my-4 overflow-hidden`}>
+                <TouchableRipple
+                  onPress={() => {
+                    onChange(!value);
+                  }}
+                  style={tw`flex-row items-center `}>
+                 <Fragment>
+                    <Checkbox status={value ? "checked" : "unchecked"} />
+                    <Text>Are you sure this is an {upperCaseProvider} number?</Text>
+                  </Fragment>
+                </TouchableRipple>
+              </View>
+            )}
+          />
+          <DropdownMenuField
+            label="Airtime Type"
+            placeholder="Select Airtime Type"
+            name="type"
+            control={control}
+            data={airtimeTypes.map((t) => ({
+              label: t,
+              id: t,
+            }))}
+          />
+          <View>
+            <NairaInput name="amount" control={control} />
+            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
+              Wallet Balance: {formatToNaira(user?.wallet_balance)}
+            </Text>
+          </View>
+          <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
+            <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
+              You get ₦{values.amount || 0}
+            </Text>
+          </View>
+
+          <Banner style={tw`mb-10`} message="You get 10% off when you purchase airtime with us" />
+        </View>
+        <View style={tw`px-4 pb-4 pt-1`}>
+          <Button
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
+            labelStyle={tw`text-white text-center text-base font-bold`}
+            disabled={fetching}
+            onPress={openBottomSheet}
+            mode="contained">
+            Continue
+          </Button>
+        </View>
       </ScrollableView>
-      <View style={tw`px-4 pb-4 pt-1`}>
-        <Button
-          style={tw`w-full rounded-full`}
-          contentStyle={tw`py-2`}
-          labelStyle={tw`text-white text-center text-base font-bold`}
-          disabled={fetching}
-          onPress={openBottomSheet}
-          mode="contained">
-          Continue
-        </Button>
-      </View>
+
       <BottomSheetModal
         ref={bottomSheet}
         initialSnapPoints={["50%", "50%"]}

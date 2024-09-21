@@ -1,6 +1,7 @@
 import { formatNumber } from "react-native-currency-input";
+import { z } from "zod";
 
-export function convertToNaira(rawAmount: number | string = 0, prefix: boolean = true): string {
+function convertToNaira(rawAmount: number | string = 0, prefix: boolean = true): string {
   const parsedAmount = typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
 
   if (isNaN(parsedAmount)) {
@@ -14,7 +15,7 @@ export function convertToNaira(rawAmount: number | string = 0, prefix: boolean =
   return prefix ? formattedAmount : amount;
 }
 
-export const formatToNaira = (value: string | number = 0) => {
+const formatToNaira = (value: string | number = 0) => {
   let numberValue: number;
 
   if (typeof value === "string") {
@@ -37,3 +38,23 @@ export const formatToNaira = (value: string | number = 0) => {
 
   return formattedNumber;
 };
+
+const zodAmountValidation = (minAmount: number = 0) =>
+  z
+    .string()
+    .trim()
+    .transform((val) => {
+      const numericValue = val ? parseFloat(val.replace(/[^0-9.]/g, "")) : 0;
+      return `${numericValue}`;
+    })
+    .refine(
+      (val) => {
+        const numericValue = parseFloat(val);
+        return numericValue >= minAmount;
+      },
+      {
+        message: `Amount must not be less than ${formatToNaira(minAmount)}`,
+      },
+    );
+
+export { convertToNaira, formatToNaira, zodAmountValidation };

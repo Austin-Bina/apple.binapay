@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
 import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
@@ -16,7 +16,7 @@ import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { convertToNaira, formatToNaira } from "@utils/money";
-import { selectUser } from "@store/selectors/auth";
+import { selectIsAccountVerified, selectUser } from "@store/selectors/auth";
 import { accountTransactionsApi, useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
 import { format } from "date-fns";
 import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";
@@ -28,21 +28,47 @@ import API from "@lib/api";
 import { route } from "@helpers/route";
 import { navigateToTransaction } from "@helpers/transaction";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import { notificationsApi } from "@store/redux-api/notificationApi";
+import { HorizontalDots, LargeEyeClose, LargeEyeOpen } from "@components/icons/svg";
+import { scale } from "react-native-size-matters";
+import { SCREENS } from "@constants/screens";
 
 const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
 
   const user = useTypedSelector(selectUser);
+  const isVerified = useTypedSelector(selectIsAccountVerified);
   const toggleBalance = () => setBalanceVisible(!balanceVisible);
   const dispatch = useTypedDispatch();
 
-  const balanceNaira = useMemo(() => {
-    return balanceVisible ? formatToNaira(user?.wallet_balance) : "₦***.**";
-  }, [user?.wallet_balance, balanceVisible]);
-
-  const isVerified = user?.accounts && user?.accounts.length > 0;
+  const balanceNaira = useMemo(() => formatToNaira(user?.wallet_balance), [user?.wallet_balance]);
 
   useEffect(() => {
+    if (!user?.id) return;
+    Promise.all([initProfile(), initCable()]);
+  }, []);
+
+  const initProfile = useCallback(async () => {
+    setIsFetching(true);
+    try {
+      await dispatch(authSliceActions.fetchUserProfile());
+      dispatch(
+        notificationsApi.util.prefetch(
+          "fetchNotifications",
+          { page: 1 },
+          {
+            force: true,
+          },
+        ),
+      );
+    } catch (error) {
+    } finally {
+      setIsFetching(false);
+    }
+  }, [dispatch]);
+
+  const initCable = useCallback(() => {
     if (!user?.id) return;
 
     const client = new Ably.Realtime({
@@ -97,16 +123,21 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
 
   const onRefresh = async () => {
     try {
-      await dispatch(authSliceActions.fetchUserProfile());
+      if (!isFetching) {
+        await initProfile();
+      }
     } catch (error) {}
   };
 
   const handleVerifyAccount = async () => {
     const { navigate } = await getNavigate();
-    navigate("Main", {
-      screen: "Menu",
+    navigate(SCREENS.MAIN, {
+      screen: SCREENS.MENU,
       params: {
-        screen: "Verify Account",
+        screen: SCREENS.VERIFY_ACCOUNT,
+        params: {
+          screen: SCREENS.ACCOUNT_VERIFICATION_OPTIONS,
+        },
       },
     });
   };
@@ -125,16 +156,25 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
         <Card mode="contained" style={tw`bg-primary-50 py-2`}>
           <Card.Content style={tw`items-center`}>
             <View style={tw`flex-row justify-center items-center`}>
-              <Text style={tw`text-gray-900 font-bold text-xl text-center`}>{balanceNaira}</Text>
-              <IconButton icon={balanceVisible ? "eye-off-outline" : "eye-outline"} onPress={toggleBalance} />
+              <View>
+                {balanceVisible ? (
+                  <Text style={tw`text-gray-900 font-bold text-3xl text-center`}>{balanceNaira}</Text>
+                ) : (
+                  <HorizontalDots />
+                )}
+              </View>
+              <IconButton
+                icon={
+                  balanceVisible
+                    ? (props) => <LargeEyeOpen {...props} width={scale(30)} height={scale(30)} />
+                    : (props) => <LargeEyeClose {...props} width={scale(30)} height={scale(30)} />
+                }
+                onPress={toggleBalance}
+              />
             </View>
-            <Text style={tw`text-center text-gray-400`}>Current Balance</Text>
-            <Button
-              icon={isVerified ? "wallet" : "shield-alert"}
-              mode="outlined"
-              style={tw`border-primary mt-2`}
-              onPress={isVerified ? handleFundWallet : handleVerifyAccount}>
-              {isVerified ? "Fund Wallet" : "Verify Account"}
+            <Text style={tw`text-center text-sm text-gray-400`}>Current Balance</Text>
+            <Button icon="wallet" mode="outlined" style={tw`border-primary mt-2`} onPress={handleFundWallet}>
+              Fund Wallet
             </Button>
           </Card.Content>
         </Card>
@@ -222,8 +262,6 @@ type RecentTransactionsProps = {
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const dispatch = useTypedDispatch();
   const { data: queryData, isLoading } = useFetchRecentTransactionsQuery();
 
   const { transactions } = queryData || {};

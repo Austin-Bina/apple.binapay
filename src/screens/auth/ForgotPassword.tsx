@@ -7,17 +7,19 @@ import { Controller, useForm } from "react-hook-form";
 import Screen from "@components/ui/shared/Screen";
 import CustomTextInput from "@components/ui/form/TextInput";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
-import { z } from 'zod';
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+type ForgetPasswordProps = StackScreenProps<"Forgot Password">;
 const schema = z.object({
-  email: z.string().email("Invalid email"),
+  email: z
+    .string()
+    .email("Please enter a valid email")
+    .trim()
+    .transform((val) => val.toLowerCase()),
 });
 
-const ForgetPassword: React.FC<StackScreenProps<"Forgot Password">> = ({
-  navigation,
-  route,
-}) => {
+export default function ForgetPassword({ navigation, route }: ForgetPasswordProps) {
   const [fetching, setFetching] = useState(false);
 
   const {
@@ -39,14 +41,9 @@ const ForgetPassword: React.FC<StackScreenProps<"Forgot Password">> = ({
     <Screen>
       <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
         <View>
-          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>
-            Forgot Your Password?
-          </Text>
-          <Text
-            style={tw`w-full text-gray-500 text-base font-normal leading-snug mb-10`}
-          >
-            Enter your registered email address to receive a password reset
-            link.
+          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Forgot Your Password?</Text>
+          <Text style={tw`w-full text-gray-500 text-base font-normal leading-snug mb-10`}>
+            Enter your registered email address to receive a password reset link.
           </Text>
 
           <Controller
@@ -64,15 +61,12 @@ const ForgetPassword: React.FC<StackScreenProps<"Forgot Password">> = ({
               />
             )}
           />
-          <View
-            style={tw`flex flex-row items-center justify-center mb-10 gap-2`}
-          >
+          <View style={tw`flex flex-row items-center justify-center mb-5 gap-2 mt-1`}>
             <Text style={tw`text-gray-700`}>Remember your login details?</Text>
             <TouchableOpacity
               onPress={() => {
                 navigation.navigate("Auth", { screen: "Login" });
-              }}
-            >
+              }}>
               <Text style={tw`text-primary`}>Log in here</Text>
             </TouchableOpacity>
           </View>
@@ -82,16 +76,11 @@ const ForgetPassword: React.FC<StackScreenProps<"Forgot Password">> = ({
           contentStyle={tw`p-2`}
           disabled={fetching}
           onPress={onSubmit}
-          mode="contained"
-        >
-          <Text style={tw`text-white text-center text-base font-bold`}>
-            Continue
-          </Text>
+          mode="contained">
+          <Text style={tw`text-white text-center text-base font-bold`}>Continue</Text>
         </Button>
       </View>
       <PleaseWaitModal visible={fetching} />
     </Screen>
   );
-};
-
-export default ForgetPassword;
+}

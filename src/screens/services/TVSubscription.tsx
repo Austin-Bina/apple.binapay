@@ -25,7 +25,6 @@ import { ActivityIndicator, Button, Text } from "react-native-paper";
 import { z } from "zod";
 import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import Fuse from "fuse.js";
-import { CablePlan } from "@type/app";
 import { formatToNaira } from "@utils/money";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { showToast } from "@helpers/toast";
@@ -171,15 +170,6 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
               return showToast({ message });
             }
           }
-
-          dispatch(
-            setTransactionError({
-              code: "500",
-              status: "error",
-              title: "Something went wrong",
-              description: "We had an error while trying to verify your card number, please try again.",
-            }),
-          );
         } finally {
           setShowProgress(false);
           setIsProcessing(false);
@@ -225,105 +215,110 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   return (
     <Screen>
       <ScrollableView
-        style={tw`flex-1 px-4 pt-5`}
+        contentContainerStyle={tw`justify-between px-4 py-5`}
         refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
-        <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-          TV Subscription
-        </Text>
-        <Text variant="bodySmall" style={tw`text-gray-500`}>
-          Easily purchase subscriptions for your favorite TV channels. Enter the details below to proceed.
-        </Text>
-        <View style={tw`flex-row items-center justify-around my-5`}>
-          {Object.values(serviceProvidersMap.entertainment).map((provider) => (
-            <TouchableOpacity
-              key={provider.serviceId}
-              onPress={() => setValue("provider", provider.serviceId)}
-              style={[
-                tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
-                values.provider === provider.serviceId && tw`border-blue-500 border-2`,
-              ]}>
-              <Image source={provider.logo} width={60} height={60} />
-            </TouchableOpacity>
-          ))}
-        </View>
         <View>
-          <Controller
-            control={control}
-            name="smart_card_number"
-            render={({ fieldState: { error }, field: { onChange, onBlur, value } }) => (
-              <CustomTextInput
-                label="Smart-card Number"
-                placeholder="Enter Smart-Card Number"
-                mode="outlined"
-                onBlur={onBlur}
-                value={value}
-                onChangeText={onChange}
-                error={!!error}
-                errorMessage={error?.message}
-              />
+          <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
+            TV Subscription
+          </Text>
+          <Text variant="bodySmall" style={tw`text-gray-500`}>
+            Easily purchase subscriptions for your favorite TV channels. Enter the details below to proceed.
+          </Text>
+          <View style={tw`flex-row items-center justify-around my-5`}>
+            {Object.values(serviceProvidersMap.entertainment).map((provider) => (
+              <TouchableOpacity
+                key={provider.serviceId}
+                onPress={() => setValue("provider", provider.serviceId)}
+                style={[
+                  tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
+                  values.provider === provider.serviceId && tw`border-blue-500 border-2`,
+                ]}>
+                <Image source={provider.logo} width={60} height={60} />
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View>
+            <Controller
+              control={control}
+              name="smart_card_number"
+              render={({ fieldState: { error }, field: { onChange, onBlur, value } }) => (
+                <CustomTextInput
+                  label="Smart-card Number"
+                  placeholder="Enter Smart-Card Number"
+                  mode="outlined"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!error}
+                  errorMessage={error?.message}
+                />
+              )}
+            />
+            {showProgress && (
+              <View style={tw`flex-row items-center gap-2`}>
+                <ActivityIndicator animating size="small" aria-label="Reading card number" />
+                <Text variant="labelSmall" style={tw`text-xs text-gray-500`}>
+                  Verifying card number
+                </Text>
+              </View>
             )}
-          />
-          {showProgress && (
-            <View style={tw`flex-row items-center gap-2`}>
-              <ActivityIndicator animating size="small" aria-label="Reading card number" />
-              <Text variant="labelSmall" style={tw`text-xs text-gray-500`}>
-                Verifying card number
-              </Text>
-            </View>
-          )}
-          {values.customer_name && (
-            <View style={tw`flex-row items-center gap-1.5`}>
-              <VerifiedBadge />
-              <Text variant="titleSmall" style={tw`text-primary-600`}>
-                {values.customer_name}
-              </Text>
-            </View>
-          )}
-        </View>
+            {values.customer_name && (
+              <View style={tw`flex-row items-center gap-1.5`}>
+                <VerifiedBadge />
+                <Text variant="titleSmall" style={tw`text-primary-600`}>
+                  {values.customer_name}
+                </Text>
+              </View>
+            )}
+          </View>
 
-        <DropdownMenuField
-          label="Period"
-          placeholder="Select your period"
-          name="period"
-          control={control}
-          data={gotvSubPeriods}
-        />
-        <DropdownMenuField
-          label="Package"
-          placeholder="Select your package"
-          name="package"
-          control={control}
-          data={cablePackages.map((plan) => ({
-            label: `${plan.package} - ${formatToNaira(plan.plan_amount)}`,
-            amount: plan.plan_amount,
-            package_name: plan.package,
-            id: plan.id.toString(),
-          }))}
-          onDataSelect={(plan) => {
-            reset({
-              ...values,
-              amount: plan.amount,
-              package: plan.id,
-              package_name: plan.package_name,
-            });
-          }}
-        />
-        <View style={tw`mb-5`}>
-          <NairaInput name="amount" control={control} isDisabled />
-          <Text style={tw`text-primary-900 text-sm mt-2.5`}>Wallet Balance: {formatToNaira(user?.wallet_balance)}</Text>
+          <DropdownMenuField
+            label="Period"
+            placeholder="Select your period"
+            name="period"
+            control={control}
+            data={gotvSubPeriods}
+          />
+          <DropdownMenuField
+            label="Package"
+            placeholder="Select your package"
+            name="package"
+            control={control}
+            data={cablePackages.map((plan) => ({
+              label: `${plan.package} - ${formatToNaira(plan.plan_amount)}`,
+              amount: plan.plan_amount,
+              package_name: plan.package,
+              id: plan.id.toString(),
+            }))}
+            onDataSelect={(plan) => {
+              reset({
+                ...values,
+                amount: plan.amount,
+                package: plan.id,
+                package_name: plan.package_name,
+              });
+            }}
+          />
+          <View style={tw`mb-5`}>
+            <NairaInput name="amount" control={control} isDisabled />
+            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
+              Wallet Balance: {formatToNaira(user?.wallet_balance)}
+            </Text>
+          </View>
+        </View>
+        <View style={tw`px-4 pb-4 pt-1`}>
+          <Button
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
+            labelStyle={tw`text-white text-center text-base font-bold`}
+            disabled={isProcessing}
+            onPress={openBottomSheet}
+            mode="contained">
+            {!readyToPay ? "Verify" : "Proceed"}
+          </Button>
         </View>
       </ScrollableView>
-      <View style={tw`px-4 pb-4 pt-1`}>
-        <Button
-          style={tw`w-full rounded-full`}
-          contentStyle={tw`py-2`}
-          labelStyle={tw`text-white text-center text-base font-bold`}
-          disabled={isProcessing}
-          onPress={openBottomSheet}
-          mode="contained">
-          {!readyToPay ? "Verify" : "Proceed"}
-        </Button>
-      </View>
+
       <BottomSheetModal
         ref={bottomSheet}
         initialSnapPoints={["50%", "50%"]}
