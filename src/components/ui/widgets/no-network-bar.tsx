@@ -1,13 +1,8 @@
-import React, {useEffect, useState, useRef, useMemo, useCallback} from 'react';
-import {
-  SafeAreaView,
-  StatusBar,
-  Animated,
-  Easing,
-  StyleSheet,
-} from 'react-native';
-import NetInfo from '@react-native-community/netinfo';
-import {MD3Theme, useTheme} from 'react-native-paper';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { StatusBar, Animated, Easing, StyleSheet, View } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
+import { MD3Theme, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const createStyles = (theme: MD3Theme) => {
   return StyleSheet.create({
@@ -20,8 +15,8 @@ const createStyles = (theme: MD3Theme) => {
       // We have predefined text-control-color variable
       color: theme.colors.error,
       padding: 16,
-      textAlign: 'center',
-      fontWeight: '500',
+      textAlign: "center",
+      fontWeight: "500",
       fontSize: 14,
     },
   });
@@ -30,6 +25,7 @@ const createStyles = (theme: MD3Theme) => {
 const OfflineBar = () => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const insets = useSafeAreaInsets();
 
   const animationConstants = useMemo(
     () => ({
@@ -56,8 +52,8 @@ const OfflineBar = () => {
   }, [animation, animationConstants]);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      const {isConnected} = state;
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const { isConnected } = state;
       setConnected(isConnected);
       if (isConnected) {
         triggerAnimation();
@@ -73,16 +69,25 @@ const OfflineBar = () => {
     outputRange: animationConstants.OUTPUT_RANGE,
   });
   const animationStyle = {
-    transform: [{translateX: interpolated}],
+    transform: [{ translateX: interpolated }],
   };
 
   return !connected ? (
-    <SafeAreaView style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}>
       <StatusBar backgroundColor={theme.colors.errorContainer} />
       <Animated.Text style={[styles.offlineText, animationStyle]}>
         You must connect to Wi-fi or a cellular network to get online again
       </Animated.Text>
-    </SafeAreaView>
+    </View>
   ) : null;
 };
 

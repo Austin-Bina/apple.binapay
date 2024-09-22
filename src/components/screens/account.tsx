@@ -41,7 +41,7 @@ const Action = ({ onPress, title, ItemIcon, badgeElement, backgroundColor = Colo
 interface ActionWithDescriptionProps {
   onPress: () => void;
   title: string;
-  ItemIcon: React.FC<SvgProps>;
+  ItemIcon?: React.FC<SvgProps>;
   badgeElement?: React.ReactNode;
   backgroundColor?: string;
   description: string;
@@ -60,15 +60,17 @@ const ActionWithDescription = ({
   return (
     <TouchableRipple onPress={onPress} disabled={isDisabled} style={[tw`py-4`, { opacity: isDisabled ? 0.6 : 1 }]}>
       <View style={tw`flex-row justify-between items-center px-4 gap-2`}>
-        <View
-          style={[
-            tw`flex-none justify-center h-12 w-12 items-center p-4 bg-primary-50 rounded-full`,
-            {
-              backgroundColor,
-            },
-          ]}>
-          <ItemIcon width={24} height={24} />
-        </View>
+        {ItemIcon && (
+          <View
+            style={[
+              tw`flex-none justify-center h-12 w-12 items-center p-4 bg-primary-50 rounded-full`,
+              {
+                backgroundColor,
+              },
+            ]}>
+            <ItemIcon width={24} height={24} />
+          </View>
+        )}
 
         <View style={tw`flex-1`}>
           <View style={tw`flex-row items-center gap-2`}>
@@ -86,4 +88,19 @@ const ActionWithDescription = ({
   );
 };
 
-export { Action, ActionWithDescription };
+interface SupportActionProps {
+  onPress: () => void;
+  title: string;
+}
+const SupportAction = ({ onPress, title }: SupportActionProps) => {
+  return (
+    <TouchableRipple onPress={onPress} style={tw`py-2`}>
+      <View style={tw`flex-row justify-between items-center px-4 my-1`}>
+        <Text style={tw`text-base font-medium`}>{title}</Text>
+        <AngledRightArrow width={20} />
+      </View>
+    </TouchableRipple>
+  );
+};
+
+export { Action, ActionWithDescription, SupportAction };

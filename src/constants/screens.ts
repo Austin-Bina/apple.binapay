@@ -39,7 +39,7 @@ export const SCREENS = {
 
   // Account Verifications
   VERIFY_ACCOUNT: "Verify Account",
-  ONE_TIME_PASSWORD: "One Time Password",
+  REQUEST_ONE_TIME_PASSWORD: "Request One Time Password",
   ACCOUNT_VERIFICATION_OPTIONS: "Account Verification Options",
   NAME_CHECK_VERIFICATION: "Name Check Verification",
   BVN_VERIFICATION: "BVN Verification",
@@ -74,4 +74,12 @@ export const SCREENS = {
 
   // Settings
   SETTINGS: "Settings",
+
+  // Support
+  SUPPORT_STACK: "Support",
+  SUPPORT_DEPARTMENT: "Support Department",
+  SUPPORT_START_CONVERSATION: "Start Conversation",
+  SUPPORT_CHAT: "Support Chat",
+  SUPPORT_HISTORY: "Support History",
+  DEPARTMENT_AND_HISTORY_TAB: "Department and History Tab",
 } as const;

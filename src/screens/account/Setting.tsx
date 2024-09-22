@@ -29,7 +29,6 @@ export default function SettingScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
 
   const tier1 = user?.account_tier === AccountTier.Tier1;
-  const tier2 = user?.account_tier === AccountTier.Tier2;
 
   const verificationStatusText = tier1 ? "Upgrade to Tier 2" : "Verified";
 
@@ -91,7 +90,9 @@ export default function SettingScreen({ navigation }: Props) {
           title="Help & Support"
           ItemIcon={SupportIcon}
           onPress={() => {
-            Linking.openURL("https://support.binapay.co/login");
+            navigation.navigate(SCREENS.SUPPORT_STACK, {
+              screen: SCREENS.DEPARTMENT_AND_HISTORY_TAB,
+            });
           }}
         />
         <Action

@@ -6,19 +6,21 @@ import { getPendingTransaction } from "@store/slice/transactionSlice";
 import { getNavigate } from "@utils/navigation";
 import { getTransactionDescription, getTransactionDetails, getTransactionTitle } from "@helpers/transaction";
 import React, { useMemo } from "react";
-import { View, ImageBackground, SafeAreaView } from "react-native";
+import { View, ImageBackground } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
 import { match } from "ts-pattern";
 import { convertToNaira } from "@utils/money";
 import { format } from "date-fns";
 import { SCREENS } from "@constants/screens";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = ServicesStackScreenProps<"View Transaction">;
 
 export default function ViewTransaction({ route }: Props) {
   const { transactionId, type = "utility" } = route.params;
 
+  const insets = useSafeAreaInsets();
   const pendingTransaction = useTypedSelector((state) => getPendingTransaction(state.transaction, transactionId));
 
   const response = useMemo(() => {
@@ -119,7 +121,16 @@ export default function ViewTransaction({ route }: Props) {
     <ImageBackground
       source={require("@assets/images/background-without-logo.png")}
       style={tw`px-4 py-8 flex-1 justify-between`}>
-      <SafeAreaView style={tw`py-8 items-center gap-10 h-[70%]`}>
+      <View
+        style={[
+          tw`py-8 items-center gap-10 h-[70%]`,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}>
         <View>
           <Image source={require("@assets/images/logo-with-name.png")} width={136} />
         </View>
@@ -160,7 +171,7 @@ export default function ViewTransaction({ route }: Props) {
             </Button>
           )}
         </View>
-      </SafeAreaView>
+      </View>
       <Button
         style={tw`w-full rounded-full`}
         contentStyle={tw`py-2`}

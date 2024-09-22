@@ -1,3 +1,5 @@
+import * as DocumentPicker from "expo-document-picker";
+
 type ProviderDetails = {
   id: number;
   serviceId: string;
@@ -106,4 +108,23 @@ export interface BinaNotification {
   read_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type ExpoAttachment = DocumentPicker.DocumentPickerAsset;
+
+export interface GiftedChatMessageData {
+  id: string;
+  _id: string | number;
+  type: string;
+  body: string;
+  attachment?: string;
+  sent: boolean;
+  received: boolean;
+  created_at: number;
+}
+export interface DraftMessage {
+  _id: string | number;
+  type: 'text' | 'attachment';
+  message?: string;
+  attachment?: string;
 }

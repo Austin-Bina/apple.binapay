@@ -1,6 +1,6 @@
-import { Platform, StyleProp, ViewStyle } from "react-native";
+import { Platform, StyleProp, View, ViewStyle } from "react-native";
 import React, { ReactNode } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import tw from "@lib/tailwind";
 
 interface Props {
@@ -9,14 +9,21 @@ interface Props {
   withBackgroundImage?: boolean;
 }
 const Screen = ({ children, style }: Props) => {
-  const iosEdges = ["right", "left"] as const;
-  const otherEdges = ["right", "left"] as const;
-  const edges = Platform.OS === "ios" ? iosEdges : otherEdges;
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={[tw`flex-1 bg-white`, style]} edges={edges}>
+    <View
+      style={[
+        tw`flex-1 bg-white`,
+        style,
+        {
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}>
       {children}
-    </SafeAreaView>
+    </View>
   );
 };
 

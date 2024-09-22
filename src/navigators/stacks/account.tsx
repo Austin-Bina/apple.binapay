@@ -11,6 +11,7 @@ import BinaRewardsScreen from "@screens/account/BinaRewards";
 import EarningSummaryScreen from "@screens/account/EarningSummary";
 import { SCREENS } from "@constants/screens";
 import KYCStack from "./verify-account";
+import SupportStack from "./support";
 
 const Stack = createNativeStackNavigator<AccountParamList>();
 
@@ -52,6 +53,7 @@ function AccountStack() {
       <Stack.Screen name="Earning Summary" component={EarningSummaryScreen} />
       <Stack.Screen name="Change Password" component={ChangePassword} />
       <Stack.Screen name={SCREENS.VERIFY_ACCOUNT} options={{ headerShown: false }} component={KYCStack} />
+      <Stack.Screen name={SCREENS.SUPPORT_STACK} options={{ headerShown: false }} component={SupportStack} />
     </Stack.Navigator>
   );
 }

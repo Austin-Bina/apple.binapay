@@ -15,7 +15,6 @@ import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
 import { selectIsLoggingIn } from "@store/selectors/auth";
 import { showToast } from "@helpers/toast";
-import { AxiosError } from "axios";
 import { EyeOpen, PasswordLock } from "@components/icons/svg";
 
 const schema = z.object({
@@ -51,15 +50,9 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
     try {
       await dispatch(authSliceActions.doLogin(values)).unwrap();
     } catch (error) {
-      const { errors, message } = error as any;
-      
-      if (errors) {
-        if (message && typeof message === "string") {
-          showToast({ message });
-        } else {
-          showToast({ message: "Something went wrong. Please try again." });
-        }
+      const { errors } = error as any;
 
+      if (errors) {
         if (errors) {
           for (const [field, fieldErrors] of Object.entries(errors)) {
             if (Array.isArray(fieldErrors)) {
@@ -69,7 +62,11 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
             }
           }
         }
+
+        return;
       }
+
+      showToast({ message: "Something went wrong. Please try again." });
     }
   });
 

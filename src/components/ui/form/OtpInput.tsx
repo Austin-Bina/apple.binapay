@@ -1,6 +1,6 @@
 import { TextInput, View } from "react-native";
 import React, { useMemo, useState } from "react";
-import { Text, useTheme } from "react-native-paper";
+import { HelperText, Text, useTheme } from "react-native-paper";
 import tw from "@lib/tailwind";
 import { scale } from "react-native-size-matters";
 import { Control, useController } from "react-hook-form";
@@ -14,6 +14,7 @@ type OtpInputProps = {
 const OtpInput = ({ control, name = "pin", maximumLength = 6 }: OtpInputProps) => {
   const {
     field: { onChange, value },
+    fieldState: { error },
   } = useController({
     control,
     name,
@@ -72,6 +73,11 @@ const OtpInput = ({ control, name = "pin", maximumLength = 6 }: OtpInputProps) =
         placeholderTextColor="#B8B8D2"
         placeholder="Enter OTP"
       />
+      {error?.message && (
+        <HelperText type="error" style={tw`text-sm text-center mt-2`}>
+          {error.message}
+        </HelperText>
+      )}
     </View>
   );
 };

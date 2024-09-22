@@ -11,76 +11,104 @@ import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import tw from "@lib/tailwind";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { EyeOpen, PasswordLock } from "@components/icons/svg";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import API from "@lib/api";
+import { route } from "@helpers/route";
+import { AxiosError } from "axios";
+import { showToast } from "@helpers/toast";
+import { SCREENS } from "@constants/screens";
 
+const schema = z
+  .object({
+    password: z.string().trim().min(8, "Password length must be at least 8 characters"),
+    password_confirmation: z.string().trim().min(8, "Password length must be at least 8 characters"),
+    token: z.string().trim().min(6, "Token length must be at least 6 characters"),
+    email: z.string().email("Please enter a valid email"),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: "Passwords don't match",
+    path: ["password_confirmation"],
+  });
+
+type FormValues = z.infer<typeof schema>;
 type ResetPasswordProps = StackScreenProps<"Reset Password">;
 
-const schema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Required"),
-  password: Yup.string().min(8, "Too short!").required("Required").trim(),
-  password_confirmation: Yup.string()
-    .required("Required")
-    .trim()
-    .oneOf([Yup.ref("password")], "passwords must match"),
-});
-
-const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
+export default function ResetPasswordScreen(props: ResetPasswordProps) {
   const [passwordVisible, setPasswordVisible] = useState(true);
   const [passwordConfirmationVisible, setPasswordConfirmationVisible] = useState(true);
-  const [fetching, setFetching] = useState(false);
-
-  const isLoggedOut = true;
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const params = props.route.params;
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
+  const { control, handleSubmit, setError } = useForm<FormValues>({
     defaultValues: {
       password: "",
       password_confirmation: "",
       email: params.email,
+      token: params.code,
     },
-    resolver: yupResolver(schema),
+    resolver: zodResolver(schema),
   });
 
-  const onSubmit = handleSubmit((data) => {
-    setFetching(true);
+  const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
+  const togglePasswordConfirmVisibility = () => setPasswordConfirmationVisible(!passwordConfirmationVisible);
 
-    if (isLoggedOut) {
-      props.navigation.navigate("Reset Password Successful");
-    } else {
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      setIsProcessing(true);
+      await API.post(route("auth.resetPassword"), data);
+      props.navigation.navigate(SCREENS.RESET_PASSWORD_SUCCESS);
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      const { response } = axiosError;
+
+      if (response) {
+        const { errors } = response.data;
+
+        if (errors) {
+          for (const [field, fieldErrors] of Object.entries(errors)) {
+            if (Array.isArray(fieldErrors)) {
+              setError(field as keyof FormValues, {
+                message: fieldErrors.join(", "),
+              });
+            }
+          }
+        }
+      } else {
+        showToast({ message: "Something went wrong. Please try again." });
+      }
+    } finally {
+      setIsProcessing(false);
     }
-    setFetching(false);
   });
 
   return (
     <Screen>
-      <ScrollableView>
-        <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
+      <ScrollableView contentContainerStyle={tw`px-4 pt-5 justify-between`}>
+        <View>
           <View>
-            <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Create Password</Text>
+            <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Reset Password</Text>
             <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>
-              Create password to secure your account.
+              Create a new password for your BinaPay account.
             </Text>
 
             <Controller
               control={control}
-              render={({ field: { onChange, onBlur, value } }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <CustomTextInput
                   label="Password"
                   secureTextEntry={passwordVisible}
                   onBlur={onBlur}
                   value={value}
                   onChangeText={onChange}
-                  error={!!errors.password}
-                  errorMessage={errors.password?.message}
+                  error={!!error}
+                  errorMessage={error?.message}
                   mode="outlined"
                   left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
-                      onPress={() => setPasswordVisible((prev) => !prev)}
+                      onPress={togglePasswordVisibility}
                       icon={passwordVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
@@ -92,20 +120,20 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
             />
             <Controller
               control={control}
-              render={({ field: { onChange, onBlur, value } }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <CustomTextInput
                   label="Confirm Password"
                   onBlur={onBlur}
                   value={value}
                   onChangeText={onChange}
-                  error={!!errors.password_confirmation}
-                  errorMessage={errors.password_confirmation?.message}
+                  error={!!error}
+                  errorMessage={error?.message}
                   secureTextEntry={passwordConfirmationVisible}
                   mode="outlined"
                   left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                   right={
                     <TextInput.Icon
-                      onPress={() => setPasswordConfirmationVisible((prev) => !prev)}
+                      onPress={togglePasswordConfirmVisibility}
                       icon={passwordConfirmationVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
                       color="#71717A"
                       forceTextInputFocus={false}
@@ -116,20 +144,19 @@ const ResetPassword: React.FC<ResetPasswordProps> = (props) => {
               name="password_confirmation"
             />
           </View>
-
+        </View>
+        <View style={tw`px-4 pb-4 pt-1`}>
           <Button
-            style={tw`mt-auto mb-[30px] px-2 py-2 w-full rounded-full`}
+            style={tw`w-full rounded-full`}
             contentStyle={tw`py-2`}
-            disabled={fetching}
+            disabled={isProcessing}
             onPress={onSubmit}
             mode="contained">
-            <Text style={tw`text-white text-center text-base font-bold`}>Reset Password</Text>
+            Reset Password
           </Button>
         </View>
-        <PleaseWaitModal visible={fetching} />
       </ScrollableView>
+      <PleaseWaitModal visible={isProcessing} />
     </Screen>
   );
-};
-
-export default ResetPassword;
+}

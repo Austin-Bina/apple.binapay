@@ -5,8 +5,10 @@ import { Button, Text } from "react-native-paper";
 import { StackScreenProps } from "@navigators/types";
 import { useTypedSelector } from "@store/common";
 import { selectLoggedIn } from "@store/selectors/auth";
+import { SCREENS } from "@constants/screens";
 
-const ResetPasswordSuccessScreen: React.FC<StackScreenProps<"Reset Password Successful">> = ({ navigation }) => {
+type Props = StackScreenProps<typeof SCREENS.RESET_PASSWORD_SUCCESS>;
+export default function ResetPasswordSuccessScreen({ navigation }: Props) {
   const isLoggedIn = useTypedSelector(selectLoggedIn);
 
   const handleNavigate = function () {
@@ -46,6 +48,4 @@ const ResetPasswordSuccessScreen: React.FC<StackScreenProps<"Reset Password Succ
       </View>
     </ImageBackground>
   );
-};
-
-export default ResetPasswordSuccessScreen;
+}

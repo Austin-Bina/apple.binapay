@@ -7,10 +7,8 @@ import Busy from "@screens/Busy";
 import Onboarding from "@screens/onboarding/Onboarding";
 import AuthStack from "./stacks/authentication";
 import ForgetPassword from "@screens/auth/ForgotPassword";
-import ResetPassword from "@screens/auth/ResetPassword";
 import { TouchableRipple } from "react-native-paper";
 import ResetPasswordSuccessScreen from "@screens/auth/ResetPasswordSuccess";
-import VerifyOTPScreen from "@screens/auth/VerifyOTP";
 import { TabBar } from "./tabs/MainTab";
 import { NavigationContainer } from "@react-navigation/native";
 import { navigationRef } from "@utils/navigation";
@@ -19,6 +17,9 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useTypedSelector } from "@store/common";
 import { selectIsFetchingProfile, selectLoggedIn, selectNewUser } from "@store/selectors/auth";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import { SCREENS } from "@constants/screens";
+import RequestOneTimePasswordScreen from "@screens/auth/RequestOneTimePassword";
+import ResetPasswordScreen from "@screens/auth/ResetPassword";
 
 const Stack = createNativeStackNavigator<StackParamList>();
 
@@ -28,7 +29,7 @@ function Router() {
   const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
 
   const isAuthenticated = isLoggedIn && !isNewUser;
-  
+
   return (
     <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
       <NavigationContainer ref={navigationRef}>
@@ -53,20 +54,20 @@ function Router() {
             })}>
             {isAuthenticated ? (
               <React.Fragment>
-                <Stack.Screen name="Main" component={TabBar} options={{ headerShown: false }} />
-                <Stack.Screen name="One Time Password" component={VerifyOTPScreen} />
+                <Stack.Screen name={SCREENS.MAIN} component={TabBar} options={{ headerShown: false }} />
               </React.Fragment>
             ) : (
               <React.Fragment>
-                <Stack.Screen name="Auth" component={AuthStack} options={{ headerShown: false }} />
-                <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} />
-                <Stack.Screen name="Forgot Password" component={ForgetPassword} />
+                <Stack.Screen name={SCREENS.AUTH} component={AuthStack} options={{ headerShown: false }} />
+                <Stack.Screen name={SCREENS.ONBOARDING} component={Onboarding} options={{ headerShown: false }} />
               </React.Fragment>
             )}
-            <Stack.Screen name="Busy" options={{ headerShown: false }} component={Busy} />
-            <Stack.Screen name="Reset Password" component={ResetPassword} />
+            <Stack.Screen name={SCREENS.FORGOT_PASSWORD} component={ForgetPassword} />
+            <Stack.Screen name={SCREENS.BUSY} options={{ headerShown: false }} component={Busy} />
+            <Stack.Screen name={SCREENS.REQUEST_ONE_TIME_PASSWORD} component={RequestOneTimePasswordScreen} />
+            <Stack.Screen name={SCREENS.RESET_PASSWORD} component={ResetPasswordScreen} />
             <Stack.Screen
-              name="Reset Password Successful"
+              name={SCREENS.RESET_PASSWORD_SUCCESS}
               options={{ headerShown: false }}
               component={ResetPasswordSuccessScreen}
             />

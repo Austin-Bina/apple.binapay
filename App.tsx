@@ -15,7 +15,7 @@ import { RootSiblingParent as ToastRootSiblingParent } from "react-native-root-s
 
 SplashScreen.preventAutoHideAsync();
 
-function Binapay() {
+function BinaPay() {
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
@@ -104,5 +104,5 @@ function Binapay() {
 //   });
 // }
 
-// export default !__DEV__ ? Sentry.wrap(Binapay) : Binapay;
-export default Binapay;
+// export default !__DEV__ ? Sentry.wrap(BinaPay) : BinaPay;
+export default BinaPay;

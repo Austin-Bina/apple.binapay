@@ -11,9 +11,10 @@
   },
   "cSpell.words": [
     "airtel",
-    "Binapay",
+    "BinaPay",
     "Epin",
     "epins",
     "persistor"
   ],
+  "typescript.tsdk": "node_modules/typescript/lib",
 }

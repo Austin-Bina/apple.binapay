@@ -17,14 +17,17 @@ import { showToast } from "@helpers/toast";
 import { AxiosError } from "axios";
 import { getNavigate } from "@utils/navigation";
 import { EyeOpen, PasswordLock } from "@components/icons/svg";
+import { SCREENS } from "@constants/screens";
+import { useTypedSelector } from "@store/common";
+import { selectUser } from "@store/selectors/auth";
 
 type ResetPasswordProps = AccountStackScreenProps<"Change Password">;
 
 const schema = z
   .object({
-    current_password: z.string().min(8, "Too short!").trim(),
-    password: z.string().min(8, "Too short!").trim(),
-    password_confirmation: z.string().trim(),
+    current_password: z.string().trim().min(8, "Password too weak"),
+    password: z.string().trim().min(8, "Password too weak"),
+    password_confirmation: z.string().trim().min(8, "Password too weak"),
   })
   .refine((data) => data.password === data.password_confirmation, {
     message: "Passwords don't match",
@@ -32,12 +35,13 @@ const schema = z
   });
 type FormValues = z.infer<typeof schema>;
 
-const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
+export default function ChangePassword(props: ResetPasswordProps) {
   const [currentPasswordVisible, setCurrentPasswordVisible] = useState(true);
   const [passwordVisible, setPasswordVisible] = useState(true);
   const [passwordConfirmationVisible, setPasswordConfirmationVisible] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const user = useTypedSelector(selectUser);
   const { control, handleSubmit, setError } = useForm<FormValues>({
     defaultValues: {
       current_password: "",
@@ -60,13 +64,7 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
       const { response } = axiosError;
 
       if (response) {
-        const { message, errors } = response.data;
-
-        if (message && typeof message === "string") {
-          showToast({ message });
-        } else {
-          showToast({ message: "Something went wrong. Please try again." });
-        }
+        const { errors } = response.data;
 
         if (errors) {
           for (const [field, fieldErrors] of Object.entries(errors)) {
@@ -77,16 +75,28 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
             }
           }
         }
+
+        return;
       }
+
+      showToast({ message: "Something went wrong. Please try again." });
     } finally {
       setIsProcessing(false);
     }
   });
 
+  const handlePasswordResetNavigation = async () => {
+    const { navigate } = await getNavigate();
+
+    navigate(SCREENS.FORGOT_PASSWORD, {
+      email: user?.email || "",
+    });
+  };
+
   return (
     <Screen>
-      <ScrollableView>
-        <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
+      <ScrollableView contentContainerStyle={tw`px-4 pt-5 justify-between`}>
+        <View>
           <View>
             <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Change Password</Text>
             <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>
@@ -173,26 +183,25 @@ const ChangePassword: React.FC<ResetPasswordProps> = (props) => {
           </View>
 
           <View style={tw`items-center my-10`}>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={handlePasswordResetNavigation}>
               <Text variant="bodySmall" style={tw`text-primary font-bold text-center`}>
                 Forgot Current Password?
               </Text>
             </TouchableOpacity>
           </View>
-
+        </View>
+        <View style={tw`px-4 pb-4 pt-1`}>
           <Button
-            style={tw`mt-auto mb-[30px] w-full rounded-full`}
-            contentStyle={tw`p-2`}
+            style={tw`w-full rounded-full`}
+            contentStyle={tw`py-2`}
             disabled={isProcessing}
             onPress={onSubmit}
             mode="contained">
             <Text style={tw`text-white text-center text-base font-bold`}>Reset Password</Text>
           </Button>
         </View>
-        <PleaseWaitModal visible={isProcessing} />
       </ScrollableView>
+      <PleaseWaitModal visible={isProcessing} />
     </Screen>
   );
-};
-
-export default ChangePassword;
+}

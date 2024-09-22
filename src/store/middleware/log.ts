@@ -1,5 +1,5 @@
 import {type Middleware} from '@reduxjs/toolkit';
-import { Dispatch, State } from '@lib/app';
+import { State, Dispatch } from '@store/main';
 
 export type LogOptions = Readonly<{
   logStackTrace?: boolean;

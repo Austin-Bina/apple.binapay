@@ -127,11 +127,11 @@ export default function ListServicesScreen({ navigation }: Props) {
         </View>
         <BottomSheetModal
           ref={bottomSheet}
-          initialSnapPoints={["55%", "55%"]}
+          initialSnapPoints={["58%", "58%"]}
           closeFilter={closeBottomSheet}
           children={
             <View style={tw`flex-1 items-center px-2.5`}>
-              <Image source={require("@assets/images/oops.png")} width={scale(240)} style={tw`mb-6`} />
+              <Image source={require("@assets/images/oops.png")} width={scale(220)} style={tw`mb-6`} />
               <Text variant="titleLarge" style={tw`font-bold mb-2`}>
                 Service Coming Soon
               </Text>
