@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
 import Screen from "@components/ui/shared/Screen";
 import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
@@ -32,10 +32,13 @@ import { notificationsApi } from "@store/redux-api/notificationApi";
 import { HorizontalDots, LargeEyeClose, LargeEyeOpen } from "@components/icons/svg";
 import { scale } from "react-native-size-matters";
 import { SCREENS } from "@constants/screens";
+import FundAccountSheet from "@components/ui/modals/fund-account";
 
-const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation }) => {
+type Props = HomeStackScreenProps<typeof SCREENS.DASHBOARD>;
+export default function HomeScreen({ navigation }: Props) {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
+  const [fundModalVisible, setFundModalVisible] = useState(false);
 
   const user = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
@@ -142,8 +145,43 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
     });
   };
 
-  const handleFundWallet = async () => {
-    navigation.navigate("Add Money");
+  const openFundModal = () => {
+    setFundModalVisible(true);
+  };
+
+  const closeFundModal = () => {
+    setFundModalVisible(false);
+  };
+
+  const handleFundWithBank = () => {
+    closeFundModal();
+
+    navigation.navigate(SCREENS.ADD_MONEY, {
+      screen: SCREENS.MANUAL_FUND_STACK,
+      params: {
+        screen: SCREENS.FUND_WITH_BANK,
+      },
+    });
+  };
+
+  const handleFundWithCard = () => {
+    closeFundModal();
+
+    navigation.navigate(SCREENS.ADD_MONEY, {
+      screen: SCREENS.MANUAL_FUND_STACK,
+      params: {
+        screen: SCREENS.FUND_WITH_CARD,
+      },
+    });
+  };
+
+  const handleManualFund = () => {
+    closeFundModal();
+
+    navigation.navigate(SCREENS.ADD_MONEY, {
+      screen: SCREENS.MANUAL_FUND_STACK,
+      params: { screen: SCREENS.START_MANUAL_FUNDING },
+    });
   };
 
   return (
@@ -173,7 +211,7 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
               />
             </View>
             <Text style={tw`text-center text-sm text-gray-400`}>Current Balance</Text>
-            <Button icon="wallet" mode="outlined" style={tw`border-primary mt-2`} onPress={handleFundWallet}>
+            <Button icon="wallet" mode="outlined" style={tw`border-primary mt-2`} onPress={openFundModal}>
               Fund Wallet
             </Button>
           </Card.Content>
@@ -252,9 +290,18 @@ const HomeScreen: React.FC<HomeStackScreenProps<"Dashboard">> = ({ navigation })
         {/* Recent Transactions */}
         <RecentTransactions navigation={navigation} />
       </ScrollableView>
+      <FundAccountSheet
+        show={fundModalVisible}
+        hide={closeFundModal}
+        navigation={{
+          handleFundWithBank,
+          handleFundWithCard,
+          handleManualFund,
+        }}
+      />
     </Screen>
   );
-};
+}
 
 type RecentTransactionsProps = {
   navigation: any;
@@ -341,5 +388,3 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) =
     </View>
   );
 };
-
-export default HomeScreen;

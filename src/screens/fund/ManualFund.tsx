@@ -14,12 +14,13 @@ import { Controller, useForm } from "react-hook-form";
 import {
   Animated,
   FlatList,
+  ImageBackground,
   RefreshControl,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
-import { ActivityIndicator, Avatar, Button, HelperText, Text, TouchableRipple } from "react-native-paper";
+import { ActivityIndicator, Avatar, Button, HelperText, IconButton, Text, TouchableRipple } from "react-native-paper";
 import { scale } from "react-native-size-matters";
 import { z } from "zod";
 import * as Clipboard from "expo-clipboard";
@@ -29,6 +30,7 @@ import { route as apiRoute } from "@helpers/route";
 import { showToast } from "@helpers/toast";
 import Banner from "@components/ui/banner";
 import ScrollableView from "@components/ui/shared/ScrollableView";
+import DropdownMenuField from "@components/ui/form/DropdownMenu";
 
 type ManualFundViewProps = ManualFundStackScreenProps<typeof SCREENS.MANUAL_FUND>;
 
@@ -182,7 +184,20 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
             />
           )}
 
-          <FlatList
+          <View style={tw`mt-4`}>
+            <DropdownMenuField
+              control={control}
+              name="account_number"
+              label="Bank To Use"
+              placeholder="Select Bank"
+              data={bankAccounts.map((bank) => ({
+                label: `${bank.bank_name} - ${bank.account_name}`,
+                id: bank.account_number,
+              }))}
+            />
+          </View>
+
+          {/* <FlatList
             ref={slideRef}
             horizontal
             data={bankAccounts}
@@ -215,7 +230,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
                 height: 4,
               }}
             />
-          </View>
+          </View> */}
 
           {!transactionReference && (
             <Controller
@@ -239,9 +254,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
 
           {EmptyView}
 
-          {selectedBank && transactionReference && (
-            <SelectedBankDetails selected={selectedBank} reference={transactionReference} />
-          )}
+          {selectedBank && <SelectedBankDetails selected={selectedBank} reference={transactionReference} />}
         </View>
 
         <View style={tw`px-4 pb-4 pt-1 mt-10`}>
@@ -261,21 +274,61 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
     </Screen>
   );
 }
-
 type SelectedBankDetailsProps = {
   selected: BankAccount;
-  reference: string;
+  reference: string | null;
 };
 
 const SelectedBankDetails: React.FC<SelectedBankDetailsProps> = ({ selected, reference }) => {
+  const [accountNumberCopied, setAccountNumberCopied] = useState(false);
+  const [referenceNumberCopied, setReferenceNumberCopied] = useState(false);
+
+  const copyToClipboard = async (text: string, setCopied: React.Dispatch<React.SetStateAction<boolean>>) => {
+    await Clipboard.setStringAsync(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <View style={tw`mt-5`}>
-      <DetailsItemCopy label="Account Name" value={selected.account_name} />
-      <DetailsItemCopy label="Bank Name" value={selected.bank_name} />
-      <DetailsItemCopy label="Account Number" value={selected.account_number} />
-      <DetailsItemCopy label="Reference Number" value={reference} />
-      <Banner message="Kindly ensure you use Reference number as transaction narration. It will be used to verify your transaction." />
-    </View>
+    <ImageBackground
+      source={require("@assets/images/card-background-waves.png")}
+      style={tw`bg-primary-900 p-4 rounded-lg shadow-xl shadow-primary/20 mt-4`}>
+      <View style={tw`mt-5 gap-2`}>
+        <View style={tw`flex-row justify-between`}>
+          <Text style={tw`text-white`}>Account Name</Text>
+          <Text style={tw`text-base font-bold text-white`}>{selected.account_name}</Text>
+        </View>
+        <View style={tw`flex-row justify-between`}>
+          <Text style={tw`text-white`}>Bank Name</Text>
+          <Text style={tw`text-base font-bold text-white`}>{selected.bank_name}</Text>
+        </View>
+        <View style={tw`flex-row items-center justify-between`}>
+          <Text style={tw`text-white`}>Account Number</Text>
+          <View style={tw`flex-row font-bold items-center`}>
+            <Text style={tw`text-base text-white`}>{selected.account_number}</Text>
+            <IconButton
+              onPress={() => copyToClipboard(selected.account_number, setAccountNumberCopied)}
+              icon={accountNumberCopied ? "sticker-check" : "content-copy"}
+              iconColor="white"
+            />
+          </View>
+        </View>
+        {reference && (
+          <View style={tw`flex-col items-start justify-start`}>
+            <Text style={tw`text-white`}>Reference Number</Text>
+            <View style={tw`flex-row font-bold items-center justify-end`}>
+              <Text style={tw`text-base text-white`}>{reference}</Text>
+              <IconButton
+                onPress={() => copyToClipboard(reference, setReferenceNumberCopied)}
+                icon={referenceNumberCopied ? "sticker-check" : "content-copy"}
+                iconColor="white"
+              />
+            </View>
+          </View>
+        )}
+        <Banner message="Kindly ensure you use Reference number as transaction narration. It will be used to verify your transaction." />
+      </View>
+    </ImageBackground>
   );
 };
 

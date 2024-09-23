@@ -1,4 +1,5 @@
 import Screen from "@components/ui/shared/Screen";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 import { SCREENS } from "@constants/screens";
 import tw from "@lib/tailwind";
 import { ManualFundStackScreenProps } from "@navigators/types";
@@ -26,17 +27,18 @@ export default function ManualFundWaitScreen(props: Props) {
     <ImageBackground
       source={require("@assets/images/background-with-logo.png")}
       style={tw`flex-1 justify-center items-center`}>
-      <View style={tw`p-4`}>
-        <ActivityIndicator animating size="large" color="gray" />
+      <ScrollableView contentContainerStyle={tw`px-4 py-5 justify-between`}>
+        <View style={tw`p-4 flex-1 justify-center items-center`}>
+          <ActivityIndicator animating size="large" color="gray" />
 
-        <Text variant="titleLarge" style={tw`text-gray-800 text-center my-2 font-bold`}>
-          Confirming your payment
-        </Text>
-        <Text variant="bodyMedium" style={tw`text-gray-500 text-center mt-4`}>
-          We are now reviewing your payment, this should not take too long. If you need to cancel or make further
-          request or enquiry, please contact support.
-        </Text>
-
+          <Text variant="titleLarge" style={tw`text-gray-800 text-center my-2 font-bold`}>
+            Confirming your payment
+          </Text>
+          <Text variant="bodyMedium" style={tw`text-gray-500 text-center mt-4`}>
+            We are now reviewing your payment, this should not take too long. If you need to cancel or make further
+            request or enquiry, please contact support.
+          </Text>
+        </View>
         <View style={tw`my-10`}>
           <Button
             onPress={resetNavigationToDashboard}
@@ -46,7 +48,7 @@ export default function ManualFundWaitScreen(props: Props) {
             Back to Home
           </Button>
         </View>
-      </View>
+      </ScrollableView>
     </ImageBackground>
   );
 }

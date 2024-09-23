@@ -6,7 +6,6 @@ import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import { View } from "react-native";
 import { SCREENS } from "@constants/screens";
 import PaymentSuccessScreen from "@screens/home/PaymentSuccess";
-import AddMoneyScreen from "@screens/fund/AddMoney";
 import { AddMoneyParamList } from "@navigators/types";
 import ManualFundStack from "./manual-fund";
 
@@ -15,7 +14,7 @@ const Stack = createNativeStackNavigator<AddMoneyParamList>();
 function AddMoneyStack() {
   return (
     <Stack.Navigator
-      initialRouteName={SCREENS.FUND_ACCOUNT_OPTIONS}
+      initialRouteName={SCREENS.MANUAL_FUND_STACK}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -45,7 +44,6 @@ function AddMoneyStack() {
           </View>
         ),
       })}>
-      <Stack.Screen name={SCREENS.FUND_ACCOUNT_OPTIONS} component={AddMoneyScreen} />
       <Stack.Screen name={SCREENS.PAYMENT_SUCCESS} options={{ headerShown: false }} component={PaymentSuccessScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND_STACK} options={{ headerShown: false }} component={ManualFundStack} />
     </Stack.Navigator>

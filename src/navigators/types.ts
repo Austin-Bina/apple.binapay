@@ -78,7 +78,7 @@ export type TabNavScreenProps<T extends keyof TabParamList> = BottomTabScreenPro
 export type HomeParamList = {
   [SCREENS.DASHBOARD]: undefined;
   [SCREENS.NOTIFICATION]: NavigatorScreenParams<NotificationParamList>;
-  [SCREENS.ADD_MONEY]: undefined;
+  [SCREENS.ADD_MONEY]: NavigatorScreenParams<AddMoneyParamList>;
   [SCREENS.TRANSACTION_HISTORY]: undefined;
   [SCREENS.TRANSACTION_DETAILS]: undefined;
 };
@@ -89,7 +89,6 @@ export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScr
  * Group for screens related to adding money.
  */
 export type AddMoneyParamList = {
-  [SCREENS.FUND_ACCOUNT_OPTIONS]: undefined;
   [SCREENS.MANUAL_FUND_STACK]: NavigatorScreenParams<ManualFundParamList>;
   [SCREENS.PAYMENT_SUCCESS]: undefined;
 };
@@ -100,6 +99,9 @@ export type AddMoneyStackScreenProps<T extends keyof AddMoneyParamList> = Native
  * Group for manual funding-related screens.
  */
 export type ManualFundParamList = {
+  [SCREENS.START_MANUAL_FUNDING]: undefined;
+  [SCREENS.FUND_WITH_BANK]: undefined;
+  [SCREENS.FUND_WITH_CARD]: undefined;
   [SCREENS.MANUAL_FUND]: { amount: string };
   [SCREENS.MANUAL_FUND_PROOF]: { reference: string };
   [SCREENS.MANUAL_FUND_WAIT]: undefined;

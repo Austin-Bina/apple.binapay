@@ -11,12 +11,16 @@ export const SCREENS = {
 
   // Add Money
   ADD_MONEY: "Add Money",
-  FUND_ACCOUNT_OPTIONS: "Fund Account Options",
+  FUND_WITH_BANK: "Fund With Bank",
+  FUND_WITH_CARD: "Fund With Card",
   MANUAL_FUND_STACK: "Manual Fund Stack",
   MANUAL_FUND: "Manual Fund",
+  START_MANUAL_FUNDING: "Start Manual Funding",
   MANUAL_FUND_PROOF: "Manual Fund Proof",
   MANUAL_FUND_WAIT: "Manual Fund Wait",
   PAYMENT_SUCCESS: "Payment Success",
+
+
 
   // Purchases
   AIRTIME_PURCHASE: "Airtime Purchase",

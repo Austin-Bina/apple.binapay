@@ -43,21 +43,13 @@ export default function ManualFundProofScreen({ route, navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [receiptInfo, setReceiptInfo] = useState(emptyReceiptInfo);
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    setError,
-    reset,
-    watch,
-    formState: { errors },
-  } = useForm<FormValues>({
+  const { control, handleSubmit, setValue, setError, reset, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       reference: ref,
-      account_name: "Justice Ekemezie",
-      bank: "Opay Nigeria",
-      account_number: "1234567890",
+      account_name: "",
+      bank: "",
+      account_number: "",
       proof_of_payment: "",
     },
     mode: "onChange",
@@ -112,8 +104,6 @@ export default function ManualFundProofScreen({ route, navigation }: Props) {
       setIsProcessing(true);
       const response = await API.post(apiRoute("funding.uploadProof"), data);
       const { message } = response.data;
-
-      showToast({ message });
 
       navigation.navigate(SCREENS.MANUAL_FUND_WAIT);
     } catch (error) {

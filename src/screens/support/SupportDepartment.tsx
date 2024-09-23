@@ -8,7 +8,7 @@ import { SCREENS } from "@constants/screens";
 import { Colors } from "@constants/theme";
 import tw from "@lib/tailwind";
 import { SupportStackScreenProps } from "@navigators/types";
-import { useGetSupportDepartmentsQuery, useGetSupportHistoryQuery } from "@store/redux-api/supportApi";
+import { supportApi, useGetSupportDepartmentsQuery, useGetSupportHistoryQuery } from "@store/redux-api/supportApi";
 import { formatSecondsToDate } from "@utils/index";
 import { Fragment } from "react";
 import { RefreshControl, View } from "react-native";
@@ -20,7 +20,7 @@ import { selectUser } from "@store/selectors/auth";
 type Props = SupportStackScreenProps<typeof SCREENS.SUPPORT_DEPARTMENT>;
 export default function SupportDepartment({ navigation }: Props) {
   const user = useTypedSelector(selectUser);
-  const { data: queryData, isFetching, isError, refetch } = useGetSupportDepartmentsQuery();
+  const { data: queryData, isFetching, isError } = useGetSupportDepartmentsQuery();
   const { data: historyQuery, isError: isHistoryError } = useGetSupportHistoryQuery(undefined, {
     refetchOnMountOrArgChange: true,
     pollingInterval: 10000,
@@ -43,11 +43,16 @@ export default function SupportDepartment({ navigation }: Props) {
     navigation.navigate(SCREENS.SUPPORT_CHAT, { ...args });
   };
 
+  const handleRefresh = () => {
+    supportApi.util.prefetch("getSupportDepartments", undefined, { force: true });
+    supportApi.util.prefetch("getSupportHistory", undefined, { force: true });
+  };
+
   return (
     <Screen>
       <ScrollableView
         contentContainerStyle={tw`pt-5 justify-between`}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
+        refreshControl={<RefreshControl refreshing={false} onRefresh={handleRefresh} />}>
         <View>
           <View style={tw`mb-4 px-4`}>
             <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Support Department</Text>
@@ -71,18 +76,16 @@ export default function SupportDepartment({ navigation }: Props) {
           </View>
 
           {/* Current open tickets */}
-          <View style={tw`pt-5 pb-4 bg-white border border-gray-300 rounded-md mx-2 mt-10`}>
+          <View style={tw`pt-5 pb-4 bg-white border border-gray-300 rounded-md mx-2 mt-10 min-h-[300px]`}>
             <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4 text-secondary`}>Open Issues</Text>
             {(history.length === 0 || isHistoryError) && (
-              <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4 text-secondary`}>
-                No open issues
-              </Text>
+              <Text style={tw`text-gray-500 text-sm font-bold leading-relaxed px-4`}>No open issues</Text>
             )}
             {history.map((ticket, index) => (
               <Fragment key={ticket.id}>
                 <ActionWithDescription
                   title={ticket.subject}
-                  description={`${formatSecondsToDate(ticket.last_update)}, ${ticket.department_name}`}
+                  description={`${formatSecondsToDate(ticket.last_update)}, ${ticket.department_name}: ${ticket.replies} replies`}
                   ItemIcon={SpeechBubbleCheck}
                   onPress={() => {
                     handleNavigateHistory({
@@ -90,17 +93,6 @@ export default function SupportDepartment({ navigation }: Props) {
                       departmentId: ticket.department_id,
                     });
                   }}
-                  badgeElement={
-                    <Badge
-                      theme={{
-                        colors: {
-                          error: Colors.secondary[600],
-                          onError: "white",
-                        },
-                      }}>
-                      {`${ticket.replies} replies`}
-                    </Badge>
-                  }
                 />
                 {index !== history.length - 1 && <Divider />}
               </Fragment>
