@@ -2,7 +2,7 @@ import { ActionWithDescription } from "@components/screens/account";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { SCREENS } from "@constants/screens";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import { SupportStackScreenProps } from "@navigators/types";
 import { useGetSupportHistoryQuery } from "@store/redux-api/supportApi";

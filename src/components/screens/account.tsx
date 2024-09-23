@@ -1,5 +1,5 @@
 import { AngledRightArrow } from "@components/icons/svg";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import { Dimensions, View } from "react-native";
 import { Badge, Text, TouchableRipple } from "react-native-paper";

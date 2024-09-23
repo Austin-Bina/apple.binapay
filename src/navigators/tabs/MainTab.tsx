@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TabParamList } from "@navigators/types";
 import tw from "@lib/tailwind";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import { BottomNavigation, Icon } from "react-native-paper";
 import AccountStack from "@navigators/stacks/account";
 import HomeStack from "@navigators/stacks/home";

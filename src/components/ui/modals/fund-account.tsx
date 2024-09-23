@@ -11,7 +11,6 @@ import { scale, vs } from "react-native-size-matters";
 interface Props {
   show: boolean;
   hide: () => void;
-
   navigation: {
     handleFundWithBank: () => void;
     handleFundWithCard: () => void;
@@ -53,7 +52,7 @@ export default function FundAccountSheet({ show, hide, navigation }: Props) {
       children={
         <View>
           <View style={tw`px-4 mt-10 mb-[36px]`}>
-            <Text style={tw`text-2xl font-bold text-gray-800`}>Funding Option</Text>
+            <Text style={tw`text-2xl font-bold text-gray-800`}>Funding Options</Text>
             <Text style={tw`text-base font-normal text-gray-500`}>Select funding option</Text>
           </View>
           <TouchableRipple onPress={navigation.handleFundWithBank} style={tw`my-1`}>
@@ -71,17 +70,6 @@ export default function FundAccountSheet({ show, hide, navigation }: Props) {
               </View>
             </View>
           </TouchableRipple>
-          <TouchableRipple onPress={navigation.handleFundWithCard} style={tw`my-1`}>
-            <View style={tw`flex-row justify-between items-center px-4 my-1`}>
-              <View style={tw`flex-row items-center gap-3`}>
-                <Image source={require("@assets/icons/card-outline.png")} width={scale(48)} height={scale(48)} />
-                <Text style={tw`text-base font-medium`}>Card</Text>
-              </View>
-              <View style={tw`flex-row items-center`}>
-                <AngledRightArrow width={20} />
-              </View>
-            </View>
-          </TouchableRipple>
           <TouchableRipple onPress={navigation.handleManualFund} style={tw`my-1`}>
             <View style={tw`flex-row justify-between items-center px-4 my-1`}>
               <View style={tw`flex-row items-center gap-3`}>
@@ -91,6 +79,17 @@ export default function FundAccountSheet({ show, hide, navigation }: Props) {
                   height={scale(48)}
                 />
                 <Text style={tw`text-base font-medium`}>Manual Fund</Text>
+              </View>
+              <View style={tw`flex-row items-center`}>
+                <AngledRightArrow width={20} />
+              </View>
+            </View>
+          </TouchableRipple>
+          <TouchableRipple onPress={navigation.handleFundWithCard} style={tw`my-1`}>
+            <View style={tw`flex-row justify-between items-center px-4 my-1`}>
+              <View style={tw`flex-row items-center gap-3`}>
+                <Image source={require("@assets/icons/card-outline.png")} width={scale(48)} height={scale(48)} />
+                <Text style={tw`text-base font-medium`}>Card</Text>
               </View>
               <View style={tw`flex-row items-center`}>
                 <AngledRightArrow width={20} />

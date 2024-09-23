@@ -4,7 +4,7 @@ import { Button, SegmentedButtons } from "react-native-paper";
 import { RegistrationStackScreenProps } from "@navigators/types";
 import tw from "@lib/tailwind";
 import Screen from "@components/ui/shared/Screen";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import MaleOne from "@assets/images/avatars/male-1.svg";
 import MaleTwo from "@assets/images/avatars/male-2.svg";
 import MaleThree from "@assets/images/avatars/male-3.svg";

@@ -4,7 +4,7 @@ import { Avatar, Button, Icon, IconButton, Modal, Portal, Text, Title, useTheme 
 import { Asset, launchImageLibrary } from "react-native-image-picker";
 import { findFileSize } from "@utils/file";
 import tw from "@lib/tailwind";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import { showToast } from "@helpers/toast";
 
 type ImageInputProps = {

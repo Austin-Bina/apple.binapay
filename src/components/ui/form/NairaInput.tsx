@@ -1,4 +1,4 @@
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import React from "react";
 import { Control, useController } from "react-hook-form";

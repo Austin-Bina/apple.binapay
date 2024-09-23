@@ -1,6 +1,6 @@
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import { NotificationStackScreenProps } from "@navigators/types";
 import { useTypedSelector } from "@store/common";

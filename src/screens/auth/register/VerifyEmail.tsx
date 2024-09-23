@@ -5,7 +5,7 @@ import { RegistrationStackScreenProps } from "@navigators/types";
 import tw from "@lib/tailwind";
 import Screen from "@components/ui/shared/Screen";
 import OtpInput from "@components/ui/form/OtpInput";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

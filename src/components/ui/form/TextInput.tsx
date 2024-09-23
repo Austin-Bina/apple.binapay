@@ -6,7 +6,7 @@ import {
 } from "react-native-paper";
 import tw from "@lib/tailwind";
 import { Text, View } from "react-native";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 
 interface CustomTextInputProps extends TextInputProps {
   errorMessage?: string;

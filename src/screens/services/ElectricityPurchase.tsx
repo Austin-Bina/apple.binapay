@@ -25,7 +25,7 @@ import { route } from "@helpers/route";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { TransactionForm } from "@enum/transaction";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import { SelectCloseIcon, SelectOpenIcon } from "@components/icons/svg";
 import { AxiosError } from "axios";
 

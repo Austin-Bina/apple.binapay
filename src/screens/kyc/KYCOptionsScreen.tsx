@@ -4,7 +4,7 @@ import Banner from "@components/ui/banner";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { SCREENS } from "@constants/screens";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import { AccountTier } from "@enum/user";
 import tw from "@lib/tailwind";
 import { KYCStackScreenProps } from "@navigators/types";

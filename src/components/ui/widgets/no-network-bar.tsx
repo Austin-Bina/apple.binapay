@@ -8,7 +8,8 @@ const createStyles = (theme: MD3Theme) => {
   return StyleSheet.create({
     container: {
       backgroundColor: theme.colors.errorContainer,
-      paddingTop: 16,
+      position: "absolute",
+      top: 0,
     },
     offlineText: {
       // For texts displayed on contrast backgrounds (color-danger-800 in this case)
@@ -78,9 +79,9 @@ const OfflineBar = () => {
         styles.container,
         {
           paddingTop: insets.top,
-          paddingBottom: insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
+          zIndex: 100,
         },
       ]}>
       <StatusBar backgroundColor={theme.colors.errorContainer} />

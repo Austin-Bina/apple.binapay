@@ -2,7 +2,7 @@ import Empty from "@components/ui/empty-states/empty";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import Screen from "@components/ui/shared/Screen";
 import { SCREENS } from "@constants/screens";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import { NotificationStackScreenProps } from "@navigators/types";
 import { useFetchNotificationsQuery } from "@store/redux-api/notificationApi";

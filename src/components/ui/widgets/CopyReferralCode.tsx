@@ -1,4 +1,4 @@
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import * as Clipboard from 'expo-clipboard';
 import React, { Fragment, useState } from "react";
@@ -28,7 +28,7 @@ const CopyReferralCode: React.FC<Props> = ({ referralCode }) => {
         style={tw`flex-row items-center justify-center`}
       >
         <Fragment>
-          <Text variant="bodySmall" style={tw`text-white text-gray-400 -mr-1`}>
+          <Text variant="bodySmall" style={tw`text-gray-400 -mr-1`}>
             Tap to copy referral code
           </Text>
           <IconButton

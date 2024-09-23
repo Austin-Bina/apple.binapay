@@ -5,7 +5,7 @@ import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { SCREENS } from "@constants/screens";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import { SupportStackScreenProps } from "@navigators/types";
 import { supportApi, useGetSupportDepartmentsQuery, useGetSupportHistoryQuery } from "@store/redux-api/supportApi";
@@ -77,7 +77,7 @@ export default function SupportDepartment({ navigation }: Props) {
 
           {/* Current open tickets */}
           <View style={tw`pt-5 pb-4 bg-white border border-gray-300 rounded-md mx-2 mt-10 min-h-[300px]`}>
-            <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4 text-secondary`}>Open Issues</Text>
+            <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4`}>Open Issues</Text>
             {(history.length === 0 || isHistoryError) && (
               <Text style={tw`text-gray-500 text-sm font-bold leading-relaxed px-4`}>No open issues</Text>
             )}

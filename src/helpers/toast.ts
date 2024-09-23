@@ -1,4 +1,4 @@
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import Toast, { ToastOptions } from "react-native-root-toast";
 

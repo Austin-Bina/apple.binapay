@@ -1,5 +1,5 @@
 import { SadFace } from "@components/icons/svg";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import React from "react";
 import { View } from "react-native";

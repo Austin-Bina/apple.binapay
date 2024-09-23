@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Paginator from "./Paginator";
 import tw from "@lib/tailwind";
 import { IconButton } from "react-native-paper";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 
 const onboarding = [
   {

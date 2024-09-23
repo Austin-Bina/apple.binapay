@@ -1,6 +1,5 @@
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, PaperProvider } from "react-native-paper";
-import { defaultTheme } from "./src/constants/theme";
 import Router from "@navigators/MainStack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import tw from "@lib/tailwind";
@@ -12,11 +11,28 @@ import { PersistGate } from "redux-persist/integration/react";
 import NoNetworkBar from "@components/ui/widgets/no-network-bar";
 import { Alert, BackHandler } from "react-native";
 import { RootSiblingParent as ToastRootSiblingParent } from "react-native-root-siblings";
+import { defaultTheme } from "@constants/theme/md-theme";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  useFonts,
+} from "@expo-google-fonts/inter";
 
 SplashScreen.preventAutoHideAsync();
 
 function BinaPay() {
   const [appIsReady, setAppIsReady] = useState(false);
+
+  let [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+  });
 
   useEffect(() => {
     // ErrorHelper.init();
@@ -47,7 +63,7 @@ function BinaPay() {
 
         // Artificially delay for two seconds to simulate a slow loading
         // experience. Please remove this if you copy and paste the code!
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (e) {
         console.warn(e);
       } finally {
@@ -63,7 +79,7 @@ function BinaPay() {
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
+    if (appIsReady && fontsLoaded) {
       // This tells the splash screen to hide immediately! If we call this after
       // `setAppIsReady`, then we may see a blank screen while the app is
       // loading its initial state and rendering its first pixels. So instead,
@@ -71,15 +87,15 @@ function BinaPay() {
       // performed layout.
       await SplashScreen.hideAsync();
     }
-  }, [appIsReady]);
+  }, [appIsReady, fontsLoaded]);
 
-  if (!appIsReady) {
+  if (!appIsReady || !fontsLoaded) {
     return null;
   }
 
   return (
     <ToastRootSiblingParent>
-      <GestureHandlerRootView style={tw`flex-1`} onLayout={onLayoutRootView}>
+      <GestureHandlerRootView style={tw`flex-1 relative`} onLayout={onLayoutRootView}>
         <React.Fragment>
           <StatusBar style="dark" animated backgroundColor="white" />
           <Provider store={store}>

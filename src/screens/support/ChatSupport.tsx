@@ -8,14 +8,14 @@ import { useTypedSelector } from "@store/common";
 import { useAddResponseMutation, useListConversationsQuery } from "@store/redux-api/supportApi";
 import { selectUser } from "@store/selectors/auth";
 import React, { useMemo, useState } from "react";
-import { useWindowDimensions, View } from "react-native";
+import { Platform, useWindowDimensions, View } from "react-native";
 import { GiftedChat, IMessage, Send } from "react-native-gifted-chat";
 import { ActivityIndicator, Appbar, Avatar, IconButton, Text } from "react-native-paper";
 import GiftedChatComponents from "@components/screens/support-chat";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { ExpoAttachment } from "@type/app";
 import * as FileSystem from "expo-file-system";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import * as DocumentPicker from "expo-document-picker";
 import { showToast } from "@helpers/toast";
 import { MAXIMUM_FILE_UPLOAD_SIZE, MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES, formatBytes, findFileSize } from "@utils/file";
@@ -115,7 +115,7 @@ export default function ChatSupport({ navigation, route }: Props) {
   };
 
   return (
-    <Screen style={tw`pb-4`}>
+    <Screen style={tw.style(Platform.OS === "ios" && `pb-4`)}>
       <Appbar.Header style={tw`bg-white`}>
         <Appbar.BackAction onPress={navigation.goBack} color={Colors.gray[600]} />
         <View style={tw`w-full px-2 py-2 bg-white  flex flex-row gap-3 items-center `}>
@@ -141,7 +141,7 @@ export default function ChatSupport({ navigation, route }: Props) {
         scrollToBottom={true}
         messagesContainerStyle={tw`bg-gray-100`}
         onSend={(message) => onSendMessage(message[0])}
-        renderDay={GiftedChatComponents.renderDay}
+        // renderDay={GiftedChatComponents.renderDay}
         renderBubble={GiftedChatComponents.renderBubble}
         renderAvatar={GiftedChatComponents.renderAvatar}
         renderLoading={() => <ActivityIndicator />}

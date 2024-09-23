@@ -9,7 +9,8 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useTheme } from "react-native-paper";
 import BottomSheetModalHeader from "./BottomSheetHeader";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
+import tw from "@lib/tailwind";
 
 interface BottomSheetModalProps {
   children: React.ReactNode;
@@ -19,15 +20,6 @@ interface BottomSheetModalProps {
   initialSnapPoints?: PrimitiveBottomSheetProps["snapPoints"];
   onDismiss?: () => void;
 }
-
-const createStyles = () => {
-  return StyleSheet.create({
-    handleStyle: {
-      paddingBottom: 2,
-      paddingTop: 4,
-    },
-  });
-};
 
 const BottomSheetModal = forwardRef<
   BottomSheetModalLibrary,
@@ -45,7 +37,6 @@ const BottomSheetModal = forwardRef<
     ref
   ) => {
     const theme = useTheme();
-    const styles = useMemo(() => createStyles(), []);
     const { colors } = theme;
 
     const renderBackdrop = useCallback(
@@ -69,8 +60,8 @@ const BottomSheetModal = forwardRef<
         onChange={() => {}}
         snapPoints={initialSnapPoints}
         backgroundStyle={{ backgroundColor: "white" }}
-        handleIndicatorStyle={{ backgroundColor: Colors.gray[300] }}
-        handleStyle={styles.handleStyle}
+        handleIndicatorStyle={tw`bg-gray-300 w-16`}
+        handleStyle={tw`pt-2.5`}
         topInset={60}
         backdropComponent={renderBackdrop}
         keyboardBlurBehavior="restore"

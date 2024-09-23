@@ -45,59 +45,67 @@ export const defaultTheme: MD3Theme = {
     onSurfaceDisabled: "rgba(27, 27, 31, 0.38)",
     backdrop: "rgba(46, 48, 56, 0.4)",
   },
-};
-
-export const Colors = {
-  primary: {
-    50: "#EFF6FF",
-    100: "#DBEAFE",
-    200: "#BFDBFE",
-    300: "#93C5FD",
-    400: "#60A5FA",
-    500: "#3B82F6",
-    DEFAULT: "#3B82F6",
-    600: "#2563EB",
-    700: "#1D4ED8",
-    800: "#1E40AF",
-    900: "#1E3A8A",
-  },
-  secondary: {
-    50: "#FFF7ED",
-    100: "#FFEDD5",
-    200: "#FED7AA",
-    300: "#FDBA74",
-    400: "#FB923C",
-    500: "#F97316",
-    DEFAULT: "#F97316",
-    600: "#EA580C",
-    700: "#C2410C",
-    800: "#9A3412",
-    900: "#7C2D12",
-  },
-  gray: {
-    50: "#F9FAFB",
-    100: "#F3F4F6",
-    200: "#E5E7EB",
-    300: "#D2D5DA",
-    400: "#9CA3AF",
-    500: "#6D7280",
-    DEFAULT: "#6D7280",
-    600: "#4B5563",
-    700: "#374151",
-    800: "#1F2937",
-    900: "#111827",
-  },
-  red: {
-    50: "#FEF2F2",
-    100: "#FEE2E2",
-    200: "#FECACA",
-    300: "#FCA5A5",
-    400: "#F87171",
-    500: "#EF4444",
-    DEFAULT: "#EF4444",
-    600: "#DC2626",
-    700: "#B91C1C",
-    800: "#991B1B",
-    900: "#7F1D1D",
+  fonts: {
+    ...MD3LightTheme.fonts,
+    displayLarge: {
+      ...MD3LightTheme.fonts.displayLarge,
+      fontFamily: "Inter_800ExtraBold",
+    },
+    displayMedium: {
+      ...MD3LightTheme.fonts.displayMedium,
+      fontFamily: "Inter_700Bold",
+    },
+    displaySmall: {
+      ...MD3LightTheme.fonts.displaySmall,
+      fontFamily: "Inter_600SemiBold",
+    },
+    headlineLarge: {
+      ...MD3LightTheme.fonts.headlineLarge,
+      fontFamily: "Inter_800ExtraBold",
+    },
+    headlineMedium: {
+      ...MD3LightTheme.fonts.headlineMedium,
+      fontFamily: "Inter_700Bold",
+    },
+    headlineSmall: {
+      ...MD3LightTheme.fonts.headlineSmall,
+      fontFamily: "Inter_600SemiBold",
+    },
+    titleLarge: {
+      ...MD3LightTheme.fonts.titleLarge,
+      fontFamily: "Inter_800ExtraBold",
+    },
+    titleMedium: {
+      ...MD3LightTheme.fonts.titleMedium,
+      fontFamily: "Inter_700Bold",
+    },
+    titleSmall: {
+      ...MD3LightTheme.fonts.titleSmall,
+      fontFamily: "Inter_600SemiBold",
+    },
+    labelLarge: {
+      ...MD3LightTheme.fonts.labelLarge,
+      fontFamily: "Inter_800ExtraBold",
+    },
+    labelMedium: {
+      ...MD3LightTheme.fonts.labelMedium,
+      fontFamily: "Inter_700Bold",
+    },
+    labelSmall: {
+      ...MD3LightTheme.fonts.labelSmall,
+      fontFamily: "Inter_600SemiBold",
+    },
+    bodyLarge: {
+      ...MD3LightTheme.fonts.bodyLarge,
+      fontFamily: "Inter_500Medium",
+    },
+    bodyMedium: {
+      ...MD3LightTheme.fonts.bodyMedium,
+      fontFamily: "Inter_400Regular",
+    },
+    bodySmall: {
+      ...MD3LightTheme.fonts.bodySmall,
+      fontFamily: "Inter_400Regular",
+    },
   },
 };

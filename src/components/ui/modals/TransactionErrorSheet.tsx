@@ -6,7 +6,7 @@ import { Keyboard, View } from "react-native";
 import BottomSheetModal from "./BottomSheet/BottomSheet";
 import { Card, Text } from "react-native-paper";
 import tw from "@lib/tailwind";
-import { Colors } from "@constants/theme";
+import { Colors } from "@constants/theme/colors";
 import { SadFace } from "@components/icons/svg";
 
 const TransactionErrorSheet = () => {
