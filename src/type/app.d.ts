@@ -124,7 +124,36 @@ export interface GiftedChatMessageData {
 }
 export interface DraftMessage {
   _id: string | number;
-  type: 'text' | 'attachment';
+  type: "text" | "attachment";
   message?: string;
   attachment?: string;
+}
+
+export interface CustomerSettings {
+  // Verification settings
+  bvn_verification_limit: number;
+  nin_verification_limit: number;
+  bvn_verification_charge: number;
+  nin_verification_charge: number;
+
+  // Percentage charges
+  account_deposit_charge_percentage: number;
+  airtime_charge_percentage: number;
+  data_charge_percentage: number;
+  cable_charge_percentage: number;
+  education_charge_percentage: number;
+  epin_charge_percentage: number;
+  electricity_charge_percentage: number;
+
+  // Discounts (for various services)
+  account_deposit_percentage: number;
+  airtime_discount_percentage: number;
+  data_discount_percentage: number;
+  cable_discount_percentage: number;
+  education_discount_percentage: number;
+  epin_discount_percentage: number;
+  electricity_discount_percentage: number;
+}
+export interface SystemSettings {
+  customers: CustomerSettings;
 }

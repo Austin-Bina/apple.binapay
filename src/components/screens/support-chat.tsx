@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Icon, Text } from "react-native-paper";
 import tw from "@lib/tailwind";
 import { AvatarImage } from "@components/avatar";
+import { scale } from "react-native-size-matters";
 
 const renderDay = (props: DayProps) => {
   return (
@@ -59,7 +60,7 @@ const renderBubble = ({ currentMessage, position, ...rest }: BubbleProps<IMessag
         },
         wrapperStyle: {
           left: {
-            backgroundColor: "#e0f2ff",
+            backgroundColor: "#ffffff",
           },
           right: {
             backgroundColor: "#CADFD0",
@@ -80,9 +81,15 @@ const renderBubble = ({ currentMessage, position, ...rest }: BubbleProps<IMessag
 };
 
 const renderAvatar = ({ currentMessage }: AvatarProps<IMessage>) => {
-  return currentMessage?.user?.avatar ? (
-    <AvatarImage avatar={currentMessage.user.avatar} style={tw.style("bg-transparent")} size={20} />
-  ) : null;
+  return (
+    currentMessage?.user?.avatar && (
+      <AvatarImage
+        avatar={currentMessage.user.avatar}
+        style={tw.style("bg-transparent")}
+        svgProps={{ width: scale(30), height: scale(30) }}
+      />
+    )
+  );
 };
 
 export default {

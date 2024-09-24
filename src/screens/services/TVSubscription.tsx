@@ -281,7 +281,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
           />
           <DropdownMenuField
             label="Package"
-            placeholder="Select your package"
+            placeholder={cablePackages.length === 0 ? "No packages available" : "Select your package"}
             name="package"
             control={control}
             data={cablePackages.map((plan) => ({

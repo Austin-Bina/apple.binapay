@@ -161,7 +161,7 @@ export type EducationStackScreenProps<T extends keyof EducationParamList> = Nati
  */
 export type KYCParamList = {
   [SCREENS.ACCOUNT_VERIFICATION_OPTIONS]: undefined;
-  [SCREENS.NAME_CHECK_VERIFICATION]: undefined;
+  [SCREENS.NIN_VERIFICATION]: undefined;
   [SCREENS.BVN_VERIFICATION]: undefined;
 };
 export type KYCStackScreenProps<T extends keyof KYCParamList> = NativeStackScreenProps<KYCParamList, T>;

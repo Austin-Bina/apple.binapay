@@ -91,9 +91,9 @@ const VerifyEmail: React.FC<Props> = (props) => {
         const hasAuthErrorMsg = message && typeof message === "string";
 
         if (hasAuthErrorMsg) {
-          showToast({ message: message });
+          showToast({ message: message, position: Toast.positions.TOP });
         } else {
-          showToast({ message: "Something went wrong. Please try again." });
+          showToast({ message: "Something went wrong. Please try again." , position: Toast.positions.TOP });
         }
 
         setError("code", { message });

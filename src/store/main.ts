@@ -29,7 +29,7 @@ const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, Unkno
     key: "Root",
     version: 1,
     storage: ExpoFileSystemStorage,
-    blacklist: ["transaction", utilityBillsQueryApi.reducerPath],
+    blacklist: ["transaction", "settings", utilityBillsQueryApi.reducerPath],
     debug: true,
   },
   (s, a) => {

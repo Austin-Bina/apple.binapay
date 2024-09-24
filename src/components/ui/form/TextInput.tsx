@@ -23,7 +23,7 @@ const CustomTextInput = ({
 }: CustomTextInputProps) => {
   return (
     <View>
-      <Text style={tw`text-gray text-sm font-light leading-loose`}>
+      <Text style={tw`text-gray text-sm font-medium leading-loose`}>
         {label}
       </Text>
       <PaperTextInput

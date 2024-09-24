@@ -43,7 +43,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function ManualFundScreen({ navigation, route }: ManualFundViewProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [fetchingBanks, setFetchingBanks] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -58,17 +57,8 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
     },
   });
 
-  const slideRef = useRef<FlatList<BankAccount>>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const dimensions = useWindowDimensions();
-  const viewableItemsChanged = useRef(({ viewableItems }: any) => {
-    setCurrentIndex(viewableItems[0]?.index);
-  }).current;
-  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
   const { account_number: selectedAccount, narration } = watch();
   const { amount } = route.params;
-  const width = scale(dimensions.width - 200);
 
   const selectedBank = useMemo(() => {
     return bankAccounts.find((bank) => bank.account_number === selectedAccount);
@@ -102,7 +92,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
     try {
       setIsProcessing(true);
       const response = await API.post(apiRoute("funding.initiate"), data);
-      const { transaction_info, message = "" } = response.data;
+      const { transaction_info } = response.data;
       setTransactionReference(transaction_info?.reference);
 
       const description = `${narration} Reference:  ${transaction_info?.reference}`;
@@ -114,53 +104,11 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
     }
   });
 
-  const scrollTo = () => {
-    if (slideRef.current && currentIndex < bankAccounts.length - 1) {
-      slideRef.current.scrollToIndex({ index: currentIndex + 1 });
-    }
-  };
-
   const EmptyView = useMemo(() => {
     if (selectedAccount) return null;
 
     return <HelperText type="error">Please select a bank account to deposit money</HelperText>;
   }, [selectedAccount]);
-
-  const renderEmptyList = () => {
-    if (fetchingBanks) {
-      return (
-        <View style={tw`flex-1 items-center justify-center p-4 h-[80px]`}>
-          <ActivityIndicator size="small" color={"gray"} animating={true} />
-        </View>
-      );
-    }
-
-    return (
-      <View style={tw`flex-1 items-center justify-center p-4`}>
-        <HelperText type="error">No bank accounts found</HelperText>
-      </View>
-    );
-  };
-
-  const renderBankAccount = ({ item }: { item: BankAccount }) => (
-    <TouchableRipple
-      onPress={() => {
-        setValue("account_number", item.account_number);
-      }}
-      style={[
-        tw`p-4 flex-row items-center gap-3 border-2 rounded-xl mr-2`,
-        selectedAccount === item.account_number ? tw`border-primary-500` : tw`border-gray-200`,
-        { width },
-      ]}>
-      <Fragment>
-        <Avatar.Image source={{ uri: item.logo }} size={32} style={tw`flex-none bg-gray-300`} />
-        <View>
-          <Text style={tw`font-normal text-xs text-gray-400`}>{item.bank_name}</Text>
-          <Text style={tw`leading-6 font-light`}>{item.account_name}</Text>
-        </View>
-      </Fragment>
-    </TouchableRipple>
-  );
 
   return (
     <Screen>
@@ -173,7 +121,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
           </Text>
           <Text variant="bodyMedium" style={tw`text-gray-400`}>
             Kindly make a <Text style={tw`font-semibold text-gray-600`}>{formatToNaira(amount)}</Text> deposit to the
-            account details below and confirm deposit when it’s done.
+            account details below and confirm deposit when it's done.
           </Text>
 
           {transactionReference && (
@@ -196,41 +144,6 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
               }))}
             />
           </View>
-
-          {/* <FlatList
-            ref={slideRef}
-            horizontal
-            data={bankAccounts}
-            snapToAlignment="start"
-            decelerationRate="fast"
-            snapToInterval={width}
-            keyExtractor={(item) => item.account_number}
-            renderItem={renderBankAccount}
-            contentContainerStyle={tw`my-4`}
-            showsHorizontalScrollIndicator={false}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-              useNativeDriver: false,
-            })}
-            ListEmptyComponent={renderEmptyList}
-            onViewableItemsChanged={viewableItemsChanged}
-            viewabilityConfig={viewConfig}
-            scrollEventThrottle={32}
-            pagingEnabled
-            disableIntervalMomentum
-          />
-
-          <View>
-            <Paginator
-              size={bankAccounts.length}
-              scrollX={scrollX}
-              scrollTo={scrollTo}
-              currentIndex={currentIndex}
-              style={tw`mb-4`}
-              dotStyle={{
-                height: 4,
-              }}
-            />
-          </View> */}
 
           {!transactionReference && (
             <Controller
@@ -261,7 +174,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
           <Button
             mode="contained"
             onPress={onSubmit}
-            disabled={isProcessing}
+            disabled={isProcessing || fetchingBanks}
             contentStyle={tw`py-2`}
             style={tw`w-full rounded-full`}
             labelStyle={tw`text-white text-center text-base font-bold`}>
@@ -270,7 +183,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
         </View>
       </ScrollableView>
 
-      <PleaseWaitModal visible={isProcessing} />
+      <PleaseWaitModal visible={isProcessing || fetchingBanks} />
     </Screen>
   );
 }
@@ -310,18 +223,20 @@ const SelectedBankDetails: React.FC<SelectedBankDetailsProps> = ({ selected, ref
               onPress={() => copyToClipboard(selected.account_number, setAccountNumberCopied)}
               icon={accountNumberCopied ? "sticker-check" : "content-copy"}
               iconColor="white"
+              style={tw`m-0`}
             />
           </View>
         </View>
         {reference && (
           <View style={tw`flex-col items-start justify-start`}>
             <Text style={tw`text-white`}>Reference Number</Text>
-            <View style={tw`flex-row font-bold items-center justify-end`}>
+            <View style={tw`flex-row font-bold items-center ml-auto justify-end`}>
               <Text style={tw`text-base text-white`}>{reference}</Text>
               <IconButton
                 onPress={() => copyToClipboard(reference, setReferenceNumberCopied)}
                 icon={referenceNumberCopied ? "sticker-check" : "content-copy"}
                 iconColor="white"
+                style={tw`m-0`}
               />
             </View>
           </View>
@@ -331,35 +246,3 @@ const SelectedBankDetails: React.FC<SelectedBankDetailsProps> = ({ selected, ref
     </ImageBackground>
   );
 };
-
-const DetailsItemCopy = React.memo(({ label, value }: { label: string; value: string }) => {
-  const [copied, setCopied] = useState(false);
-
-  const copyToClipboard = async () => {
-    await Clipboard.setStringAsync(value);
-
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1000);
-  };
-
-  return (
-    <View style={tw`flex-row justify-between mb-4`}>
-      <View style={tw`gap-0.5`}>
-        <Text variant="bodyLarge" style={tw`text-gray-900`}>
-          {label}
-        </Text>
-        <Text variant="bodySmall" style={tw`text-gray-500`}>
-          {value}
-        </Text>
-      </View>
-      <TouchableOpacity onPress={copyToClipboard} style={tw`flex-row items-center justify-center gap-2`}>
-        <Fragment>
-          <Text variant="labelSmall" style={tw`text-white text-gray-500 -mr-1`}>
-            {copied ? "Copied" : "Copy"}
-          </Text>
-          <BeautifyCopy />
-        </Fragment>
-      </TouchableOpacity>
-    </View>
-  );
-});

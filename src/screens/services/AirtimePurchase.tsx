@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import React, { Fragment, useCallback, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FlatList, Keyboard, TouchableOpacity, View } from "react-native";
 import { Button, Checkbox, Text, TouchableRipple } from "react-native-paper";
@@ -17,14 +17,15 @@ import { Image } from "react-native-element-image";
 import { INTERNET_PROVIDERS, serviceProvidersMap } from "@constants/providers";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
-import { scale } from "react-native-size-matters";
+import { scale, vs } from "react-native-size-matters";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { TransactionForm } from "@enum/transaction";
-import { formatToNaira, zodAmountValidation } from "@utils/money";
+import { calculateTransactionDetails, formatToNaira, zodAmountValidation } from "@utils/money";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import { selectUser } from "@store/selectors/auth";
 import { upperCaseFirst } from "@utils/index";
+import { selectSystemSettings } from "@store/selectors/settings";
 
 type Props = ServicesStackScreenProps<"Airtime Purchase">;
 
@@ -41,11 +42,10 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function AirtimePurchaseScreen({ navigation }: Props) {
-  const [fetching, setFetching] = useState(false);
-
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
+  const { customers } = useTypedSelector(selectSystemSettings);
 
   const {
     control,
@@ -68,6 +68,12 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
 
   const values = watch();
   const upperCaseProvider = upperCaseFirst(values.provider);
+
+  const extraPlanDetails = useMemo(() => {
+    return calculateTransactionDetails(parseFloat(values.amount) || 0, "airtime", customers);
+  }, [values.amount, customers]);
+
+  const snapSize = Object.keys(extraPlanDetails).length === 0 ? "48%" : "55%";
 
   const airtimeTypes = useMemo(() => {
     const selected = values.provider;
@@ -166,7 +172,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
                     onChange(!value);
                   }}
                   style={tw`flex-row items-center `}>
-                 <Fragment>
+                  <Fragment>
                     <Checkbox status={value ? "checked" : "unchecked"} />
                     <Text>Are you sure this is an {upperCaseProvider} number?</Text>
                   </Fragment>
@@ -192,18 +198,20 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
           </View>
           <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
             <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
-              You get ₦{values.amount || 0}
+              You get {formatToNaira(values.amount || 0)}
             </Text>
           </View>
 
-          <Banner style={tw`mb-10`} message="You get 10% off when you purchase airtime with us" />
+          <Banner
+            style={tw`mb-10`}
+            message={`You get ${customers.airtime_discount_percentage}% off when you purchase airtime with us`}
+          />
         </View>
         <View style={tw`px-4 pb-4 pt-1`}>
           <Button
             style={tw`w-full rounded-full`}
             contentStyle={tw`py-2`}
             labelStyle={tw`text-white text-center text-base font-bold`}
-            disabled={fetching}
             onPress={openBottomSheet}
             mode="contained">
             Continue
@@ -213,7 +221,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
 
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={["50%", "50%"]}
+        initialSnapPoints={[snapSize, snapSize]}
         closeFilter={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
@@ -236,6 +244,12 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
                 <Text variant="bodyLarge">Number:</Text>
                 <Text style={tw`text-lg font-bold`}>{values.phone}</Text>
               </View>
+              {Object.keys(extraPlanDetails).map((key, index) => (
+                <View style={tw`flex-row justify-between my-2`} key={index}>
+                  <Text variant="bodyLarge">{key}:</Text>
+                  <Text style={tw`text-lg font-bold`}>{extraPlanDetails[key]}</Text>
+                </View>
+              ))}
             </View>
             <Button
               mode="contained"

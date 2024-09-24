@@ -1,11 +1,12 @@
+import { CustomerSettings } from "@type/app";
 import { formatNumber } from "react-native-currency-input";
 import { z } from "zod";
 
 function convertToNaira(rawAmount: number | string = 0, prefix: boolean = true): string {
-  const parsedAmount = typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
+  let parsedAmount = typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
 
   if (isNaN(parsedAmount)) {
-    throw new Error("Invalid input: amount must be a number or a string representing a number.");
+    parsedAmount = 0;
   }
 
   const amountInNaira = parsedAmount / 100;
@@ -25,7 +26,7 @@ const formatToNaira = (value: string | number = 0) => {
   }
 
   if (isNaN(numberValue)) {
-    throw new Error("Invalid input: amount must be a number or a string representing a number.");
+    numberValue = 0;
   }
 
   const formattedNumber = formatNumber(numberValue, {
@@ -57,4 +58,31 @@ const zodAmountValidation = (minAmount: number = 0) =>
       },
     );
 
-export { convertToNaira, formatToNaira, zodAmountValidation };
+function calculateTransactionDetails(
+  amount: number,
+  type: "airtime" | "data" | "cable" | "education" | "epin" | "electricity",
+  customers: CustomerSettings,
+) {
+  const chargeKey = `${type}_charge_percentage` as const;
+  const discountKey = `${type}_discount_percentage` as const;
+
+  let chargePercentage = customers[chargeKey] || 0;
+  let discountPercentage = customers[discountKey] || 0;
+
+  let chargeAmount = (chargePercentage / 100) * amount;
+  let discountAmount = (discountPercentage / 100) * amount;
+
+  const details: { [key: string]: string } = {};
+
+  if (chargeAmount > 0) {
+    details["Extra Charge"] = formatToNaira(chargeAmount);
+  }
+
+  if (discountAmount > 0) {
+    details["You Save"] = formatToNaira(discountAmount);
+  }
+
+  return details;
+}
+
+export { convertToNaira, formatToNaira, zodAmountValidation, calculateTransactionDetails };

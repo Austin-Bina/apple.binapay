@@ -7,4 +7,6 @@ export const selectLoggedIn = (state: State) => !!state.auth.user?.id;
 export const selectNewUser = (state: State) => state.auth.newUser;
 export const selectIsLoggingIn = (state: State) => state.auth.isLoggingIn;
 export const selectIsFetchingProfile = (state: State) => state.auth.isFetchingProfile;
-export const selectIsAccountVerified = (state: State) => state.auth.user?.account_tier !== AccountTier.Tier1;
+export const selectIsAccountVerified = (state: State) => state.auth.user?.is_bvn_verified || state.auth.user?.is_nin_verified;
+export const selectIsBvnVerified = (state: State) => !!state.auth.user?.is_bvn_verified;
+export const selectIsNinVerified = (state: State) => !!state.auth.user?.is_nin_verified;

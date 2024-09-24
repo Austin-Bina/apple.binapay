@@ -1,32 +1,48 @@
-import { SpeechBubbleCheck } from "@components/icons/svg";
+import { SupportHead } from "@components/icons/svg";
 import { ActionWithDescription, SupportAction } from "@components/screens/account";
 import Banner from "@components/ui/banner";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { SCREENS } from "@constants/screens";
-import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import { SupportStackScreenProps } from "@navigators/types";
 import { supportApi, useGetSupportDepartmentsQuery, useGetSupportHistoryQuery } from "@store/redux-api/supportApi";
 import { formatSecondsToDate } from "@utils/index";
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { RefreshControl, View } from "react-native";
-import { Badge, Button, Divider, Text } from "react-native-paper";
+import { Badge, Button, Divider, ProgressBar, Text } from "react-native-paper";
 import { SupportStatus } from "@enum/support";
 import { useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 
 type Props = SupportStackScreenProps<typeof SCREENS.SUPPORT_DEPARTMENT>;
 export default function SupportDepartment({ navigation }: Props) {
+  const [isSupportIdError, setIsSupportIdError] = useState(false);
+
   const user = useTypedSelector(selectUser);
   const { data: queryData, isFetching, isError } = useGetSupportDepartmentsQuery();
-  const { data: historyQuery, isError: isHistoryError } = useGetSupportHistoryQuery(undefined, {
+  const {
+    data: historyQuery,
+    error,
+    isError: isHistoryError,
+  } = useGetSupportHistoryQuery(undefined, {
     refetchOnMountOrArgChange: true,
     pollingInterval: 10000,
     skipPollingIfUnfocused: true,
-    skip: !user,
+    skip: !user || isSupportIdError,
   });
+
+  // If is support error, stop retrying
+  useEffect(() => {
+    if (isSupportIdError) return;
+
+    const err = error as any;
+    const errorMessage = err?.data?.message || ("" as string | undefined);
+    if (errorMessage?.includes("Support initialization required.")) {
+      setIsSupportIdError(true);
+    }
+  }, [error]);
 
   const departments = queryData?.departments ?? [];
   const history = historyQuery?.data.tickets.filter((ticket) => ticket.status === SupportStatus.Open).slice(0, 5) ?? [];
@@ -78,15 +94,20 @@ export default function SupportDepartment({ navigation }: Props) {
           {/* Current open tickets */}
           <View style={tw`pt-5 pb-4 bg-white border border-gray-300 rounded-md mx-2 mt-10 min-h-[300px]`}>
             <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4`}>Open Issues</Text>
-            {(history.length === 0 || isHistoryError) && (
+            {(history.length === 0 || isHistoryError) && !isFetching && (
               <Text style={tw`text-gray-500 text-sm font-bold leading-relaxed px-4`}>No open issues</Text>
+            )}
+            {isFetching && (
+              <View>
+                <ProgressBar indeterminate />
+              </View>
             )}
             {history.map((ticket, index) => (
               <Fragment key={ticket.id}>
                 <ActionWithDescription
                   title={ticket.subject}
                   description={`${formatSecondsToDate(ticket.last_update)}, ${ticket.department_name}: ${ticket.replies} replies`}
-                  ItemIcon={SpeechBubbleCheck}
+                  ItemIcon={SupportHead}
                   onPress={() => {
                     handleNavigateHistory({
                       ticketId: ticket.id,
@@ -109,7 +130,6 @@ export default function SupportDepartment({ navigation }: Props) {
           </View>
         </View>
       </ScrollableView>
-      <PleaseWaitModal visible={isFetching} />
     </Screen>
   );
 }

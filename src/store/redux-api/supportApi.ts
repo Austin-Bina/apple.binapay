@@ -125,7 +125,6 @@ export const supportApi = createApi({
           );
         } catch (error) {
           patchedResult.undo();
-          console.log("Failed to add response", error);
         }
       },
     }),

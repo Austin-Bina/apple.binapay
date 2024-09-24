@@ -5,7 +5,7 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
 import { Image } from "react-native-element-image";
@@ -17,7 +17,7 @@ import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import { serviceProvidersMap } from "@constants/providers";
 import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import { METER_TYPE } from "@enum/providers";
-import { formatToNaira, zodAmountValidation } from "@utils/money";
+import { calculateTransactionDetails, formatToNaira, zodAmountValidation } from "@utils/money";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import API from "@lib/api";
@@ -28,6 +28,7 @@ import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import { Colors } from "@constants/theme/colors";
 import { SelectCloseIcon, SelectOpenIcon } from "@components/icons/svg";
 import { AxiosError } from "axios";
+import { selectSystemSettings } from "@store/selectors/settings";
 
 type Props = ServicesStackScreenProps<"Electricity Bill">;
 
@@ -89,6 +90,7 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const controllerRef = useRef(new AbortController());
+  const { customers } = useTypedSelector(selectSystemSettings);
 
   const { control, watch, trigger, setValue, setError, clearErrors, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -106,6 +108,12 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
 
   const values = watch();
   const isPrepaidType = values.meter_type === METER_TYPE.PREPAID;
+
+  const extraPlanDetails = useMemo(() => {
+    return calculateTransactionDetails(parseFloat(values.amount) || 0, "electricity", customers);
+  }, [values.amount, customers]);
+
+  const snapSize = Object.keys(extraPlanDetails).length === 0 ? "48%" : "55%";
 
   useEffect(() => {
     if (readyToPay && values.meter_number) {
@@ -300,7 +308,7 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
       </ScrollableView>
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={["50%", "50%"]}
+        initialSnapPoints={[snapSize, snapSize]}
         closeFilter={closeBottomSheet}
         children={
           <View style={tw`p-4`}>

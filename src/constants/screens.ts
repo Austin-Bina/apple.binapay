@@ -20,8 +20,6 @@ export const SCREENS = {
   MANUAL_FUND_WAIT: "Manual Fund Wait",
   PAYMENT_SUCCESS: "Payment Success",
 
-
-
   // Purchases
   AIRTIME_PURCHASE: "Airtime Purchase",
   AIRTIME_EPIN_PURCHASE: "Airtime EPIN Purchase",
@@ -45,8 +43,8 @@ export const SCREENS = {
   VERIFY_ACCOUNT: "Verify Account",
   REQUEST_ONE_TIME_PASSWORD: "Request One Time Password",
   ACCOUNT_VERIFICATION_OPTIONS: "Account Verification Options",
-  NAME_CHECK_VERIFICATION: "Name Check Verification",
   BVN_VERIFICATION: "BVN Verification",
+  NIN_VERIFICATION: "NIN Verification",
 
   // Password Recovery
   FORGOT_PASSWORD: "Forgot Password",

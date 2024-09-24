@@ -15,14 +15,15 @@ import { ServicesStackScreenProps } from "@navigators/types";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { useGetEpinPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { selectUser } from "@store/selectors/auth";
+import { selectSystemSettings } from "@store/selectors/settings";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
-import { formatToNaira } from "@utils/money";
-import React, { useCallback, useRef } from "react";
+import { calculateTransactionDetails, formatToNaira } from "@utils/money";
+import React, { useCallback, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, TouchableOpacity, FlatList, Keyboard, RefreshControl } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
-import { scale } from "react-native-size-matters";
+import { scale, vs } from "react-native-size-matters";
 import { z } from "zod";
 
 type Props = ServicesStackScreenProps<"Airtime EPIN Purchase">;
@@ -40,6 +41,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const { data: queryData, isFetching, refetch } = useGetEpinPlansQuery();
+  const { customers } = useTypedSelector(selectSystemSettings);
   const { control, watch, setValue, trigger, reset, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -54,6 +56,9 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
   const epinPlans = queryData?.epins_plans || [];
   const quantityOptions = queryData?.quantity_options || [];
+  const extraPlanDetails = useMemo(() => {
+    return calculateTransactionDetails(values.amount, "epin", customers);
+  }, [values.amount, customers]);
 
   const openBottomSheet = useCallback(async () => {
     const valid = await trigger();
@@ -195,7 +200,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={["50%", "50%"]}
+        initialSnapPoints={[vs(348), vs(348)]}
         closeFilter={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
@@ -218,11 +223,17 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
                 <Text variant="bodyLarge">Business Name:</Text>
                 <Text style={tw`text-lg font-bold`}>{values.business_name}</Text>
               </View>
+              {Object.keys(extraPlanDetails).map((key, index) => (
+                <View style={tw`flex-row justify-between my-2`} key={index}>
+                  <Text variant="bodyLarge">{key}:</Text>
+                  <Text style={tw`text-lg font-bold`}>{extraPlanDetails[key]}</Text>
+                </View>
+              ))}
             </View>
             <Button
               mode="contained"
               onPress={handleMakePayment}
-              style={tw`w-full rounded-full mt-[20%]`}
+              style={tw`w-full rounded-full mt-10`}
               contentStyle={tw`py-2`}
               labelStyle={tw`text-base`}>
               Make Payment

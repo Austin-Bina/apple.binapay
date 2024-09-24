@@ -10,10 +10,12 @@ import { Button, IconButton, Text } from "react-native-paper";
 import * as Clipboard from "expo-clipboard";
 import { SCREENS } from "@constants/screens";
 import { getNavigate } from "@utils/navigation";
+import { selectSystemSettings } from "@store/selectors/settings";
 
 export default function BankTransferScreen() {
   const user = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
+  const { customers } = useTypedSelector(selectSystemSettings);
 
   const hasDedicatedAccounts = isVerified && user?.accounts && user?.accounts.length > 0;
 
@@ -28,7 +30,7 @@ export default function BankTransferScreen() {
           screen: SCREENS.ACCOUNT_VERIFICATION_OPTIONS,
         },
       },
-    });
+    }); 
   };
   return (
     <Screen>
@@ -41,7 +43,11 @@ export default function BankTransferScreen() {
             Transfer the desired amount to the following bank account. Once the transfer is complete, your BinaPay
             wallet will be credited
           </Text>
-          {hasDedicatedAccounts && <Banner message="Automated bank transfer attracts additional charges of 4% only." />}
+          {hasDedicatedAccounts && (
+            <Banner
+              message={`Automated bank transfer attracts additional charges of ${customers.account_deposit_percentage}% only.`}
+            />
+          )}
           {hasDedicatedAccounts &&
             user.accounts.map((account) => (
               <View key={account.id}>

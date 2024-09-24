@@ -23,11 +23,13 @@ export interface User {
   referred_by: string | null;
   email_verified_at: string;
   onboarding_step: string;
-  account_tier: AccountTier;
+  is_bvn_verified: boolean;
+  is_nin_verified: boolean;
   status: AccountStatus;
   accounts: DVA[];
   wallet_balance: number;
   created_at: string;
+  verification_attempts: number;
 }
 
 export interface ReferralReward {

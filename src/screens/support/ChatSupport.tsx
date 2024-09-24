@@ -38,24 +38,23 @@ export default function ChatSupport({ navigation, route }: Props) {
       conversationId: ticketId,
     },
     {
-      pollingInterval: 10000,
+      pollingInterval: 5000,
       skipPollingIfUnfocused: true,
-      refetchOnMountOrArgChange: true,
       skip: !user || !ticketId,
     },
   );
 
-  const messagesData = queryData?.data?.conversation ?? [];
-
   const inboxMessages = useMemo(() => {
-    if (!user) {
+    if (!user || !queryData?.data) {
       return [];
     }
+
+    const messagesData = queryData.data.conversation;
 
     const formattedMessagesForGiftedChat = getGiftedChatMessages(messagesData, user, systemUser);
 
     return formattedMessagesForGiftedChat;
-  }, [messagesData, user]);
+  }, [queryData, user]);
 
   const onRemoveAttachment = () => {
     setAttachmentDetails(null);
@@ -135,15 +134,12 @@ export default function ChatSupport({ navigation, route }: Props) {
         user={{ _id: user?.id || 1, ...user }}
         alignTop={true}
         renderUsernameOnMessage={true}
-        showUserAvatar={true}
         showAvatarForEveryMessage={false}
-        renderAvatarOnTop={true}
+        renderAvatarOnTop={false}
         scrollToBottom={true}
         messagesContainerStyle={tw`bg-gray-100`}
         onSend={(message) => onSendMessage(message[0])}
-        // renderDay={GiftedChatComponents.renderDay}
         renderBubble={GiftedChatComponents.renderBubble}
-        renderAvatar={GiftedChatComponents.renderAvatar}
         renderLoading={() => <ActivityIndicator />}
         renderActions={() => <IconButton icon="attachment" onPress={handleImagePress} />}
         renderSend={(props) => (
@@ -166,9 +162,9 @@ export default function ChatSupport({ navigation, route }: Props) {
             <View style={tw`mx-4 py-2`}>
               <RenderHTML
                 source={{ html: currentMessage.text }}
-                contentWidth={scale(width - 50)}
+                contentWidth={scale(width)}
                 tagsStyles={{
-                  p: tw`text-white my-2`,
+                  p: tw`my-2`,
                 }}
               />
             </View>

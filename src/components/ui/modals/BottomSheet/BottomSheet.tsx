@@ -1,5 +1,4 @@
-import React, { useCallback, useMemo, forwardRef } from "react";
-import { StyleSheet } from "react-native";
+import React, { useCallback, forwardRef } from "react";
 import {
   BottomSheetModal as BottomSheetModalLibrary,
   BottomSheetBackdrop,
@@ -9,7 +8,6 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useTheme } from "react-native-paper";
 import BottomSheetModalHeader from "./BottomSheetHeader";
-import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 
 interface BottomSheetModalProps {

@@ -33,6 +33,7 @@ import { HorizontalDots, LargeEyeClose, LargeEyeOpen } from "@components/icons/s
 import { scale } from "react-native-size-matters";
 import { SCREENS } from "@constants/screens";
 import FundAccountSheet from "@components/ui/modals/fund-account";
+import { settingsSliceActions } from "@store/slice/settings";
 
 type Props = HomeStackScreenProps<typeof SCREENS.DASHBOARD>;
 export default function HomeScreen({ navigation }: Props) {
@@ -49,7 +50,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!user?.id) return;
-    Promise.all([initProfile(), initCable()]);
+    Promise.all([initProfile(), initCable(), initSystemSettings()]);
   }, []);
 
   const initProfile = useCallback(async () => {
@@ -69,6 +70,10 @@ export default function HomeScreen({ navigation }: Props) {
     } finally {
       setIsFetching(false);
     }
+  }, [dispatch]);
+
+  const initSystemSettings = useCallback(async () => {
+    await dispatch(settingsSliceActions.fetchSettings());
   }, [dispatch]);
 
   const initCable = useCallback(() => {
@@ -127,7 +132,7 @@ export default function HomeScreen({ navigation }: Props) {
   const onRefresh = async () => {
     try {
       if (!isFetching) {
-        await initProfile();
+        await Promise.all([initProfile(), initSystemSettings()]);
       }
     } catch (error) {}
   };
@@ -185,7 +190,7 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   return (
-    <Screen>
+    <View style={tw`flex-1 bg-white`}>
       <UserAppbar />
       <ScrollableView
         style={tw`px-3 flex flex-1 py-6`}
@@ -299,7 +304,7 @@ export default function HomeScreen({ navigation }: Props) {
           handleManualFund,
         }}
       />
-    </Screen>
+    </View>
   );
 }
 

@@ -181,7 +181,6 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
             style={tw`w-full rounded-full`}
             contentStyle={tw`py-2`}
             mode="contained"
-            loading={isLoggingIn}
             disabled={!selectedAvatar || isLoggingIn}
             onPress={handleValidate}>
             Continue

@@ -6,7 +6,7 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import React, { Fragment, useCallback, useRef } from "react";
+import React, { Fragment, useCallback, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FlatList, Keyboard, RefreshControl, TouchableOpacity, View } from "react-native";
 import { Image } from "react-native-element-image";
@@ -17,7 +17,7 @@ import Banner from "@components/ui/banner";
 import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
-import { scale } from "react-native-size-matters";
+import { scale, vs } from "react-native-size-matters";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
@@ -26,8 +26,9 @@ import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { useGetDataPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { InternetProviders } from "@type/app";
-import { formatToNaira } from "@utils/money";
+import { calculateTransactionDetails, formatToNaira } from "@utils/money";
 import { upperCaseFirst } from "@utils/index";
+import { selectSystemSettings } from "@store/selectors/settings";
 
 type Props = ServicesStackScreenProps<"Data Purchase">;
 
@@ -44,6 +45,7 @@ const schema = z.object({
 export default function DataPurchaseScreen({ navigation }: Props) {
   const { data, isFetching, refetch } = useGetDataPlansQuery();
   const user = useTypedSelector(selectUser);
+  const { customers } = useTypedSelector(selectSystemSettings);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
@@ -62,6 +64,12 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   const values = watch();
   const upperCaseProvider = upperCaseFirst(values.provider);
+
+  const extraPlanDetails = useMemo(() => {
+    return calculateTransactionDetails(parseFloat(values.amount) || 0, "data", customers);
+  }, [values.amount, customers]);
+
+  const snapSize = Object.keys(extraPlanDetails).length === 0 ? "54%" : '65%';
 
   const openBottomSheet = useCallback(async () => {
     const valid = await trigger();
@@ -97,7 +105,9 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScrollableView contentContainerStyle={tw`justify-between px-4 py-5`} refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
+      <ScrollableView
+        contentContainerStyle={tw`justify-between px-4 py-5`}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
         <View>
           <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
             Buy Data Bundle
@@ -157,7 +167,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
                     onChange(!value);
                   }}
                   style={tw`flex-row items-center `}>
-                 <Fragment>
+                  <Fragment>
                     <Checkbox status={value ? "checked" : "unchecked"} />
                     <Text>Are you sure this is an {upperCaseProvider} number?</Text>
                   </Fragment>
@@ -199,7 +209,10 @@ export default function DataPurchaseScreen({ navigation }: Props) {
             </Text>
           </View>
 
-          <Banner style={tw`mb-10`} message="You get 10% off when you purchase airtime with us" />
+          <Banner
+            style={tw`mb-10`}
+            message={`You get ${customers.data_discount_percentage}% off when you purchase airtime with us`}
+          />
         </View>
         <View style={tw`px-4 mb-4 pt-1`}>
           <Button
@@ -215,7 +228,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={["50%", "50%"]}
+        initialSnapPoints={[snapSize, snapSize]}
         closeFilter={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
@@ -242,6 +255,12 @@ export default function DataPurchaseScreen({ navigation }: Props) {
                 <Text variant="bodyLarge">Number:</Text>
                 <Text style={tw`text-lg font-bold`}>{values.phone}</Text>
               </View>
+              {Object.keys(extraPlanDetails).map((key, index) => (
+                <View style={tw`flex-row justify-between my-2`} key={index}>
+                  <Text variant="bodyLarge">{key}:</Text>
+                  <Text style={tw`text-lg font-bold`}>{extraPlanDetails[key]}</Text>
+                </View>
+              ))}
             </View>
             <Button
               mode="contained"

@@ -25,6 +25,7 @@ export const routes = {
         recentTransactions: "/api/v1/account/recent-transactions",
         transactions: "/api/v1/account/transactions",
         referralActivities: "/api/v1/account/referral-activities",
+        settings: "/api/v1/account/settings",
       },
       notification: {
         index: "/api/v1/notifications",
@@ -35,6 +36,7 @@ export const routes = {
       },
       kyc: {
         verifyBvn: "/api/v1/kyc/verify-bvn",
+        verifyNin: "/api/v1/kyc/verify-nin",
       },
       bank: {
         resolveAccount: "/api/v1/bank/resolve",

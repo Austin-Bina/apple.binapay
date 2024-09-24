@@ -1,8 +1,5 @@
-import { VerifiedBadge } from "@components/icons/svg";
 import Banner from "@components/ui/banner";
-import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import MaskedInput from "@components/ui/form/mask-input";
-import CustomTextInput from "@components/ui/form/TextInput";
 import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import Screen from "@components/ui/shared/Screen";
@@ -26,102 +23,57 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
 import { formatWithMask } from "react-native-mask-input";
-import { ActivityIndicator, Button, Text } from "react-native-paper";
+import { Button, Text } from "react-native-paper";
+import Toast from "react-native-root-toast";
 import { vs } from "react-native-size-matters";
 import { z } from "zod";
 
-type Props = KYCStackScreenProps<typeof SCREENS.BVN_VERIFICATION>;
+type Props = KYCStackScreenProps<typeof SCREENS.NIN_VERIFICATION>;
 
 const schema = z.object({
-  bvn: z
+  nin: z
     .string()
     .transform((val) => val.replace(/\D/g, ""))
     .refine((val) => `${val}`.length === 11, {
-      message: "Account number must be exactly 11 digits",
+      message: "NIN must be exactly 11 digits",
     }),
-  account_number: z
-    .string()
-    .transform((val) => val.replace(/\D/g, ""))
-    .refine((val) => `${val}`.length === 10, {
-      message: "Account number must be exactly 10 digits",
-    }),
-  bank_code: z.string().length(3, "Please select bank"),
 });
 
 type FormValues = z.infer<typeof schema>;
-
-type Bank = {
-  name: string;
-  code: string;
-};
-
-export default function BVNVerificationScreen(props: Props) {
-  const [banks, setBanks] = useState<Bank[]>([]);
+export default function NinVerificationScreen(props: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasError, setHasError] = useState(false);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
-  const [showProgress, setShowProgress] = useState(false);
-  const [resolvedAccountName, setResolvedAccountName] = useState<string | null>(null);
 
+  const bottomSheet = useRef<BottomSheetModalMethods>(null);
+  const { customers } = useTypedSelector(selectSystemSettings);
   const dispatch = useTypedDispatch();
   const user = useTypedSelector(selectUser);
-  const { customers } = useTypedSelector(selectSystemSettings);
-  const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const { control, handleSubmit, setError, watch, trigger } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      bvn: "",
-      account_number: "",
-      bank_code: "",
+      nin: "",
     },
+    mode: "onChange",
   });
 
   const values = watch();
 
   const { masked } = formatWithMask({
-    text: values.bvn,
+    text: values.nin,
     mask: bvn_nin_mask,
   });
 
   const formattedRemainingAttempts = useMemo(() => {
     if (remainingAttempts === null) return null;
-    if (typeof remainingAttempts === "undefined") return Math.max(0, customers.bvn_verification_limit - 0);
-    if (typeof remainingAttempts === "number") return Math.max(0, customers.bvn_verification_limit - remainingAttempts);
+    if (typeof remainingAttempts === "undefined") return Math.max(0, customers.nin_verification_limit - 0);
+    if (typeof remainingAttempts === "number") return Math.max(0, customers.nin_verification_limit - remainingAttempts);
     else return 0;
   }, [remainingAttempts]);
-
-  const filteredBanks = useMemo(
-    () =>
-      banks
-        .filter((b) => !!b.code)
-        .map((bank) => ({
-          label: bank.name,
-          id: bank.code,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
-    [banks],
-  );
 
   useEffect(() => {
     if (!user?.id) return;
     setRemainingAttempts(user.verification_attempts);
   }, [user?.id]);
-
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        const response = await API.get(route("bank.list"));
-        const { banks } = response.data;
-        setBanks(banks);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    fetchBanks();
-  }, []);
 
   const openBottomSheet = useCallback(async () => {
     const valid = await trigger();
@@ -138,55 +90,11 @@ export default function BVNVerificationScreen(props: Props) {
     bottomSheet.current?.dismiss();
   };
 
-  const validateBank = useCallback(async () => {
-    const { bank_code, account_number } = values;
-    const data = {
-      bank_code,
-      account_number,
-    };
-
-    trigger(["bank_code", "account_number"]).then(async (allGood) => {
-      if (allGood) {
-        try {
-          setIsProcessing(true);
-          setShowProgress(true);
-          setHasError(false);
-          setResolvedAccountName("");
-
-          const response = await API.post(route("bank.resolveAccount"), data);
-          const { is_valid, account_name } = response.data;
-
-          if (is_valid) {
-            return setResolvedAccountName(account_name);
-          } else {
-            setError("account_number", { message: "Account name does not match with your Binapay account" });
-          }
-        } catch (error) {
-          const axiosError = error as AxiosError<any>;
-          const { response } = axiosError;
-
-          if (response) {
-            const { message } = response.data;
-            setError("account_number", { message });
-            return;
-          }
-
-          setHasError(true);
-        } finally {
-          setShowProgress(false);
-          setIsProcessing(false);
-        }
-      }
-    });
-  }, [values]);
-
   const onSubmit = handleSubmit(async function (form) {
-    if (!resolvedAccountName) return;
-
     try {
       setIsProcessing(true);
 
-      const response = await API.post(route("kyc.verifyBvn"), form);
+      const response = await API.post(route("kyc.verifyNin"), form);
       const { accounts } = response.data;
 
       dispatch(authSliceActions.updateUser({ accounts }));
@@ -214,9 +122,9 @@ export default function BVNVerificationScreen(props: Props) {
 
           return;
         }
-
-        setHasError(true);
       }
+
+      showToast({ message: "We had trouble verifying your NIN. Please try again.", position: Toast.positions.TOP });
     } finally {
       setIsProcessing(false);
       closeBottomSheet();
@@ -226,84 +134,34 @@ export default function BVNVerificationScreen(props: Props) {
   return (
     <Screen>
       <ScrollableView contentContainerStyle={tw`px-4 pt-5 justify-between`}>
-        <View style={tw`mb-10`}>
+        <View>
           <View style={tw`mb-4`}>
-            <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>BVN and Account Name Validation</Text>
+            <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>NIN Verification</Text>
             <Text style={tw`w-full text-gray-500 text-base font-normal leading-snug mt-2`}>
-              Verify your BVN for added security and increased transaction limits.
+              Verify your NIN for added security and increased transaction limits.
             </Text>
           </View>
 
-          {hasError && <Banner message="We had trouble verifying your account name. Please try again." />}
-
           <Controller
             control={control}
-            name="bvn"
+            name="nin"
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <MaskedInput
-                label="Bank verification number"
-                placeholder="Enter your BVN"
+                label="National Identity Number"
+                placeholder="Enter your NIN"
                 mode="outlined"
                 onBlur={onBlur}
                 value={value}
-                mask={bvn_nin_mask}
                 onChangeText={onChange}
                 error={!!error}
                 errorMessage={error?.message}
+                mask={bvn_nin_mask}
               />
             )}
           />
 
-          <View>
-            <Controller
-              control={control}
-              name="account_number"
-              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-                <CustomTextInput
-                  label="Use any of your account number"
-                  placeholder="Enter account number"
-                  keyboardType="numeric"
-                  mode="outlined"
-                  onBlur={onBlur}
-                  value={value}
-                  onChangeText={onChange}
-                  error={!!error}
-                  errorMessage={error?.message}
-                />
-              )}
-            />
-
-            {showProgress && !resolvedAccountName && (
-              <View style={tw`flex-row items-center gap-2 mb-1`}>
-                <ActivityIndicator animating size="small" aria-label="Reading card number" />
-                <Text variant="labelSmall" style={tw`text-xs text-gray-500`}>
-                  Verifying account number
-                </Text>
-              </View>
-            )}
-
-            {resolvedAccountName && (
-              <View style={tw`flex-row items-center gap-1.5 mb-1`}>
-                <VerifiedBadge />
-                <Text variant="titleSmall" style={tw`text-primary-600`}>
-                  {resolvedAccountName}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <DropdownMenuField
-            label="Select any of your bank"
-            placeholder="select your bank"
-            name="bank_code"
-            control={control}
-            data={filteredBanks}
-          />
-
           <View style={tw`my-4`}>
-            <Banner
-              message={`Verifying NIN numbers costs ${customers.bvn_verification_charge}. We will offset the cost of the verification process. Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free attempts, after which you will be required to pay for the cost of verifying.`}
-            />
+            <Banner message="Verifying NIN numbers costs a small fee. We will offset the cost of the verification process. Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free attempts, after which you will be required to pay for the cost of verifying." />
           </View>
 
           {/* Display remaining attempts */}
@@ -324,9 +182,9 @@ export default function BVNVerificationScreen(props: Props) {
           style={tw`mt-auto mb-[30px] w-full rounded-full`}
           contentStyle={tw`p-2`}
           disabled={isProcessing}
-          onPress={resolvedAccountName ? openBottomSheet : validateBank}
+          onPress={openBottomSheet}
           mode="contained">
-          {resolvedAccountName ? "Complete Verification" : "Verify Name"}
+          Start Verification
         </Button>
       </ScrollableView>
       <BottomSheetModal
@@ -340,7 +198,7 @@ export default function BVNVerificationScreen(props: Props) {
             </Text>
             <View>
               <Text variant="bodyLarge" style={tw`text-center text-gray-500`}>
-                Your BVN
+                Your NIN
               </Text>
               <Text variant="headlineLarge" style={tw`text-center text-primary my-2`}>
                 {masked}

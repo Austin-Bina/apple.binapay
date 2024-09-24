@@ -10,19 +10,15 @@ import { ManualFundParamList } from "@navigators/types";
 import ManualFundProofScreen from "@screens/fund/ManualFundProof";
 import ManualFundWaitScreen from "@screens/fund/ManualFundWait";
 import FundWithCardScreen from "@screens/fund/FundWithCard";
-import { useTypedSelector } from "@store/common";
-import { selectIsAccountVerified } from "@store/selectors/auth";
 import BankTransferScreen from "@screens/fund/BankTransfer";
 import StartManualFundingScreen from "@screens/fund/StartManualFunding";
 
 const Stack = createNativeStackNavigator<ManualFundParamList>();
 
 function ManualFundStack() {
-  const isVerified = useTypedSelector(selectIsAccountVerified);
-
   return (
     <Stack.Navigator
-      initialRouteName={isVerified ? SCREENS.FUND_WITH_BANK : SCREENS.MANUAL_FUND}
+      initialRouteName={SCREENS.FUND_WITH_BANK}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,

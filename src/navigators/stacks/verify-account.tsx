@@ -6,8 +6,8 @@ import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import { SCREENS } from "@constants/screens";
 import KYCOptionsScreen from "@screens/kyc/KYCOptionsScreen";
-import NameVerificationScreen from "@screens/kyc/NameVerification";
 import BVNVerificationScreen from "@screens/kyc/BVNVerificationScreen";
+import NinVerificationScreen from "@screens/kyc/NINVerificationScreen";
 
 const Stack = createNativeStackNavigator<KYCParamList>();
 
@@ -44,8 +44,8 @@ function KYCStack() {
         ),
       })}>
         <Stack.Screen name={SCREENS.ACCOUNT_VERIFICATION_OPTIONS} component={KYCOptionsScreen} />
-        <Stack.Screen name={SCREENS.NAME_CHECK_VERIFICATION} component={NameVerificationScreen} />
         <Stack.Screen name={SCREENS.BVN_VERIFICATION} component={BVNVerificationScreen} />
+        <Stack.Screen name={SCREENS.NIN_VERIFICATION} component={NinVerificationScreen} />
     </Stack.Navigator>
   );
 }

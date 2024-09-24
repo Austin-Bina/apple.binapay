@@ -1,5 +1,5 @@
 export enum TransactionForm {
-  Electricity = "bill_payment",
+  Electricity = "electricity_bill",
   Data = "data_purchase",
   Airtime = "airtime_purchase",
   CableTv = "tv_subscription_renew",

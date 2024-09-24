@@ -13,7 +13,7 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
 import { authSliceActions } from "@store/slice/auth";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
-import { selectIsLoggingIn, selectUser } from "@store/selectors/auth";
+import { selectIsBvnVerified, selectIsLoggingIn, selectIsNinVerified, selectUser } from "@store/selectors/auth";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { AvatarImage } from "@components/avatar";
 import { scale } from "react-native-size-matters";
@@ -28,9 +28,10 @@ export default function SettingScreen({ navigation }: Props) {
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
   const dispatch = useTypedDispatch();
 
-  const tier1 = user?.account_tier === AccountTier.Tier1;
+  const isBvnVerified = useTypedSelector(selectIsBvnVerified);
+  const isNinVerified = useTypedSelector(selectIsNinVerified);
 
-  const verificationStatusText = tier1 ? "Upgrade to Tier 2" : "Verified";
+  const verificationStatusText = isBvnVerified && !isNinVerified ? "Upgrade to Tier 3" : isNinVerified ? "Verified" : "Not verified";
 
   const handleLogout = () => {
     dispatch(authSliceActions.doLogout());

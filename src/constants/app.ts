@@ -4,4 +4,7 @@ const systemUser = {
   avatar: require("@assets/icon.png"),
 };
 
-export { systemUser };
+const bvn_nin_mask = [/\d/, /\d/, /\d/, /\d/, "-", /\d/, /\d/, /\d/, "-", /\d/, /\d/, /\d/, /\d/];
+const phone_mask = [/\d/, /\d/, /\d/, " ", /\d/, /\d/, /\d/, /\d/, /\d/, /\d/, /\d/, /\d/, /\d/];
+
+export { systemUser, bvn_nin_mask, phone_mask };

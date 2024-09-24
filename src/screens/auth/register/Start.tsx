@@ -15,9 +15,12 @@ import API from "@lib/api";
 import { route } from "@helpers/route";
 import { AxiosError } from "axios";
 import { showToast } from "@helpers/toast";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import MaskedInput from "@components/ui/form/mask-input";
+import { phone_mask } from "@constants/app";
 
 const schema = z.object({
-  name: z.string().min(3, "Too Short").trim(),
+  name: z.string().min(3, "Name is too short").trim(),
   phone: z.string().min(11),
   email: z
     .string()
@@ -32,7 +35,7 @@ type FormValues = z.infer<typeof schema>;
 const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { control, clearErrors, setError, setValue, handleSubmit } = useForm<FormValues>({
+  const { control, setError, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
@@ -72,6 +75,8 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
           }
         }
       }
+
+      showToast({message: 'We could not reach our servers, please try this again.'})
     } finally {
       setIsLoading(false);
     }
@@ -122,12 +127,13 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
           control={control}
           name="phone"
           render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-            <CustomTextInput
+            <MaskedInput
               label="Phone Number"
-              placeholder="+234 000 000 0000"
+              placeholder="080 000 000 0000"
               mode="outlined"
               onBlur={onBlur}
               value={value}
+              mask={phone_mask}
               onChangeText={onChange}
               error={!!error}
               errorMessage={error?.message}
@@ -175,12 +181,12 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
           style={tw`w-full rounded-[94px]`}
           contentStyle={tw`py-2`}
           mode="contained"
-          loading={isLoading}
           disabled={isLoading}
           onPress={onSubmit}>
           Continue
         </Button>
       </View>
+      <PleaseWaitModal visible={isLoading} />
     </Screen>
   );
 };

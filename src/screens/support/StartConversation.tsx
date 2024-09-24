@@ -148,9 +148,9 @@ export default function StartConversation({ navigation, route }: Props) {
 
           return;
         }
-
-        setHasError(true);
       }
+
+      setHasError(true);
     } finally {
       setIsProcessing(false);
     }

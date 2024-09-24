@@ -134,7 +134,7 @@ export default function ChangePassword(props: ResetPasswordProps) {
               name="password"
               render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <CustomTextInput
-                  label="Password"
+                  label="New Password"
                   secureTextEntry={passwordVisible}
                   onBlur={onBlur}
                   value={value}
