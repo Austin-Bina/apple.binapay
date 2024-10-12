@@ -16,7 +16,6 @@ import AwardIcon from "@assets/icons/awards.svg";
 import TvIcon from "@assets/icons/tv-screen.svg";
 import AgentIcon from "@assets/icons/man-with-cap.svg";
 import FlightIcon from "@assets/icons/flight.svg";
-import GiftIcon from "@assets/icons/gift-box.svg";
 import TicketIcon from "@assets/icons/tickets.svg";
 import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -122,20 +121,21 @@ export default function ListServicesScreen({ navigation }: Props) {
         </View>
         <View style={tw`flex-row justify-around my-5`}>
           <IconButtonWithLabel RenderIcon={FlightIcon} size={24} label="Flight" onPress={openBottomSheet} />
-          <IconButtonWithLabel RenderIcon={GiftIcon} size={24} label="GiftCard" onPress={openBottomSheet} />
           <IconButtonWithLabel RenderIcon={TicketIcon} size={24} label="Tickets" onPress={openBottomSheet} />
         </View>
         <BottomSheetModal
           ref={bottomSheet}
           initialSnapPoints={["58%", "58%"]}
-          closeFilter={closeBottomSheet}
+          enablePanDownToClose={true}
+          onDismiss={closeBottomSheet}
+          scrollable={false}
           children={
-            <View style={tw`flex-1 items-center px-2.5`}>
-              <Image source={require("@assets/images/oops.png")} width={scale(220)} style={tw`mb-6`} />
+            <View style={tw`flex-1 items-center px-4`}>
+              <Image source={require("@assets/images/oops.png")} width={scale(200)} style={tw`mb-4`} />
               <Text variant="titleLarge" style={tw`font-bold mb-2`}>
                 Service Coming Soon
               </Text>
-              <Text variant="bodyMedium" style={tw`text-center text-gray-500 mb-10`}>
+              <Text variant="bodyMedium" style={[tw`text-center text-gray-500`, {marginBottom: scale(20)}]}>
                 This service is not available yet. We're actively working to add more features and services to improve
                 your experience. Please check back later for updates.
               </Text>

@@ -31,7 +31,7 @@ export default function SettingScreen({ navigation }: Props) {
   const isBvnVerified = useTypedSelector(selectIsBvnVerified);
   const isNinVerified = useTypedSelector(selectIsNinVerified);
 
-  const verificationStatusText = isBvnVerified && !isNinVerified ? "Upgrade to Tier 3" : isNinVerified ? "Verified" : "Not verified";
+  const verificationStatusText = isBvnVerified || isNinVerified ? "Verified" : "Not verified";
 
   const handleLogout = () => {
     dispatch(authSliceActions.doLogout());

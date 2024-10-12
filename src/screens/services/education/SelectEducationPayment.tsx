@@ -14,7 +14,16 @@ import { Text } from "react-native-paper";
 type Props = EducationStackScreenProps<"Select Educational Payment">;
 
 export default function SelectEducationPaymentScreen({ navigation }: Props) {
-  const { data: queryData, isFetching, error, refetch } = useGetEducationPlansQuery();
+  const {
+    data: queryData,
+    isFetching,
+    error,
+    refetch,
+  } = useGetEducationPlansQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
+  });
   const educationPlans = queryData?.education_plans || [];
 
   const navigateToPayment = (provider: string) => {
@@ -59,4 +68,3 @@ export default function SelectEducationPaymentScreen({ navigation }: Props) {
     </Screen>
   );
 }
-

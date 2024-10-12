@@ -7,21 +7,23 @@ import { HelperText, Text } from "react-native-paper";
 import ArrowDown from "@assets/icons/arrow-down.svg";
 import { AvatarImage } from "@components/avatar";
 
-type Props = {
+type DataItem = {
+  label: string;
+  id: string | number;
+  image?: any;
+};
+
+type Props<T extends DataItem> = {
   control: Control<any>;
   name: string;
   label?: string;
   placeholder?: string;
   search?: boolean;
-  data: Array<{
-    label: string;
-    id: string | number;
-    image?: any;
-  }>;
-  onDataSelect?: (data: any) => void;
+  data: Array<T>;
+  onDataSelect?: (data: T) => void;
 };
 
-export default function DropdownMenuField({
+export default function DropdownMenuField<T extends DataItem>({
   control,
   name,
   data = [],
@@ -29,7 +31,7 @@ export default function DropdownMenuField({
   label,
   search = false,
   onDataSelect = () => {},
-}: Props) {
+}: Props<T>) {
   return (
     <Controller
       control={control}

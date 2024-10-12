@@ -47,11 +47,10 @@ export default function FundAccountSheet({ show, hide, navigation }: Props) {
     <BottomSheetModal
       ref={bottomSheetRef}
       initialSnapPoints={[vs(335), vs(335)]}
-      closeFilter={hide}
       onDismiss={hide}
       children={
         <View>
-          <View style={tw`px-4 mt-10 mb-[36px]`}>
+          <View style={tw`px-4 mb-[36px]`}>
             <Text style={tw`text-2xl font-bold text-gray-800`}>Funding Options</Text>
             <Text style={tw`text-base font-normal text-gray-500`}>Select funding option</Text>
           </View>

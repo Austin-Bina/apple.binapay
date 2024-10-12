@@ -14,27 +14,28 @@ const maximumLength = 4;
 const CreateTransactionPin: React.FC<Props> = () => {
   const [pinReady, setPinReady] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [transactionPin, setTransactionPin] = useState<string | null>(null);
+  const [firstPin, setFirstPin] = useState("");
 
   const { dispatch } = useCompleteRegisterForm();
-  const { control, watch, trigger, setError, setValue, } = useFormContext<RegistrationFormValues>();
+  const { control, watch, reset, trigger, setError, setValue } = useFormContext<RegistrationFormValues>();
 
-  const { pin } = watch();
+  const { pin: currentPin, ...rest } = watch();
 
   useEffect(() => {
-    setPinReady(pin.length === maximumLength);
-  }, [pin]);
+    setPinReady(currentPin.length === maximumLength);
+  }, [currentPin]);
 
   const handleNext = useCallback(
     async function () {
       trigger("pin").then((allGood) => {
         if (allGood) {
           if (!isConfirming) {
-            setTransactionPin(pin);
+            setFirstPin(currentPin);
+            reset({ ...rest, pin: "" });
             setIsConfirming(true);
           } else {
-            if (transactionPin === pin) {
-              setValue('pin_confirmation', transactionPin);
+            if (firstPin === currentPin) {
+              setValue("pin_confirmation", currentPin);
               dispatch({ type: "updateScreenIndex", index: 2 });
             } else {
               setError("pin", { message: "PINs do not match" });
@@ -43,7 +44,7 @@ const CreateTransactionPin: React.FC<Props> = () => {
         }
       });
     },
-    [dispatch, trigger, isConfirming, pin, transactionPin, setError],
+    [dispatch, trigger, isConfirming, firstPin, currentPin, setError],
   );
 
   return (

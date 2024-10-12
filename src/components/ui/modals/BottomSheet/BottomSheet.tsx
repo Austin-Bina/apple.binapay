@@ -5,35 +5,27 @@ import {
   BottomSheetScrollView,
   BottomSheetBackdropProps,
   BottomSheetProps as PrimitiveBottomSheetProps,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useTheme } from "react-native-paper";
 import BottomSheetModalHeader from "./BottomSheetHeader";
 import tw from "@lib/tailwind";
+import { match } from "ts-pattern";
 
 interface BottomSheetModalProps {
   children: React.ReactNode;
   headerTitle?: string;
-  closeFilter?: () => void;
   showHeader?: boolean;
   initialSnapPoints?: PrimitiveBottomSheetProps["snapPoints"];
   onDismiss?: () => void;
+  index?: number;
+  scrollable?: boolean;
+  enablePanDownToClose?: boolean;
+  enableDynamicSizing?: boolean;
 }
 
-const BottomSheetModal = forwardRef<
-  BottomSheetModalLibrary,
-  BottomSheetModalProps
->(
-  (
-    {
-      children,
-      headerTitle,
-      closeFilter,
-      showHeader,
-      initialSnapPoints,
-      onDismiss,
-    },
-    ref
-  ) => {
+const BottomSheetModal = forwardRef<BottomSheetModalLibrary, BottomSheetModalProps>(
+  ({ children, headerTitle, showHeader = true, enableDynamicSizing = false, enablePanDownToClose = true, initialSnapPoints, onDismiss, index = 1, scrollable = true }, ref) => {
     const theme = useTheme();
     const { colors } = theme;
 
@@ -48,12 +40,12 @@ const BottomSheetModal = forwardRef<
           appearsOnIndex={0}
         />
       ),
-      []
+      [],
     );
 
     return (
       <BottomSheetModalLibrary
-        index={1}
+        index={index}
         ref={ref}
         onChange={() => {}}
         snapPoints={initialSnapPoints}
@@ -64,21 +56,16 @@ const BottomSheetModal = forwardRef<
         backdropComponent={renderBackdrop}
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
-        enablePanDownToClose
+        enablePanDownToClose={enablePanDownToClose}
         onDismiss={onDismiss}
-        enableDynamicSizing
-      >
-        {showHeader && (
-          <BottomSheetModalHeader
-            title={headerTitle}
-            closeModal={closeFilter}
-            colors={colors}
-          />
-        )}
-        <BottomSheetScrollView>{children}</BottomSheetScrollView>
+        enableDynamicSizing={enableDynamicSizing}>
+        {showHeader && <BottomSheetModalHeader title={headerTitle} closeModal={onDismiss} colors={colors} />}
+        {match(scrollable)
+          .with(true, () => <BottomSheetScrollView>{children}</BottomSheetScrollView>)
+          .otherwise(() => children)}
       </BottomSheetModalLibrary>
     );
-  }
+  },
 );
 
 export default BottomSheetModal;

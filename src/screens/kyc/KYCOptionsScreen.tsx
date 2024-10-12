@@ -15,7 +15,7 @@ type Props = KYCStackScreenProps<typeof SCREENS.ACCOUNT_VERIFICATION_OPTIONS>;
 
 export default function KYCOptionsScreen({ navigation }: Props) {
   const isBvnVerified = useTypedSelector(selectIsBvnVerified);
-  const isNinVerified = useTypedSelector(selectIsNinVerified);
+  const isNinVerified = useTypedSelector(selectIsNinVerified) || isBvnVerified;
 
   return (
     <Screen>

@@ -24,6 +24,7 @@ module.exports = function (api) {
             "@env": "./src/env",
             "@contexts": "./src/contexts",
             "@providers": "./src/providers",
+            "@templates": "./src/templates",
           },
         },
       ],

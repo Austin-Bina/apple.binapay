@@ -8,6 +8,7 @@ import { selectUser } from "@store/selectors/auth";
 import { AvatarImage } from "./avatar";
 import { selectNotificationMeta } from "@store/selectors/notification";
 import { HasNotification, NoNotification } from "./icons/svg";
+import { truncateString } from "@utils/index";
 
 export default memo(function UserAppbar() {
   const user = useTypedSelector(selectUser);
@@ -31,7 +32,7 @@ export default memo(function UserAppbar() {
           <AvatarImage avatar={user?.avatar} size={48} svgProps={{ width: 48, height: 48 }} />
         </View>
         <View style={tw`flex flex-col items-start justify-start`}>
-          <Text style={tw`text-gray-900 text-xl font-semibold`}>Hi, {user?.name} 👋🏽</Text>
+          <Text style={tw`text-gray-900 text-xl font-semibold`}>Hi, {truncateString(user?.name, 17)} 👋🏽</Text>
           <Text style={tw`text-gray-500 text-sm font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
         </View>
       </TouchableOpacity>

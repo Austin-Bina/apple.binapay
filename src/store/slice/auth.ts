@@ -4,12 +4,11 @@ import { showToast } from "@helpers/toast";
 import API from "@lib/api";
 import { saveAuthToken } from "@lib/security";
 import { createSlice, createEntityAdapter, PayloadAction, EntityState } from "@reduxjs/toolkit";
-import { DVA, User } from "@type/user";
+import { User } from "@type/user";
 import { AxiosError } from "axios";
 import { WalletTransaction } from "@type/transaction";
 import { accountTransactionsApi } from "@store/redux-api/accountTransactionsApi";
 import { createTypedAsyncThunk } from "@store/common";
-import { notificationsApi } from "@store/redux-api/notificationApi";
 
 interface AuthMetaInfo {
   access_token: string;
@@ -31,6 +30,7 @@ interface AuthState extends EntityState<User, string> {
   meta: AuthMetaInfo | null;
   isLoggingIn: boolean;
   isFetchingProfile: boolean;
+  hasProfileError: boolean;
   newUser: boolean;
 }
 
@@ -59,6 +59,7 @@ export const initialState: AuthState = authAdapter.getInitialState({
   meta: null,
   isLoggingIn: false,
   isFetchingProfile: false,
+  hasProfileError: false,
   newUser: false,
 });
 
@@ -121,13 +122,16 @@ export const authSlice = createSlice({
       // Fetch user profile async actions
       .addCase(fetchUserProfile.pending, (state) => {
         state.isFetchingProfile = true;
+        state.hasProfileError = false;
       })
       .addCase(fetchUserProfile.fulfilled, (state, { payload }) => {
         state.user = payload.user;
         state.isFetchingProfile = false;
+        state.hasProfileError = false;
       })
       .addCase(fetchUserProfile.rejected, (state) => {
         state.isFetchingProfile = false;
+        state.hasProfileError = true;
       });
   },
 });
@@ -156,7 +160,7 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
 
       if (response?.status === 401) {
         dispatch(authSliceActions.logout());
-        
+
         return rejectWithValue(response.data);
       }
 
@@ -172,7 +176,6 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
         return rejectWithValue(response.data);
       }
 
-      showToast({ message: "We had issues processing your request. Please try again." });
       return rejectWithValue(error.response?.data);
     }
   },
@@ -244,8 +247,7 @@ const doLogin = createTypedAsyncThunk<LoginResponse, LoginPayload>(
         return rejectWithValue(response.data);
       }
 
-      showToast({ message: "An error occurred. Please try again." });
-      return rejectWithValue(error.response?.data);
+      return rejectWithValue(error);
     }
   },
 );

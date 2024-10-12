@@ -169,4 +169,5 @@ export const {
   useListConversationsQuery,
   useGetSupportHistoryQuery,
   useInitiateSupportMutation,
+  usePrefetch: useSupportPrefetch,
 } = supportApi;

@@ -14,8 +14,9 @@ import { z } from "zod";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
 import { selectIsLoggingIn } from "@store/selectors/auth";
-import { showToast } from "@helpers/toast";
 import { EyeOpen, PasswordLock } from "@components/icons/svg";
+import Banner from "@components/ui/banner";
+import CustomButton from "@components/ui/form/button";
 
 const schema = z.object({
   email: z
@@ -30,6 +31,7 @@ type FormValues = z.infer<typeof schema>;
 
 const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
   const dispatch = useTypedDispatch();
@@ -48,6 +50,8 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
 
   const onSubmit = handleSubmit(async function (values) {
     try {
+      setHasError(false);
+
       await dispatch(authSliceActions.doLogin(values)).unwrap();
     } catch (error) {
       const { errors } = error as any;
@@ -66,7 +70,7 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
         return;
       }
 
-      showToast({ message: "Something went wrong. Please try again." });
+      setHasError(true);
     }
   });
 
@@ -78,6 +82,13 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
           <Text style={tw`w-full mb-[30px] text-gray-500 text-base font-normal leading-snug`}>
             Log in to your account to continue.
           </Text>
+
+          {hasError && (
+            <View style={tw`mb-3`}>
+              <Banner title="Failed to connect" content="Something went wrong. Please try again." />
+            </View>
+          )}
+
           <Controller
             control={control}
             name="email"
@@ -94,6 +105,7 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
               />
             )}
           />
+
           <Controller
             control={control}
             name="password"
@@ -105,12 +117,12 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
                 onBlur={onBlur}
                 value={value}
                 onChangeText={onChange}
-                secureTextEntry={passwordVisible}
+                secureTextEntry={!passwordVisible}
                 left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
                 right={
                   <TextInput.Icon
                     onPress={() => setPasswordVisible((prev) => !prev)}
-                    icon={passwordVisible ? "eye-off-outline" : (props) => <EyeOpen {...props} />}
+                    icon={passwordVisible ? (props) => <EyeOpen {...props} /> : "eye-off-outline"}
                     color="#71717A"
                     forceTextInputFocus={false}
                   />
@@ -139,17 +151,9 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
             </TouchableOpacity>
           </View>
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            loading={isLoggingIn}
-            disabled={isLoggingIn}
-            mode="contained"
-            onPress={onSubmit}>
-            Login
-          </Button>
-        </View>
+        <CustomButton disabled={isLoggingIn} onPress={onSubmit}>
+          Login
+        </CustomButton>
       </ScrollableView>
       <PleaseWaitModal visible={isLoggingIn} />
     </Screen>

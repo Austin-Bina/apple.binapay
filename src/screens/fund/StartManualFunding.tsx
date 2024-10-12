@@ -40,12 +40,11 @@ export default function StartManualFundingScreen({ navigation }: Props) {
             Fund Wallet Manually
           </Text>
           <Text variant="bodyMedium" style={tw`text-gray-500`}>
-            Transfer the desired amount to BinaPay's bank account of your choice. Once the transfer is complete, your
-            BinaPay wallet will be credited. The minimum amount is <Text variant="labelLarge">₦2,000</Text>.
+            Enter the amount you want to fund. The minimum amount is <Text variant="labelLarge">₦2,000</Text>.
           </Text>
           <Banner
             style={tw`mt-6`}
-            message="Note this feature is for those that want to fund their BinaPay wallet without verifying their account.  Manual  funding  attracts additional charges of 4% only."
+            content="Note this feature is for those that want to fund their BinaPay wallet without verifying their account.  Manual  funding  attracts additional charges of 4% only."
           />
           <NairaInput name="amount" control={control} />
         </View>

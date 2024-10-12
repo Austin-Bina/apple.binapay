@@ -1,48 +1,26 @@
-import React, {useMemo, FC} from 'react';
-import {View, StyleSheet} from 'react-native';
-import {IconButton, useTheme, MD3Theme, Text} from 'react-native-paper';
+import { SheetModalClose } from "@components/icons/svg";
+import { Colors } from "@constants/theme/colors";
+import tw from "@lib/tailwind";
+import React, { FC } from "react";
+import { View } from "react-native";
+import { IconButton, MD3Theme, Text } from "react-native-paper";
+import { s } from "react-native-size-matters";
 
 interface BottomSheetModalHeaderProps {
   title?: string;
   closeModal?: () => void;
-  colors: MD3Theme['colors'];
+  colors: MD3Theme["colors"];
 }
 
-const createStyles = (theme: MD3Theme) => {
-  const {colors} = theme;
-  return StyleSheet.create({
-    headerContainer: {
-      paddingBottom: 2,
-      paddingTop: 4,
-      paddingHorizontal: 10,
-      borderBottomColor: colors.outline,
-      borderBottomWidth: 0.4,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      width: '100%',
-    },
-    headerTitle: {
-      textAlign: 'center',
-    },
-  });
-};
-
-const BottomSheetModalHeader: FC<BottomSheetModalHeaderProps> = ({
-  title,
-  closeModal,
-  colors,
-}) => {
-  const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
-
+const BottomSheetModalHeader: FC<BottomSheetModalHeaderProps> = ({ title, closeModal, colors }) => {
   return (
-    <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>{title}</Text>
+    <View style={tw`px-4 flex-row items-center justify-between`}>
+      <Text style={tw`text-center`}>{title}</Text>
       <IconButton
-        icon="dismiss-outline"
+        icon={(props) => <SheetModalClose {...props} color={Colors.gray[500]} />}
         iconColor={colors.error}
-        size={16}
+        size={s(36)}
+        style={tw`m-0`}
         onPress={closeModal}
       />
     </View>

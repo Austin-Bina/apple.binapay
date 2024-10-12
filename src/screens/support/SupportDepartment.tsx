@@ -1,18 +1,20 @@
 import { SupportHead } from "@components/icons/svg";
 import { ActionWithDescription, SupportAction } from "@components/screens/account";
 import Banner from "@components/ui/banner";
-import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { SCREENS } from "@constants/screens";
 import tw from "@lib/tailwind";
 import { SupportStackScreenProps } from "@navigators/types";
-import { supportApi, useGetSupportDepartmentsQuery, useGetSupportHistoryQuery } from "@store/redux-api/supportApi";
+import {
+  useGetSupportDepartmentsQuery,
+  useGetSupportHistoryQuery,
+  useSupportPrefetch,
+} from "@store/redux-api/supportApi";
 import { formatSecondsToDate } from "@utils/index";
 import { Fragment, useEffect, useState } from "react";
 import { RefreshControl, View } from "react-native";
-import { Badge, Button, Divider, ProgressBar, Text } from "react-native-paper";
-import { SupportStatus } from "@enum/support";
+import { Button, Divider, ProgressBar, Text } from "react-native-paper";
 import { useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 
@@ -29,8 +31,15 @@ export default function SupportDepartment({ navigation }: Props) {
   } = useGetSupportHistoryQuery(undefined, {
     refetchOnMountOrArgChange: true,
     pollingInterval: 10000,
-    skipPollingIfUnfocused: true,
-    skip: !user || isSupportIdError,
+    skip: !user,
+  });
+
+  const prefetchDepartments = useSupportPrefetch("getSupportDepartments", {
+    force: true,
+  });
+
+  const prefetchHistory = useSupportPrefetch("getSupportHistory", {
+    force: true,
   });
 
   // If is support error, stop retrying
@@ -45,7 +54,7 @@ export default function SupportDepartment({ navigation }: Props) {
   }, [error]);
 
   const departments = queryData?.departments ?? [];
-  const history = historyQuery?.data.tickets.filter((ticket) => ticket.status === SupportStatus.Open).slice(0, 5) ?? [];
+  const history = historyQuery?.data.tickets.slice(0, 5) ?? [];
 
   const handleNavigate = (departmentId: string) => {
     navigation.navigate(SCREENS.SUPPORT_START_CONVERSATION, { departmentId });
@@ -60,8 +69,8 @@ export default function SupportDepartment({ navigation }: Props) {
   };
 
   const handleRefresh = () => {
-    supportApi.util.prefetch("getSupportDepartments", undefined, { force: true });
-    supportApi.util.prefetch("getSupportHistory", undefined, { force: true });
+    prefetchDepartments();
+    prefetchHistory();
   };
 
   return (
@@ -76,7 +85,7 @@ export default function SupportDepartment({ navigation }: Props) {
               Contact our support team for any issues or queries. Our team is available 24/7 to assist you.
             </Text>
           </View>
-          {!!isError && <Banner message="We had trouble loading support departments. Please try again." />}
+          {!!isError && <Banner content="We had trouble loading support departments. Please try again." />}
           <View style={tw`mt-2`}>
             {departments.map((department, index) => (
               <Fragment key={department.id}>
@@ -93,9 +102,9 @@ export default function SupportDepartment({ navigation }: Props) {
 
           {/* Current open tickets */}
           <View style={tw`pt-5 pb-4 bg-white border border-gray-300 rounded-md mx-2 mt-10 min-h-[300px]`}>
-            <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4`}>Open Issues</Text>
+            <Text style={tw`text-gray-500 text-xl font-bold leading-relaxed px-4`}>Recent Issues</Text>
             {(history.length === 0 || isHistoryError) && !isFetching && (
-              <Text style={tw`text-gray-500 text-sm font-bold leading-relaxed px-4`}>No open issues</Text>
+              <Text style={tw`text-gray-500 text-sm font-bold leading-relaxed px-4`}>No recent issues</Text>
             )}
             {isFetching && (
               <View>

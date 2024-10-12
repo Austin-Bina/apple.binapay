@@ -23,6 +23,7 @@ import { vs } from "react-native-size-matters";
 import TextInput from "@components/ui/form/TextInput";
 import Screen from "@components/ui/shared/Screen";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import { truncateString } from "@utils/index";
 
 const schema = z.object({
   description: z.string().min(10, "Please add more context to your message"),
@@ -52,7 +53,7 @@ export default function StartConversation({ navigation, route }: Props) {
   const { control, handleSubmit, setError, setValue, watch, reset } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      description: "This is a test to the application here",
+      description: "",
       attachment: "",
     },
   });
@@ -108,7 +109,7 @@ export default function StartConversation({ navigation, route }: Props) {
       const form = {
         ...values,
         department_id: departmentId,
-        subject: `${values.description.slice(0, 30)} [${department?.name}]`,
+        subject: `${truncateString(values.description, 40)}`,
       };
 
       // If they have no support_id, register them as a new user
@@ -166,7 +167,7 @@ export default function StartConversation({ navigation, route }: Props) {
               Start a conversation with our support team to get help with your account.
             </Text>
           </View>
-          {hasError && <Banner message="We had trouble starting a conversation. Please try again." />}
+          {hasError && <Banner content="We had trouble starting a conversation. Please try again." />}
 
           <Controller
             control={control}

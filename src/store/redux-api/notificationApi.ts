@@ -152,4 +152,5 @@ export const {
   useMarkAllNotificationsAsReadMutation,
   useClearDeviceDetailsMutation,
   useMarkAsReadMutation,
+  usePrefetch: useNotificationsPrefetch,
 } = notificationsApi;

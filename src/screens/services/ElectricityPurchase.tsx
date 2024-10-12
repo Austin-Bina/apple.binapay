@@ -8,16 +8,14 @@ import { ServicesStackScreenProps } from "@navigators/types";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
-import { Image } from "react-native-element-image";
 import { ActivityIndicator, Button, Chip, Text } from "react-native-paper";
 import { z } from "zod";
-import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import { serviceProvidersMap } from "@constants/providers";
 import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import { METER_TYPE } from "@enum/providers";
-import { calculateTransactionDetails, formatToNaira, zodAmountValidation } from "@utils/money";
+import { calculateTransactionDetails, zodAmountValidation } from "@utils/money";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import API from "@lib/api";
@@ -29,18 +27,28 @@ import { Colors } from "@constants/theme/colors";
 import { SelectCloseIcon, SelectOpenIcon } from "@components/icons/svg";
 import { AxiosError } from "axios";
 import { selectSystemSettings } from "@store/selectors/settings";
+import WalletBalanceHelper from "@components/ui/form/wallet-balance";
+import { useWalletBalanceValidation } from "@hooks/transaction";
+import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
+import BottomSheetModal from "@components/ui/modals/preview-transaction";
+import { zodPhoneValidation } from "@utils/phone";
 
 type Props = ServicesStackScreenProps<"Electricity Bill">;
 
-const MIN_PAYMENT_AMOUNT = 50;
+const MIN_PAYMENT_AMOUNT = 1000;
 const schema = z.object({
   provider: z.string(),
   meter_type: z.nativeEnum(METER_TYPE),
-  meter_number: z.string().transform((val) => val.replace(/\D/g, "")),
-  amount: zodAmountValidation(MIN_PAYMENT_AMOUNT),
+  meter_number: z
+    .string()
+    .trim()
+    .min(10, "Please enter a valid meter number")
+    .transform((val) => val.replace(/\D/g, "")),
+  amount: zodAmountValidation(MIN_PAYMENT_AMOUNT, true),
   customer_name: z.string(),
   customer_address: z.string(),
-  phone: z.string().min(11),
+  phone: zodPhoneValidation,
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -91,6 +99,9 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const controllerRef = useRef(new AbortController());
   const { customers } = useTypedSelector(selectSystemSettings);
+  const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
 
   const { control, watch, trigger, setValue, setError, clearErrors, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -109,11 +120,19 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
   const values = watch();
   const isPrepaidType = values.meter_type === METER_TYPE.PREPAID;
 
+  useEffect(() => {
+    prefetchSystemSettings();
+  }, []);
+
+  const walletValidation = useWalletBalanceValidation({
+    amount: parseFloat(values.amount) || 0,
+  });
+
   const extraPlanDetails = useMemo(() => {
     return calculateTransactionDetails(parseFloat(values.amount) || 0, "electricity", customers);
   }, [values.amount, customers]);
 
-  const snapSize = Object.keys(extraPlanDetails).length === 0 ? "48%" : "55%";
+  const snapSize = "58%";
 
   useEffect(() => {
     if (readyToPay && values.meter_number) {
@@ -208,12 +227,22 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
 
     dispatch(addPendingTransaction(transaction));
 
+    closeBottomSheet();
+
     navigation.navigate("Confirm Transaction", {
       transactionId: transaction.id,
     });
-
-    closeBottomSheet();
   });
+
+  const transactionDetails = [
+    {
+      label: "Product Name",
+      value: "Electricity",
+      icon: require("@assets/images/services/aedc.png"),
+    },
+    { label: "Customer Name", value: values.customer_name },
+    ...Object.keys(extraPlanDetails).map((key) => ({ label: key, value: extraPlanDetails[key] })),
+  ];
 
   return (
     <Screen>
@@ -289,60 +318,31 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
 
           <View style={tw`mb-5`}>
             <NairaInput name="amount" control={control} />
-            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-              Wallet Balance: {formatToNaira(user?.wallet_balance)}
-            </Text>
+            <WalletBalanceHelper {...walletValidation} />
           </View>
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            labelStyle={tw`text-white text-center text-base font-bold`}
-            disabled={isProcessing}
-            onPress={openBottomSheet}
-            mode="contained">
-            {!readyToPay ? "Verify" : "Proceed"}
-          </Button>
-        </View>
+        <Button
+          style={tw`w-full rounded-full mt-4`}
+          contentStyle={tw`py-2`}
+          labelStyle={tw`text-white text-center text-base font-bold`}
+          disabled={isProcessing || !walletValidation.canPay}
+          onPress={openBottomSheet}
+          mode="contained">
+          {!readyToPay ? "Verify" : "Proceed"}
+        </Button>
       </ScrollableView>
+
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={[snapSize, snapSize]}
-        closeFilter={closeBottomSheet}
-        children={
-          <View style={tw`p-4`}>
-            <Text variant="titleLarge" style={tw`font-bold text-gray-800 mb-2`}>
-              Confirm Bill Payment
-            </Text>
-            <View>
-              <View style={tw`flex-row justify-between my-2`}>
-                <Text variant="bodyLarge">Product Name:</Text>
-                <View style={tw`flex-row items-center gap-2.5`}>
-                  <Image width={30} source={require("@assets/images/services/aedc.png")} />
-                  <Text style={tw`text-lg font-bold`}>Electricity</Text>
-                </View>
-              </View>
-              <View style={tw`flex-row justify-between my-2`}>
-                <Text variant="bodyLarge">Amount:</Text>
-                <Text style={tw`text-lg font-bold`}>₦{values.amount}</Text>
-              </View>
-              <View style={tw`flex-row items-center justify-between my-2`}>
-                <Text variant="bodyLarge">Customer Name:</Text>
-                <Text style={tw`text-lg font-bold`}>{values.customer_name}</Text>
-              </View>
-            </View>
-            <Button
-              mode="contained"
-              onPress={handleMakePayment}
-              style={tw`w-full rounded-full mt-[20%]`}
-              contentStyle={tw`py-2`}
-              labelStyle={tw`text-base`}>
-              Make Payment
-            </Button>
-          </View>
-        }
+        title="Confirm Bill Payment"
+        details={transactionDetails}
+        buttonLabel="Make Payment"
+        onDismiss={closeBottomSheet}
+        onConfirm={handleMakePayment}
+        snapPoints={[snapSize, snapSize]}
+        disabled={!walletValidation.canPay}
       />
+
       <TransactionErrorSheet />
     </Screen>
   );

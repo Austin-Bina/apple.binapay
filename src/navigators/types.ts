@@ -81,6 +81,7 @@ export type HomeParamList = {
   [SCREENS.ADD_MONEY]: NavigatorScreenParams<AddMoneyParamList>;
   [SCREENS.TRANSACTION_HISTORY]: undefined;
   [SCREENS.TRANSACTION_DETAILS]: undefined;
+  [SCREENS.VIEW_TRANSACTION]: { transactionId: TransactionForm};
 };
 export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScreenProps<HomeParamList, T>;
 
@@ -90,6 +91,8 @@ export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScr
  */
 export type AddMoneyParamList = {
   [SCREENS.MANUAL_FUND_STACK]: NavigatorScreenParams<ManualFundParamList>;
+  [SCREENS.FUND_WITH_CARD]: undefined;
+  [SCREENS.FUND_WITH_BANK]: undefined;
   [SCREENS.PAYMENT_SUCCESS]: undefined;
 };
 export type AddMoneyStackScreenProps<T extends keyof AddMoneyParamList> = NativeStackScreenProps<AddMoneyParamList, T>;
@@ -100,8 +103,6 @@ export type AddMoneyStackScreenProps<T extends keyof AddMoneyParamList> = Native
  */
 export type ManualFundParamList = {
   [SCREENS.START_MANUAL_FUNDING]: undefined;
-  [SCREENS.FUND_WITH_BANK]: undefined;
-  [SCREENS.FUND_WITH_CARD]: undefined;
   [SCREENS.MANUAL_FUND]: { amount: string };
   [SCREENS.MANUAL_FUND_PROOF]: { reference: string };
   [SCREENS.MANUAL_FUND_WAIT]: undefined;
@@ -136,7 +137,6 @@ export type ServicesParamList = {
   Education: NavigatorScreenParams<EducationParamList>;
   "Airtime EPIN Purchase": undefined;
   "Airtime Swap": undefined;
-  [SCREENS.VIEW_TRANSACTION]: { transactionId: TransactionForm; type?: "utility" | "wallet" };
   "Confirm Transaction": { transactionId: TransactionForm };
   "TV Subscription": undefined;
 };

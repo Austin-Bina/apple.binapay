@@ -1,36 +1,41 @@
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import NairaInput from "@components/ui/form/NairaInput";
 import CustomTextInput from "@components/ui/form/TextInput";
-import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
+import WalletBalanceHelper from "@components/ui/form/wallet-balance";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import BottomSheetModal from "@components/ui/modals/preview-transaction";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
 import { serviceProvidersMap } from "@constants/providers";
+import { Colors } from "@constants/theme/colors";
 import { TransactionForm } from "@enum/transaction";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useWalletBalanceValidation } from "@hooks/transaction";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
+import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { useGetEpinPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { selectUser } from "@store/selectors/auth";
 import { selectSystemSettings } from "@store/selectors/settings";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
-import { calculateTransactionDetails, formatToNaira } from "@utils/money";
-import React, { useCallback, useMemo, useRef } from "react";
+import { calculateTransactionDetails, formatToNaira, zodAmountValidation } from "@utils/money";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, TouchableOpacity, FlatList, Keyboard, RefreshControl } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
-import { scale, vs } from "react-native-size-matters";
+import { scale } from "react-native-size-matters";
 import { z } from "zod";
 
 type Props = ServicesStackScreenProps<"Airtime EPIN Purchase">;
 
 const schema = z.object({
-  provider: z.string(),
-  amount: z.number().min(100),
+  provider: z.string().min(3),
+  amount: zodAmountValidation(100),
   quantity: z.number().min(1),
   business_name: z.string(),
 });
@@ -40,25 +45,43 @@ type FormData = z.infer<typeof schema>;
 export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
-  const { data: queryData, isFetching, refetch } = useGetEpinPlansQuery();
   const { customers } = useTypedSelector(selectSystemSettings);
+
+  const { data: queryData, isFetching, isError, refetch } = useGetEpinPlansQuery();
+  const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
+
   const { control, watch, setValue, trigger, reset, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
-      amount: 100,
+      amount: "100",
       quantity: 1,
       business_name: user?.name,
     },
+    mode: "onChange",
   });
+
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const values = watch();
 
+  useEffect(() => {
+    prefetchSystemSettings();
+  }, []);
+
+  const walletValidation = useWalletBalanceValidation({
+    amount: parseFloat(values.amount) || 0,
+  });
+
   const epinPlans = queryData?.epins_plans || [];
   const quantityOptions = queryData?.quantity_options || [];
+
   const extraPlanDetails = useMemo(() => {
-    return calculateTransactionDetails(values.amount, "epin", customers);
+    return calculateTransactionDetails(parseFloat(values.amount) || 0, "epin", customers);
   }, [values.amount, customers]);
+
+  const snapSize = "58%";
 
   const openBottomSheet = useCallback(async () => {
     const valid = await trigger();
@@ -88,6 +111,23 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
     closeBottomSheet();
   });
+
+  const onRefresh = async () => {
+    if (!isFetching) {
+      refetch();
+      prefetchSystemSettings();
+    }
+  };
+
+  const transactionDetails = [
+    {
+      label: "Product Name",
+      value: "ePIN",
+      icon: serviceProvidersMap.internet[values.provider].logo,
+    },
+    { label: "Business Name", value: values.business_name },
+    ...Object.keys(extraPlanDetails).map((key) => ({ label: key, value: extraPlanDetails[key] })),
+  ];
 
   return (
     <Screen>
@@ -119,6 +159,16 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
             contentContainerStyle={tw`items-center`}
             style={tw`my-5`}
           />
+
+          {isError && !isFetching && (
+            <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
+              <Text variant="bodySmall">We had trouble loading your Epin plans. Please try again.</Text>
+              <Button onPress={onRefresh} textColor={Colors.primary[500]}>
+                Try again
+              </Button>
+            </View>
+          )}
+
           <DropdownMenuField
             label="Value (Denomination)"
             placeholder="Select Price Options"
@@ -128,7 +178,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
             onDataSelect={(plan) => {
               reset({
                 ...values,
-                amount: plan.plan_amount,
+                amount: String(plan.plan_amount),
               });
             }}
           />
@@ -154,12 +204,12 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
               />
             )}
           />
+
           <View>
             <NairaInput name="amount" control={control} isDisabled />
-            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-              Wallet Balance: {formatToNaira(user?.wallet_balance)}
-            </Text>
+            <WalletBalanceHelper {...walletValidation} />
           </View>
+
           <View style={tw`p-4 border relative mt-5 mb-12`}>
             <View>
               <Text variant="titleMedium">
@@ -186,60 +236,27 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
             </View>
           </View>
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            labelStyle={tw`text-white text-center text-base font-bold`}
-            onPress={openBottomSheet}
-            mode="contained">
-            Proceed
-          </Button>
-        </View>
+
+        <Button
+          style={tw`w-full rounded-full mt-4`}
+          contentStyle={tw`py-2`}
+          labelStyle={tw`text-white text-center text-base font-bold`}
+          onPress={openBottomSheet}
+          disabled={!walletValidation.canPay}
+          mode="contained">
+          Proceed
+        </Button>
       </ScrollableView>
 
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={[vs(348), vs(348)]}
-        closeFilter={closeBottomSheet}
-        children={
-          <View style={tw`p-4`}>
-            <Text variant="titleLarge" style={tw`font-bold text-gray-800 mb-2`}>
-              Confirm ePIN Bundle Purchase
-            </Text>
-            <View>
-              <View style={tw`flex-row justify-between my-2`}>
-                <Text variant="bodyLarge">Product Name:</Text>
-                <View style={tw`flex-row items-center gap-2.5`}>
-                  <Image width={30} source={serviceProvidersMap.internet[values.provider].logo} />
-                  <Text style={tw`text-lg font-bold`}>ePIN</Text>
-                </View>
-              </View>
-              <View style={tw`flex-row justify-between my-2`}>
-                <Text variant="bodyLarge">Amount:</Text>
-                <Text style={tw`text-lg font-bold`}>₦{values.amount}</Text>
-              </View>
-              <View style={tw`flex-row items-center justify-between my-2`}>
-                <Text variant="bodyLarge">Business Name:</Text>
-                <Text style={tw`text-lg font-bold`}>{values.business_name}</Text>
-              </View>
-              {Object.keys(extraPlanDetails).map((key, index) => (
-                <View style={tw`flex-row justify-between my-2`} key={index}>
-                  <Text variant="bodyLarge">{key}:</Text>
-                  <Text style={tw`text-lg font-bold`}>{extraPlanDetails[key]}</Text>
-                </View>
-              ))}
-            </View>
-            <Button
-              mode="contained"
-              onPress={handleMakePayment}
-              style={tw`w-full rounded-full mt-10`}
-              contentStyle={tw`py-2`}
-              labelStyle={tw`text-base`}>
-              Make Payment
-            </Button>
-          </View>
-        }
+        title="Confirm ePIN Bundle Purchase"
+        details={transactionDetails}
+        buttonLabel="Make Payment"
+        onConfirm={handleMakePayment}
+        onDismiss={closeBottomSheet}
+        snapPoints={[snapSize, snapSize]}
+        disabled={!walletValidation.canPay}
       />
       <TransactionErrorSheet />
       <PleaseWaitModal visible={isFetching} />

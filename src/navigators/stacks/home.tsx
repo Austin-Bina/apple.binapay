@@ -10,6 +10,7 @@ import TransactionHistoryScreen from "@screens/home/TransactionHistory";
 import NotificationStack from "./notification";
 import AddMoneyStack from "./add-money";
 import { SCREENS } from "@constants/screens";
+import ViewTransaction from "@screens/services/ViewTransaction";
 
 const Stack = createNativeStackNavigator<HomeParamList>();
 
@@ -50,6 +51,7 @@ function HomeStack() {
       <Stack.Screen name="Dashboard" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen options={{ headerShown: false }} name="Notification" component={NotificationStack} />
       <Stack.Screen name="Transaction History" component={TransactionHistoryScreen} />
+      <Stack.Screen name={SCREENS.VIEW_TRANSACTION} component={ViewTransaction} options={{ headerShown: false }} />
       <Stack.Screen name={SCREENS.ADD_MONEY} options={{ headerShown: false }} component={AddMoneyStack} />
     </Stack.Navigator>
   );

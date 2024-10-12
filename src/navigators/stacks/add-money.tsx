@@ -8,13 +8,15 @@ import { SCREENS } from "@constants/screens";
 import PaymentSuccessScreen from "@screens/home/PaymentSuccess";
 import { AddMoneyParamList } from "@navigators/types";
 import ManualFundStack from "./manual-fund";
+import BankTransferScreen from "@screens/fund/BankTransfer";
+import FundWithCardScreen from "@screens/fund/FundWithCard";
 
 const Stack = createNativeStackNavigator<AddMoneyParamList>();
 
 function AddMoneyStack() {
   return (
     <Stack.Navigator
-      initialRouteName={SCREENS.MANUAL_FUND_STACK}
+      initialRouteName={SCREENS.FUND_WITH_BANK}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -44,6 +46,8 @@ function AddMoneyStack() {
           </View>
         ),
       })}>
+      <Stack.Screen name={SCREENS.FUND_WITH_BANK} component={BankTransferScreen} />
+      <Stack.Screen name={SCREENS.FUND_WITH_CARD} component={FundWithCardScreen} />
       <Stack.Screen name={SCREENS.PAYMENT_SUCCESS} options={{ headerShown: false }} component={PaymentSuccessScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND_STACK} options={{ headerShown: false }} component={ManualFundStack} />
     </Stack.Navigator>

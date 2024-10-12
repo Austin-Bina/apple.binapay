@@ -7,7 +7,7 @@ interface Transaction {
   data: object & {
     response?: TransactionResponse;
   };
-  view?: WalletTransaction | UtilityTransaction;
+  view?: WalletTransaction;
 }
 
 type ErrorState = TransactionResponse;

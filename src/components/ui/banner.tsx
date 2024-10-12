@@ -5,12 +5,12 @@ import { Text } from "react-native-paper";
 
 interface BannerProps {
   title?: string;
-  message: string;
+  content: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: "info" | "error" | "default";
 }
 
-const Banner: React.FC<BannerProps> = ({ message, title, style, variant = "default" }) => {
+const Banner: React.FC<BannerProps> = ({ content, title, style, variant = "default" }) => {
   const variantStyles = {
     info: {
       container: tw`bg-primary-50`,
@@ -31,14 +31,21 @@ const Banner: React.FC<BannerProps> = ({ message, title, style, variant = "defau
 
   const styles = variantStyles[variant];
 
+  const contentView =
+    typeof content === "string" ? (
+      <Text variant="bodySmall" style={[styles.messageText, tw`w-full`]}>
+        {content}
+      </Text>
+    ) : (
+      content
+    );
+
   return (
     <View style={[styles.container, tw`flex-row items-center p-2.5 rounded-xl gap-2 w-full`, style]}>
       <InfoIcon width={24} height={24} />
       <View style={tw`w-11/12`}>
         {title && <Text style={[styles.titleText, tw`text-lg w-11/12 font-bold mb-0.5`]}>{title}</Text>}
-        <Text variant="bodySmall" style={[styles.messageText, tw`w-full`]}>
-          {message}
-        </Text>
+        {contentView}
       </View>
     </View>
   );

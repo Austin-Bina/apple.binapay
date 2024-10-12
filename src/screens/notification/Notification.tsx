@@ -93,8 +93,8 @@ export default function NotificationScreen({ navigation }: Props) {
   };
 
   return (
-    <Screen>
-      <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold px-4 mt-5 `}>
+    <Screen style={tw`pb-0`}>
+      <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold px-4 py-5 `}>
         Notification
       </Text>
       <View style={tw`px-4 flex-1`}>

@@ -20,6 +20,7 @@ import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import { selectSystemSettings } from "@store/selectors/settings";
 import { authSliceActions } from "@store/slice/auth";
+import { settingsSliceActions } from "@store/slice/settings";
 import { resetNavigationToDashboard } from "@utils/navigation";
 import { AxiosError } from "axios";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -27,6 +28,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
 import { formatWithMask } from "react-native-mask-input";
 import { ActivityIndicator, Button, Text } from "react-native-paper";
+import Toast from "react-native-root-toast";
 import { vs } from "react-native-size-matters";
 import { z } from "zod";
 
@@ -37,7 +39,7 @@ const schema = z.object({
     .string()
     .transform((val) => val.replace(/\D/g, ""))
     .refine((val) => `${val}`.length === 11, {
-      message: "Account number must be exactly 11 digits",
+      message: "BVN number must be exactly 11 digits",
     }),
   account_number: z
     .string()
@@ -197,10 +199,10 @@ export default function BVNVerificationScreen(props: Props) {
       const { response } = axiosError;
 
       if (response) {
-        const { message, errors } = response.data;
+        const { message, errors, error_code = null } = response.data;
 
         if (message && typeof message === "string") {
-          showToast({ message });
+          showToast({ message, position: Toast.positions.TOP });
         }
 
         if (errors) {
@@ -213,6 +215,15 @@ export default function BVNVerificationScreen(props: Props) {
           }
 
           return;
+        }
+
+        if (error_code === "client_insufficient_funds") {
+          return dispatch(
+            settingsSliceActions.setApplicationError({
+              code: "client_insufficient_funds",
+              context: message,
+            }),
+          );
         }
 
         setHasError(true);
@@ -234,7 +245,7 @@ export default function BVNVerificationScreen(props: Props) {
             </Text>
           </View>
 
-          {hasError && <Banner message="We had trouble verifying your account name. Please try again." />}
+          {hasError && <Banner content="We had trouble verifying your account name. Please try again." />}
 
           <Controller
             control={control}
@@ -302,7 +313,18 @@ export default function BVNVerificationScreen(props: Props) {
 
           <View style={tw`my-4`}>
             <Banner
-              message={`Verifying NIN numbers costs ${customers.bvn_verification_charge}. We will offset the cost of the verification process. Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free attempts, after which you will be required to pay for the cost of verifying.`}
+              content={
+                <View style={tw`gap-2`}>
+                  <Text style={tw`text-secondary-500 w-full`}>
+                    Verifying NIN numbers costs ${customers.bvn_verification_charge}. But we will offset the cost of the
+                    verification process.
+                  </Text>
+                  <Text style={tw`text-secondary-500 w-full`}>
+                    Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free
+                    attempts, after which you will be required to pay for the cost of verifying.
+                  </Text>
+                </View>
+              }
             />
           </View>
 
@@ -331,8 +353,8 @@ export default function BVNVerificationScreen(props: Props) {
       </ScrollableView>
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={[vs(250), vs(250)]}
-        closeFilter={closeBottomSheet}
+        initialSnapPoints={[vs(280), vs(280)]}
+        onDismiss={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
             <Text variant="titleLarge" style={tw`font-bold text-gray-800 mb-2 text-center`}>

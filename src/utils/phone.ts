@@ -1,35 +1,64 @@
 import { z } from "zod";
 import { CountryCode, parsePhoneNumber } from "libphonenumber-js/min";
 import { CountryCode as ModalCountryCode } from "react-native-country-picker-modal";
+import { providerNumberCodes } from "@constants/providers";
 
 const phoneSchema = z
-  .array(z.string())
-  .nonempty()
+  .string()
+  .transform((val) => formatPhone(val))
   .refine((phone) => {
-    if (phone.length < 2) return false;
-    const countryCode = phone[1] as CountryCode;
     try {
-      const parsed = parsePhoneNumber(phone[0], countryCode);
-      return parsed !== null && parsed.isValid();
+      const parsed = parsePhoneNumber(phone, "NG");
+      return parsed.isValid();
     } catch {
       return false;
     }
-  }, "Invalid phone number");
+  }, "Phone number is invalid");
 
-const phoneNotEmptySchema = z
-  .array(z.string())
-  .nonempty()
-  .refine((phone) => {
-    return phone[0] !== undefined && phone[1] !== undefined;
-  }, "Phone number is required");
+const zodPhoneValidation = phoneSchema;
 
-export const phoneValidation = phoneSchema.and(phoneNotEmptySchema);
-
-export function formatPhone(phone: string, countryCode: ModalCountryCode) {
+function formatPhone(phone: string, countryCode: CountryCode = "NG") {
   try {
-    const phoneNumber = parsePhoneNumber(phone, countryCode as CountryCode);
-    return phoneNumber?.formatInternational();
+    const phoneNumber = parsePhoneNumber(phone, countryCode);
+    return `0${phoneNumber?.nationalNumber}`;
   } catch (err) {
     return "";
   }
 }
+
+function checkPhoneNumberProvider(number: string) {
+  const lookUpKeyLong = number.slice(0, 5) as keyof typeof providerNumberCodes;
+  const lookUpKeyShort = number.slice(0, 4) as keyof typeof providerNumberCodes;
+
+  const matchingPrefix = providerNumberCodes[lookUpKeyLong] || providerNumberCodes[lookUpKeyShort];
+
+  if (matchingPrefix) {
+    const { network, provider } = matchingPrefix;
+
+    return {
+      code: number.slice(0, 5),
+      network,
+      provider: provider.toLowerCase(),
+      matches: true,
+    };
+  }
+
+  return {
+    code: null,
+    network: null,
+    provider: null,
+    matches: false,
+  };
+}
+
+const getDefaultProvider = (phone: string = "") => {
+  const matches = checkPhoneNumberProvider(phone);
+
+  if (matches.matches && matches.provider) {
+    return matches.provider;
+  }
+
+  return "mtn";
+};
+
+export { checkPhoneNumberProvider, formatPhone, zodPhoneValidation, getDefaultProvider };

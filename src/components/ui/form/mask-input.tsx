@@ -35,7 +35,7 @@ export default function MaskedInput({
         keyboardType="numeric"
         style={[
           tw.style(
-            "rounded-xl h-12 border border-[#D2D5DA] py-2 px-4 w-full bg-white",
+            "rounded-xl h-12 border border-[#D2D5DA] py-2 px-4 w-full bg-white text-base",
             error ? "border-red-500" : "border-gray-300",
           ),
           outlineStyle,

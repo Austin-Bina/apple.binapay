@@ -145,7 +145,7 @@ export default function ResetPasswordScreen(props: ResetPasswordProps) {
             />
           </View>
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
+        <View style={tw`pb-4 pt-1`}>
           <Button
             style={tw`w-full rounded-full`}
             contentStyle={tw`py-2`}

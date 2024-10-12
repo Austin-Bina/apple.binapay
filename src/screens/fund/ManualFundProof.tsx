@@ -66,7 +66,7 @@ export default function ManualFundProofScreen({ route, navigation }: Props) {
   const handleSelectFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "image/*"],
+        type: ["application/pdf", "image/jpeg", "image/png", "image/jpg"],
       });
 
       if (!result.canceled) {
@@ -229,7 +229,7 @@ export default function ManualFundProofScreen({ route, navigation }: Props) {
             }
           />
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
+        <View style={tw`pb-4 pt-1`}>
           <Button
             mode="contained"
             onPress={onSubmit}

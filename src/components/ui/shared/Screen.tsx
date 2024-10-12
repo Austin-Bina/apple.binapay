@@ -15,12 +15,11 @@ const Screen = ({ children, style }: Props) => {
     <View
       style={[
         tw`flex-1 bg-white`,
-        style,
         {
-          paddingBottom: insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
         },
+        style,
       ]}>
       {children}
     </View>

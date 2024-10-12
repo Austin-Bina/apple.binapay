@@ -2,56 +2,46 @@ import { TransactionForm, TransactionStatus, TransactionType } from "@enum/trans
 
 export interface WalletTransaction {
   id: number;
-  payable_type: string;
-  payable_id: string;
-  wallet_id: number;
-  type: TransactionType;
   amount: string;
+  type: "withdraw" | "deposit";
   confirmed: boolean;
+  wallet_id: number;
   meta: {
     description: string;
-    type?: string; // e.g., "refund", "chargeback", etc.
+    form: string;
+    transaction_id: string;
   };
-  uuid: string;
   created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  payment_transaction?: PaymentTransaction;
+  response: Record<string, string> | null;
 }
 
 export interface PaymentTransaction {
   id: string;
-  user_id: string;
-  payment_channel: string | null;
-  processor_transaction_id: string | null;
-  transaction_type: TransactionType;
-  transaction_form: TransactionForm;
-  utility_transaction_id: string | null;
+  transaction_type: TransactionForm;
+  utility_transaction_id: string;
   virtual_account_funding_id: string | null;
-  amount: string;
   balance_before: string;
   balance_after: string;
+  utilityTransaction: UtilityTransaction | null;
 }
 
 export interface UtilityTransaction {
   id: string;
-  user_id: string;
-  vendor: string;
-  request_id: string;
-  status: TransactionStatus;
-  amount: string;
-  transaction_type: TransactionForm;
   provider_logo: string;
-  response: {
-    [index: string]: string;
-  } | null;
   details: {
-    [index: string]: string;
-  } | null;
+    provider: string;
+    phone: string;
+    amount: string;
+    data_amount: string;
+    data_bundle: string;
+    ported_number: boolean;
+    type: string;
+    requestId: string;
+    Token?: string;
+  };
   created_at: string;
-  updated_at: string;
-  payment_transaction: PaymentTransaction;
 }
-
 export interface TransactionInfo {
   transaction: UtilityTransaction | null;
   was_billed: boolean;
@@ -76,4 +66,20 @@ export interface BankAccount {
   bank_name: string;
   account_number: string;
   logo?: string;
+}
+
+export interface ViewTransaction {
+  transactionTitle: string;
+  transactionDescription: string;
+  transactionDetails: {
+    label: string;
+    value: any;
+  }[];
+  hasDetails: boolean;
+  logo: string;
+  transactionDate: string;
+  hasHighlighted: {
+    value: string;
+    copyable: boolean;
+  } | null;
 }

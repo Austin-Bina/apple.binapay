@@ -15,7 +15,7 @@ const RegisterSuccessScreen: React.FC<RegistrationStackScreenProps<"Register Suc
 
   return (
     <ImageBackground source={require("@assets/images/background-with-logo.png")}>
-      <View style={tw`flex flex-col px-4 pt-5 justify-between h-full`}>
+      <View style={tw`flex flex-col px-4 pt-5 pb-5 justify-between h-full`}>
         <View style={tw`flex-1 justify-center`}>
           <View style={tw`p-4 h-1/2 justify-end`}>
             <View>
@@ -28,7 +28,7 @@ const RegisterSuccessScreen: React.FC<RegistrationStackScreenProps<"Register Suc
             </View>
           </View>
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
+        <View style={tw`pb-4 pt-1`}>
           <Button style={tw`w-full rounded-full`} contentStyle={tw`py-2`} onPress={onSubmit} mode="contained">
             Continue to Home
           </Button>

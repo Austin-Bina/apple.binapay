@@ -10,6 +10,7 @@ import HomeStack from "@navigators/stacks/home";
 import { CommonActions, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import ServicesStack from "@navigators/stacks/services";
 import { SCREENS } from "@constants/screens";
+import InsufficientBalanceModal from "@components/ui/modals/insufficient-balance";
 
 const HIDE_TAB_LIST = [
   SCREENS.PROFILE,
@@ -119,6 +120,7 @@ export const TabBar = () => {
           component={AccountStack}
         />
       </Tab.Navigator>
+      <InsufficientBalanceModal />
     </View>
   );
 };

@@ -1,3 +1,4 @@
+import { getTransactionDetails } from "@helpers/transaction";
 import * as DocumentPicker from "expo-document-picker";
 
 type ProviderDetails = {
@@ -138,22 +139,26 @@ export interface CustomerSettings {
 
   // Percentage charges
   account_deposit_charge_percentage: number;
-  airtime_charge_percentage: number;
   data_charge_percentage: number;
-  cable_charge_percentage: number;
-  education_charge_percentage: number;
   epin_charge_percentage: number;
-  electricity_charge_percentage: number;
 
   // Discounts (for various services)
-  account_deposit_percentage: number;
   airtime_discount_percentage: number;
-  data_discount_percentage: number;
+  electricity_discount_percentage: number;
   cable_discount_percentage: number;
   education_discount_percentage: number;
-  epin_discount_percentage: number;
-  electricity_discount_percentage: number;
 }
 export interface SystemSettings {
   customers: CustomerSettings;
+}
+export interface PrintProps {
+  appLogo: string; // URL for the logo image
+  transactionTitle: string; // Title for the transaction
+  transactionDate: string; // Date of the transaction
+  logo: string; // URL for the provider logo image
+  hasDetails: boolean; // Whether transaction has details to display
+  transactionDetails: ReturnType<typeof getTransactionDetails>; // Array of transaction details (label-value pairs)
+  transactionDescription?: string; // Optional description if no transaction details exist
+  promotionalText: string; // Promotional text to display in the footer
+  supportEmail: string; // Support email address
 }

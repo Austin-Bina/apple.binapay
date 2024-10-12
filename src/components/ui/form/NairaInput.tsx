@@ -1,10 +1,9 @@
-import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
 import React from "react";
 import { Control, useController } from "react-hook-form";
-import { View } from "react-native";
-import CurrencyInput from "react-native-currency-input";
-import { HelperText, TextInput } from "react-native-paper";
+import { Platform, View } from "react-native";
+import { TextInputMask } from "react-native-masked-text";
+import { HelperText } from "react-native-paper";
 
 interface Props {
   control: Control<any>;
@@ -14,43 +13,40 @@ interface Props {
 
 const NairaInput: React.FC<Props> = ({ control, name, isDisabled }) => {
   const {
-    field: { onChange, onBlur, value },
+    field: { onChange, value },
     fieldState: { error },
   } = useController({ control, name, defaultValue: 0 });
 
   return (
-    <CurrencyInput
-      prefix="₦"
-      delimiter=","
-      separator="."
-      precision={2}
-      onBlur={onBlur}
-      onChangeValue={(value) => onChange(`${value}`)}
-      value={Number.parseFloat(value)}
-      renderTextInput={({ selectionColor, cursorColor, ...props }) => (
-        <View>
-          <TextInput
-            style={[
-              tw`text-center w-full bg-white mt-6 py-1`,
-              { textAlign: "center" },
-            ]}
-            contentStyle={tw`font-bold text-2xl text-gray-700`}
-            outlineStyle={tw.style(
-              "rounded-2xl",
-              !!error ? "border-red-500" : "border-gray-300"
-            )}
-            mode="outlined"
-            value={value}
-            keyboardType="numeric"
-            cursorColor={Colors.primary[600]}
-            selectionColor={Colors.primary[400]}
-            disabled={isDisabled}
-            {...props}
-          />
-          {error && <HelperText type="error">{error.message}</HelperText>}
-        </View>
-      )}
-    />
+    <View>
+      <TextInputMask
+        type={"money"}
+        options={{
+          precision: 2,
+          delimiter: ",",
+          separator: ".",
+          unit: "₦",
+        }}
+        includeRawValueInChangeText={true}
+        editable={!isDisabled}
+        value={value}
+        multiline={Platform.OS === "android" ? true : false}
+        numberOfLines={Platform.OS === "android" ? 1 : undefined}
+        blurOnSubmit={true}
+        returnKeyType={"done"}
+        style={[
+          tw.style(
+            "text-center w-full bg-white mt-6 py-2 font-bold",
+            "text-3xl text-gray-700 rounded-2xl border min-h-16",
+            !!error ? "border-red-500" : "border-gray-300",
+          ),
+        ]}
+        onChangeText={(text, rawText) => {
+          onChange(rawText);
+        }}
+      />
+      {error && <HelperText type="error">{error.message}</HelperText>}
+    </View>
   );
 };
 

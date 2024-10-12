@@ -1,6 +1,5 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
-import Screen from "@components/ui/shared/Screen";
 import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
 import { HomeStackScreenProps } from "@navigators/types";
 import ScrollableView from "@components/ui/shared/ScrollableView";
@@ -16,7 +15,12 @@ import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { convertToNaira, formatToNaira } from "@utils/money";
-import { selectIsAccountVerified, selectUser } from "@store/selectors/auth";
+import {
+  selectHasFetchError,
+  selectIsAccountVerified,
+  selectIsFetchingProfile,
+  selectUser,
+} from "@store/selectors/auth";
 import { accountTransactionsApi, useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
 import { format } from "date-fns";
 import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";
@@ -28,52 +32,49 @@ import API from "@lib/api";
 import { route } from "@helpers/route";
 import { navigateToTransaction } from "@helpers/transaction";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
-import { notificationsApi } from "@store/redux-api/notificationApi";
+import { useNotificationsPrefetch } from "@store/redux-api/notificationApi";
 import { HorizontalDots, LargeEyeClose, LargeEyeOpen } from "@components/icons/svg";
 import { scale } from "react-native-size-matters";
 import { SCREENS } from "@constants/screens";
 import FundAccountSheet from "@components/ui/modals/fund-account";
-import { settingsSliceActions } from "@store/slice/settings";
+import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
+import { getTransactionIcon } from "@utils/index";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
 
 type Props = HomeStackScreenProps<typeof SCREENS.DASHBOARD>;
 export default function HomeScreen({ navigation }: Props) {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [isFetching, setIsFetching] = useState(false);
   const [fundModalVisible, setFundModalVisible] = useState(false);
+
+  const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
+  const hasProfileError = useTypedSelector(selectHasFetchError);
 
   const user = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
   const toggleBalance = () => setBalanceVisible(!balanceVisible);
   const dispatch = useTypedDispatch();
 
+  const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
+
+  const prefetchNotifications = useNotificationsPrefetch("fetchNotifications", {
+    ifOlderThan: 5,
+  });
+
   const balanceNaira = useMemo(() => formatToNaira(user?.wallet_balance), [user?.wallet_balance]);
+  const [integerSide, decimalSide] = balanceNaira.split(".");
 
   useEffect(() => {
     if (!user?.id) return;
-    Promise.all([initProfile(), initCable(), initSystemSettings()]);
+    Promise.all([initProfile(), initCable()]);
   }, []);
 
   const initProfile = useCallback(async () => {
-    setIsFetching(true);
-    try {
-      await dispatch(authSliceActions.fetchUserProfile());
-      dispatch(
-        notificationsApi.util.prefetch(
-          "fetchNotifications",
-          { page: 1 },
-          {
-            force: true,
-          },
-        ),
-      );
-    } catch (error) {
-    } finally {
-      setIsFetching(false);
-    }
-  }, [dispatch]);
+    await dispatch(authSliceActions.fetchUserProfile());
 
-  const initSystemSettings = useCallback(async () => {
-    await dispatch(settingsSliceActions.fetchSettings());
+    prefetchNotifications({ page: 1 });
+    prefetchSettings();
   }, [dispatch]);
 
   const initCable = useCallback(() => {
@@ -130,11 +131,9 @@ export default function HomeScreen({ navigation }: Props) {
   }, [user?.id]);
 
   const onRefresh = async () => {
-    try {
-      if (!isFetching) {
-        await Promise.all([initProfile(), initSystemSettings()]);
-      }
-    } catch (error) {}
+    if (!isFetchingProfile) {
+      await Promise.all([initProfile()]);
+    }
   };
 
   const handleVerifyAccount = async () => {
@@ -162,10 +161,7 @@ export default function HomeScreen({ navigation }: Props) {
     closeFundModal();
 
     navigation.navigate(SCREENS.ADD_MONEY, {
-      screen: SCREENS.MANUAL_FUND_STACK,
-      params: {
-        screen: SCREENS.FUND_WITH_BANK,
-      },
+      screen: SCREENS.FUND_WITH_BANK,
     });
   };
 
@@ -173,10 +169,7 @@ export default function HomeScreen({ navigation }: Props) {
     closeFundModal();
 
     navigation.navigate(SCREENS.ADD_MONEY, {
-      screen: SCREENS.MANUAL_FUND_STACK,
-      params: {
-        screen: SCREENS.FUND_WITH_CARD,
-      },
+      screen: SCREENS.FUND_WITH_CARD,
     });
   };
 
@@ -201,7 +194,10 @@ export default function HomeScreen({ navigation }: Props) {
             <View style={tw`flex-row justify-center items-center`}>
               <View>
                 {balanceVisible ? (
-                  <Text style={tw`text-gray-900 font-bold text-3xl text-center`}>{balanceNaira}</Text>
+                  <View style={tw`flex-row items-baseline`}>
+                    <Text style={tw`text-gray-900 font-bold text-3xl`}>{integerSide}.</Text>
+                    <Text style={tw`text-gray-900 font-bold text-xl`}>{decimalSide || "00"}</Text>
+                  </View>
                 ) : (
                   <HorizontalDots />
                 )}
@@ -222,11 +218,20 @@ export default function HomeScreen({ navigation }: Props) {
           </Card.Content>
         </Card>
 
+        {hasProfileError && (
+          <Pressable onPress={onRefresh} style={tw`mt-6`}>
+            <Banner
+              title="Network Error"
+              content="We couldn't load some of your account details. Click to try again."
+            />
+          </Pressable>
+        )}
+
         {!isVerified && (
-          <Pressable onPress={handleVerifyAccount} style={tw`mt-6 mb-5`}>
+          <Pressable onPress={handleVerifyAccount} style={tw`mt-6`}>
             <Banner
               title="Account Verification"
-              message="You are yet to verify your account, you will not be able to access some services on BinaPay. Click to complete verification now."
+              content="You are yet to verify your account, you will not be able to access some services on BinaPay. Click to complete verification now."
             />
           </Pressable>
         )}
@@ -314,9 +319,11 @@ type RecentTransactionsProps = {
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery();
+  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery(undefined, {
+    refetchOnFocus: true,
+  });
 
-  const { transactions } = queryData || {};
+  const { transactions = {} } = queryData || {};
 
   const onTransactionPress = async (transactionId: string | number) => {
     navigateToTransaction({
@@ -356,9 +363,9 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) =
                   <Avatar.Image
                     size={40}
                     source={{
-                      uri: "url",
+                      uri: getTransactionIcon(transaction),
                     }}
-                    style={tw`bg-gray-300`}
+                    style={tw`bg-transparent`}
                   />
                   <View style={tw`flex-1 mx-3`}>
                     <Text style={tw`text-gray-900 text-sm`}>{transaction.meta.description}</Text>

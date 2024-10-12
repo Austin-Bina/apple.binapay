@@ -20,6 +20,7 @@ import {
   Inter_800ExtraBold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import { Colors } from "@constants/theme/colors";
 
 SplashScreen.preventAutoHideAsync();
 

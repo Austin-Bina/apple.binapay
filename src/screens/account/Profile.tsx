@@ -20,7 +20,7 @@ import { showToast } from "@helpers/toast";
 import { authSliceActions } from "@store/slice/auth";
 import { AxiosError } from "axios";
 import { getNavigate } from "@utils/navigation";
-import { phoneValidation } from "@utils/phone";
+import { zodPhoneValidation } from "@utils/phone";
 
 const schema = z.object({
   name: z.string().min(2, "Too Short").trim(),
@@ -29,7 +29,7 @@ const schema = z.object({
     .email("Please enter a valid email")
     .trim()
     .transform((val) => val.toLowerCase()),
-  phone: z.string(),
+  phone: zodPhoneValidation,
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -66,7 +66,7 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
   };
 
   const onSubmit = handleSubmit(async function (values) {
-    const result = phoneValidation.safeParse([values.phone, "NG"]);
+    const result = zodPhoneValidation.safeParse([values.phone, "NG"]);
 
     if (!result.success) {
       const errorMessage = result.error.errors[0].message;
@@ -77,8 +77,7 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
     setIsProcessing(true);
     try {
       const response = await API.post(route("account.updateProfile"), values);
-      const { message, user } = response.data;
-      showToast({ message });
+      const { user } = response.data;
 
       dispatch(authSliceActions.updateUser(user));
       const { reset } = await getNavigate();

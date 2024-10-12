@@ -18,10 +18,11 @@ import { showToast } from "@helpers/toast";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import MaskedInput from "@components/ui/form/mask-input";
 import { phone_mask } from "@constants/app";
+import { zodPhoneValidation } from "@utils/phone";
 
 const schema = z.object({
   name: z.string().min(3, "Name is too short").trim(),
-  phone: z.string().min(11),
+  phone: zodPhoneValidation,
   email: z
     .string()
     .email("Please enter a valid project")
@@ -76,7 +77,7 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
         }
       }
 
-      showToast({message: 'We could not reach our servers, please try this again.'})
+      showToast({ message: "We could not reach our servers, please try this again." });
     } finally {
       setIsLoading(false);
     }
@@ -84,71 +85,19 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
 
   return (
     <Screen>
-      <ScrollableView style={tw`px-4 pt-5`}>
-        <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Get Started with BinaPay</Text>
-        <Text style={tw`w-full mb-[30px] text-zinc-500 text-lg font-normal leading-snug`}>
-          Join our community! Let's get you started with a few quick steps.
-        </Text>
-        <Controller
-          control={control}
-          name="name"
-          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-            <CustomTextInput
-              label="Full name"
-              placeholder="John Doe"
-              mode="outlined"
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!error}
-              errorMessage={error?.message}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-            <CustomTextInput
-              label="Email Address"
-              placeholder="example@example.com"
-              mode="outlined"
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!error}
-              errorMessage={error?.message}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="phone"
-          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-            <MaskedInput
-              label="Phone Number"
-              placeholder="080 000 000 0000"
-              mode="outlined"
-              onBlur={onBlur}
-              value={value}
-              mask={phone_mask}
-              onChangeText={onChange}
-              error={!!error}
-              errorMessage={error?.message}
-            />
-          )}
-        />
-
-        <View style={tw`mt-2`}>
+      <ScrollableView contentContainerStyle={tw`px-4 pt-5 justify-between`}>
+        <View>
+          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Get Started with BinaPay</Text>
+          <Text style={tw`w-full mb-[30px] text-zinc-500 text-lg font-normal leading-snug`}>
+            Join our community! Let's get you started with a few quick steps.
+          </Text>
           <Controller
             control={control}
-            name="referral_code"
+            name="name"
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <CustomTextInput
-                label="Referral Code (Optional, if applicable)"
-                placeholder="X5ATNH24-WOODR"
+                label="Full name"
+                placeholder="John Doe"
                 mode="outlined"
                 onBlur={onBlur}
                 value={value}
@@ -158,34 +107,88 @@ const RegisterScreen: React.FC<RegistrationStackScreenProps<"Start">> = ({ navig
               />
             )}
           />
-        </View>
 
-        <View style={tw`flex flex-row items-center justify-center mt-6 mb-8 gap-2`}>
-          <Text style={tw`text-gray-800 text-sm`}>Already a BinaPay User?</Text>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.dispatch(StackActions.push("Auth", { screen: "Login" }));
-            }}>
-            <Text style={tw`text-primary text-sm`}>Login here</Text>
-          </TouchableOpacity>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <CustomTextInput
+                label="Email Address"
+                placeholder="example@example.com"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
+                error={!!error}
+                errorMessage={error?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <MaskedInput
+                label="Phone Number"
+                placeholder="080 000 000 0000"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                mask={phone_mask}
+                onChangeText={onChange}
+                error={!!error}
+                errorMessage={error?.message}
+              />
+            )}
+          />
+
+          <View style={tw`mt-2`}>
+            <Controller
+              control={control}
+              name="referral_code"
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                <CustomTextInput
+                  label="Referral Code (Optional, if applicable)"
+                  placeholder="X5ATNH24-WOODR"
+                  mode="outlined"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!error}
+                  errorMessage={error?.message}
+                />
+              )}
+            />
+          </View>
+
+          <View style={tw`flex flex-row items-center justify-center mt-6 mb-8 gap-2`}>
+            <Text style={tw`text-gray-800 text-sm`}>Already a BinaPay User?</Text>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.dispatch(StackActions.push("Auth", { screen: "Login" }));
+              }}>
+              <Text style={tw`text-primary text-sm`}>Login here</Text>
+            </TouchableOpacity>
+          </View>
+          <View>
+            <Text style={tw`text-xs text-center`}>
+              By registering, you accept BinaPay's <Text style={tw`text-primary-400`}>Terms & Conditions</Text> and
+              <Text style={tw`text-primary-400`}> Privacy Policy</Text>. Your data will be securely encrypted.
+            </Text>
+          </View>
         </View>
-        <View>
-          <Text style={tw`text-xs text-center`}>
-            By registering, you accept BinaPay's <Text style={tw`text-primary-400`}>Terms & Conditions</Text> and
-            <Text style={tw`text-primary-400`}> Privacy Policy</Text>. Your data will be securely encrypted.
-          </Text>
+        <View style={tw`pb-4 pt-1`}>
+          <Button
+            style={tw`w-full rounded-[94px]`}
+            contentStyle={tw`py-2`}
+            mode="contained"
+            disabled={isLoading}
+            onPress={onSubmit}>
+            Continue
+          </Button>
         </View>
       </ScrollableView>
-      <View style={tw`px-4 pb-4 pt-1`}>
-        <Button
-          style={tw`w-full rounded-[94px]`}
-          contentStyle={tw`py-2`}
-          mode="contained"
-          disabled={isLoading}
-          onPress={onSubmit}>
-          Continue
-        </Button>
-      </View>
       <PleaseWaitModal visible={isLoading} />
     </Screen>
   );

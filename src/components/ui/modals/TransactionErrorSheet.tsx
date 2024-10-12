@@ -16,7 +16,6 @@ const TransactionErrorSheet = () => {
 
   const handleDismiss = useCallback(() => {
     dispatch(clearTransactionError());
-    dispatch(removePendingTransaction())
   }, [dispatch]);
 
   useEffect(() => {
@@ -24,20 +23,21 @@ const TransactionErrorSheet = () => {
       if (Keyboard.isVisible()) {
         Keyboard.dismiss();
       }
-      
+
       setTimeout(() => {
         bottomSheetRef.current?.present();
       }, 100);
+    } else {
+      bottomSheetRef.current?.dismiss();
     }
   }, [error]);
-
-  if (!error) return null;
 
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
       initialSnapPoints={["50%", "50%"]}
       onDismiss={handleDismiss}
+      showHeader
       children={
         <View style={tw`p-4`}>
           <Card mode="contained" style={tw`bg-transparent`}>
@@ -46,10 +46,10 @@ const TransactionErrorSheet = () => {
                 <SadFace fill={Colors.red[700]} width={30} height={30} />
               </View>
               <Text variant="titleLarge" style={tw`font-medium text-gray-800 text-center my-1`}>
-                {error.title}
+                {error?.title}
               </Text>
               <Text variant="bodyMedium" style={tw`text-gray-500 text-center`}>
-                {error.description}
+                {error?.description}
               </Text>
             </Card.Content>
           </Card>

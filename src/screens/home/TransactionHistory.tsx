@@ -7,6 +7,7 @@ import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import { useFetchCompleteTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
 import { WalletTransaction } from "@type/transaction";
+import { getTransactionIcon } from "@utils/index";
 import { convertToNaira } from "@utils/money";
 import { format } from "date-fns";
 import React, { Fragment, useCallback, useMemo, useState } from "react";
@@ -51,7 +52,7 @@ export default function TransactionHistoryScreen({}: Props) {
 
     const renderMoreLoader = () => {
       return (
-        <View style={tw`items-center h-full pt-2 pb-4 bg-white`}>
+        <View style={tw`items-center h-full pt-2 bg-white`}>
           {transactionsData.meta.has_more ? (
             <View style={tw`flex-row items-center gap-2`}>
               <ActivityIndicator size="small" color={"gray"} animating={true} />
@@ -97,6 +98,7 @@ export default function TransactionHistoryScreen({}: Props) {
           )}
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={tw`pb-4`}
           refreshing={false}
           onRefresh={refetch}
           onEndReachedThreshold={0.5}
@@ -109,8 +111,8 @@ export default function TransactionHistoryScreen({}: Props) {
   }, [transactionsData, isProcessing, isLoading, refetch, onEndReached]);
 
   return (
-    <Screen>
-      <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold px-4 mt-5`}>
+    <Screen style={tw`pb-0`}>
+      <Text variant="titleLarge" style={tw`text-gray-800 font-bold px-4 py-5`}>
         Transaction History
       </Text>
       <View style={tw`px-4 flex-1`}>{dynamicContent}</View>
@@ -126,14 +128,14 @@ type TransactionItemProps = {
 const TransactionItem = React.memo<TransactionItemProps>(({ item, onSelectTransaction }) => (
   <TouchableOpacity
     onPress={() => onSelectTransaction(item)}
-    style={tw.style(`flex-row items-center gap-2 p-2 my-2`, item.confirmed ? "bg-white" : "bg-gray-100")}>
+    style={tw`flex-row items-center gap-2 p-2 my-2 bg-white`}>
     <Fragment>
       <Avatar.Image
         size={40}
         source={{
-          uri: "url",
+          uri: getTransactionIcon(item),
         }}
-        style={tw`bg-gray-300`}
+        style={tw`bg-transparent`}
       />
       <View style={tw`flex-1 mx-3`}>
         <Text style={tw`text-gray-900 text-sm`}>{item.meta.description}</Text>

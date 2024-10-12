@@ -1,6 +1,5 @@
-import { TransactionForm, TransactionStatus } from "@enum/transaction";
-import { formatToNaira } from "../utils/money";
-import { TransactionResponse, UtilityTransaction, WalletTransaction } from "@type/transaction";
+import { convertToNaira } from "../utils/money";
+import { TransactionResponse, UtilityTransaction, ViewTransaction, WalletTransaction } from "@type/transaction";
 import { route } from "./route";
 import API from "@lib/api";
 import { format } from "date-fns";
@@ -8,54 +7,8 @@ import { store } from "@store/main";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { getNavigate } from "@utils/navigation";
 import { SCREENS } from "@constants/screens";
-
-const airtimeTitleMap: { [key in TransactionStatus]: string } = {
-  [TransactionStatus.Successful]: "Airtime Purchase Successful 🎉",
-  [TransactionStatus.Pending]: "Airtime Purchase Pending 😢",
-  [TransactionStatus.Failed]: "Airtime Purchase Failed 😢",
-  [TransactionStatus.Cancelled]: "Airtime Purchase Cancelled 😢",
-  [TransactionStatus.Initiated]: "Airtime Purchase Initiated 😢",
-};
-
-const dataTitleMap: { [key in TransactionStatus]: string } = {
-  [TransactionStatus.Successful]: "Data Purchase Successful 🎉",
-  [TransactionStatus.Pending]: "Data Purchase Pending 😢",
-  [TransactionStatus.Failed]: "Data Purchase Failed 😢",
-  [TransactionStatus.Cancelled]: "Data Purchase Cancelled 😢",
-  [TransactionStatus.Initiated]: "Data Purchase Initiated 😢",
-};
-
-const electricityTitleMap: { [key in TransactionStatus]: string } = {
-  [TransactionStatus.Successful]: "Electricity Purchase Successful 🎉",
-  [TransactionStatus.Pending]: "Electricity Purchase Pending 😢",
-  [TransactionStatus.Failed]: "Electricity Purchase Failed 😢",
-  [TransactionStatus.Cancelled]: "Electricity Purchase Cancelled 😢",
-  [TransactionStatus.Initiated]: "Electricity Purchase Initiated 😢",
-};
-
-const cableTitleMap: { [key in TransactionStatus]: string } = {
-  [TransactionStatus.Successful]: "Cable Purchase Successful 🎉",
-  [TransactionStatus.Pending]: "Cable Purchase Pending 😢",
-  [TransactionStatus.Failed]: "Cable Purchase Failed 😢",
-  [TransactionStatus.Cancelled]: "Cable Purchase Cancelled 😢",
-  [TransactionStatus.Initiated]: "Cable Purchase Initiated 😢",
-};
-
-const educationTitleMap: { [key in TransactionStatus]: string } = {
-  [TransactionStatus.Successful]: "Education Purchase Successful 🎉",
-  [TransactionStatus.Pending]: "Education Purchase Pending 😢",
-  [TransactionStatus.Failed]: "Education Purchase Failed 😢",
-  [TransactionStatus.Cancelled]: "Education Purchase Cancelled 😢",
-  [TransactionStatus.Initiated]: "Education Purchase Initiated 😢",
-};
-
-const epinTitleMap: { [key in TransactionStatus]: string } = {
-  [TransactionStatus.Successful]: "Epin Purchase Successful 🎉",
-  [TransactionStatus.Pending]: "Epin Purchase Pending 😢",
-  [TransactionStatus.Failed]: "Epin Purchase Failed 😢",
-  [TransactionStatus.Cancelled]: "Epin Purchase Cancelled 😢",
-  [TransactionStatus.Initiated]: "Epin Purchase Initiated 😢",
-};
+import { getTransactionIcon, upperCaseFirst } from "@utils/index";
+import { P, match } from "ts-pattern";
 
 const formatDate = (date: string) => {
   return format(new Date(date), "MMM dd, yyyy h:mm a");
@@ -76,108 +29,20 @@ const defaultTransactionResponse: TransactionResponse = {
   errorFields: [],
 };
 
-const airtimeDetailKeys = [
-  {
-    label: "Recipient",
-    key: "phone",
-  },
-  {
-    label: "Reference Number",
-    key: "requestId",
-  },
-  {
-    label: "Amount",
-    key: "amount",
-    formatter: formatToNaira,
-  },
-];
-
-const dataDetailKeys = [
-  {
-    label: "Recipient",
-    key: "phone",
-  },
-  {
-    label: "Reference Number",
-    key: "requestId",
-  },
-  {
-    label: "Amount",
-    key: "amount",
-    formatter: formatToNaira,
-  },
-  {
-    label: "Data Amount",
-    key: "data_amount",
-    formatter: formatToNaira,
-  },
-  {
-    label: "Recipient",
-    key: "phone",
-  },
-  {
-    label: "Date",
-    key: "created_at",
-    formatter: formatDate,
-  },
-];
-
-const getTransactionTitle = (type: TransactionForm, status: TransactionStatus) => {
-  const titleMap = {
-    [TransactionForm.Airtime]: airtimeTitleMap,
-    [TransactionForm.Data]: dataTitleMap,
-    [TransactionForm.Electricity]: electricityTitleMap,
-    [TransactionForm.CableTv]: cableTitleMap,
-    [TransactionForm.Education]: educationTitleMap,
-    [TransactionForm.Epin]: epinTitleMap,
-  };
-
-  return titleMap[type][status];
-};
-
 type Args = {
-  details: { [index: string]: string } | null;
-  type: TransactionForm;
+  details: Record<string, any>;
 };
 
-const getTransactionDetails = ({ type, details }: Args) => {
-  if (!details) return [];
+const getTransactionDetails = ({ details }: Args) => {
+  return Object.keys(details).map((label) => {
+    const formattedValue = typeof details[label] === "boolean" ? (details[label] ? "Yes" : "No") : details[label];
+    const formattedLabel = upperCaseFirst(label.replace(/_/g, " "));
 
-  switch (type) {
-    case TransactionForm.Airtime:
-      return airtimeDetailKeys.map((record) => {
-        const label = record.label;
-        const value = record.formatter ? record.formatter(details[record.key]) : details[record.key];
-
-        return {
-          label,
-          value,
-        };
-      });
-
-    case TransactionForm.Data:
-      return dataDetailKeys.map((record) => {
-        const label = record.label;
-        const value = record.formatter ? record.formatter(details[record.key]) : details[record.key];
-
-        return {
-          label,
-          value,
-        };
-      });
-
-    default:
-      return [];
-  }
-};
-
-const getTransactionDescription = (type: TransactionForm) => {
-  switch (type) {
-    case TransactionForm.Airtime:
-      return "";
-    default:
-      return "";
-  }
+    return {
+      label: formattedLabel,
+      value: formattedValue,
+    };
+  });
 };
 
 type ViewResponse =
@@ -233,12 +98,11 @@ const navigateToTransaction = async (args: GetTransData) => {
     const { navigate } = await getNavigate();
 
     navigate(SCREENS.MAIN, {
-      screen: SCREENS.SERVICES,
+      screen: SCREENS.HOME,
       params: {
         screen: SCREENS.VIEW_TRANSACTION,
         params: {
           transactionId: transactionId as any,
-          type,
         },
       },
     });
@@ -250,13 +114,100 @@ const navigateToTransaction = async (args: GetTransData) => {
   }
 };
 
+const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTransaction | null => {
+  return match(transaction)
+    .with({ wallet_id: P.number, meta: {} }, (walletView) => {
+      const { meta: details } = walletView;
+      const logo = getTransactionIcon(walletView);
+      const transactionTitle = details.description;
+      const transactionDescription = details.description;
+
+      const transactionDetails = match(walletView)
+        .with({ payment_transaction: { utilityTransaction: { details: {} } } }, ({ payment_transaction }) => {
+          const {
+            utilityTransaction: { details },
+          } = payment_transaction;
+
+          return getTransactionDetails({ details });
+        })
+        .with({ payment_transaction: { utilityTransaction: P.nullish || undefined } }, ({ payment_transaction }) => {
+          // UtilityTransaction is null, it is probably a wallet transaction
+          return getTransactionDetails({
+            details: {
+              "Transaction Amount": convertToNaira(walletView.amount, true),
+              Description: walletView.meta.description,
+              "Transaction Date": format(new Date(walletView.created_at), "MMM dd, yyyy h:mm a"),
+              Destination: "Binapay Wallet",
+              "Transaction ID": walletView.payment_transaction?.id,
+            },
+          });
+        })
+        .otherwise(() => getTransactionDetails({ details: {} }));
+
+      // Try to extract the token from elec or cable subscription
+      const hasHighlighted = match(walletView)
+        .with(
+          { payment_transaction: { utilityTransaction: { details: { Token: P.string.minLength(5) } } } },
+          ({ payment_transaction }) => {
+            const { utilityTransaction } = payment_transaction;
+            const { details } = utilityTransaction;
+
+            const token = details.Token;
+
+            return {
+              value: token,
+              copyable: true,
+            };
+          },
+        )
+        .with({ payment_transaction: { utilityTransaction: { details: { Token: P.string.minLength(0) } } } }, () => ({
+          value: "Please contact support",
+          copyable: false,
+        }))
+        .otherwise(() => null);
+
+      const hasDetails = Object.keys(transactionDetails).length > 0;
+
+      return {
+        transactionTitle,
+        transactionDescription,
+        transactionDetails,
+        hasDetails,
+        logo,
+        hasHighlighted,
+        transactionDate: format(new Date(walletView.created_at), "MMM dd, yyyy h:mm a"),
+      };
+    })
+    .otherwise(() => null);
+};
+
+const viewTransactionResponse = (transactionRes: TransactionResponse | null): ViewTransaction | null => {
+  const response = transactionRes || defaultTransactionResponse;
+
+  const {
+    transaction_info: { transaction },
+    ...data
+  } = response;
+
+  const hasHighlighted = transaction?.details?.Token ? { value: transaction.details.Token, copyable: true } : null;
+  const hasDetails = !!transaction?.details && Object.keys(transaction.details).length > 0;
+
+  return {
+    transactionTitle: data.title,
+    transactionDescription: data.description,
+    transactionDetails: hasDetails ? getTransactionDetails({ details: transaction?.details }) : [],
+    hasDetails,
+    hasHighlighted,
+    transactionDate: transaction ? format(new Date(transaction.created_at), "MMM dd, yyyy h:mm a") : "",
+    logo: getTransactionIcon(transaction),
+  };
+};
+
 export {
-  getTransactionTitle,
   getTransactionDetails,
-  getTransactionDescription,
-  airtimeDetailKeys,
-  dataDetailKeys,
   defaultTransactionResponse,
   navigateToTransaction,
   formatDate,
+  viewTransactionHelper,
+  viewTransactionResponse,
 };

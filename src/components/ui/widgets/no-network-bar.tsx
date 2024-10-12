@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
-import { StatusBar, Animated, Easing, StyleSheet, View } from "react-native";
-import NetInfo from "@react-native-community/netinfo";
+import { Animated, Easing, StyleSheet, View } from "react-native";
+import * as Network from "expo-network";
 import { MD3Theme, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 const createStyles = (theme: MD3Theme) => {
   return StyleSheet.create({
@@ -53,16 +54,19 @@ const OfflineBar = () => {
   }, [animation, animationConstants]);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      const { isConnected } = state;
-      setConnected(isConnected);
-      if (isConnected) {
-        triggerAnimation();
+    const getNetworkState = async () => {
+      const { isConnected } = await Network.getNetworkStateAsync();
+
+      if (typeof isConnected !== "undefined") {
+        setConnected(isConnected);
+
+        if (isConnected) {
+          triggerAnimation();
+        }
       }
-    });
-    return () => {
-      unsubscribe();
     };
+
+    getNetworkState();
   }, [triggerAnimation]);
 
   const interpolated = animation.interpolate({
@@ -84,7 +88,7 @@ const OfflineBar = () => {
           zIndex: 100,
         },
       ]}>
-      <StatusBar backgroundColor={theme.colors.errorContainer} />
+      <StatusBar style="dark" backgroundColor={theme.colors.errorContainer} />
       <Animated.Text style={[styles.offlineText, animationStyle]}>
         You must connect to Wi-fi or a cellular network to get online again
       </Animated.Text>

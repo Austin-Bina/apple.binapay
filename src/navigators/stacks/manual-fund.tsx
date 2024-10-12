@@ -9,8 +9,6 @@ import ManualFundScreen from "@screens/fund/ManualFund";
 import { ManualFundParamList } from "@navigators/types";
 import ManualFundProofScreen from "@screens/fund/ManualFundProof";
 import ManualFundWaitScreen from "@screens/fund/ManualFundWait";
-import FundWithCardScreen from "@screens/fund/FundWithCard";
-import BankTransferScreen from "@screens/fund/BankTransfer";
 import StartManualFundingScreen from "@screens/fund/StartManualFunding";
 
 const Stack = createNativeStackNavigator<ManualFundParamList>();
@@ -18,7 +16,7 @@ const Stack = createNativeStackNavigator<ManualFundParamList>();
 function ManualFundStack() {
   return (
     <Stack.Navigator
-      initialRouteName={SCREENS.FUND_WITH_BANK}
+      initialRouteName={SCREENS.START_MANUAL_FUNDING}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -49,8 +47,6 @@ function ManualFundStack() {
         ),
       })}>
       <Stack.Screen name={SCREENS.START_MANUAL_FUNDING} component={StartManualFundingScreen} />
-      <Stack.Screen name={SCREENS.FUND_WITH_BANK} component={BankTransferScreen} />
-      <Stack.Screen name={SCREENS.FUND_WITH_CARD} component={FundWithCardScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND} component={ManualFundScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND_PROOF} component={ManualFundProofScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND_WAIT} options={{ headerShown: false }} component={ManualFundWaitScreen} />

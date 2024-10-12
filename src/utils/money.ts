@@ -40,12 +40,12 @@ const formatToNaira = (value: string | number = 0) => {
   return formattedNumber;
 };
 
-const zodAmountValidation = (minAmount: number = 0) =>
+const zodAmountValidation = (minAmount: number = 0, format = false) =>
   z
-    .string()
-    .trim()
+    .union([z.string().trim(), z.number()])
     .transform((val) => {
-      const numericValue = val ? parseFloat(val.replace(/[^0-9.]/g, "")) : 0;
+      const numericValue = typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
+
       return `${numericValue}`;
     })
     .refine(
@@ -54,35 +54,38 @@ const zodAmountValidation = (minAmount: number = 0) =>
         return numericValue >= minAmount;
       },
       {
-        message: `Amount must not be less than ${formatToNaira(minAmount)}`,
+        message: `Amount must not be less than ${format ? formatToNaira(minAmount) : minAmount}`,
       },
     );
 
 function calculateTransactionDetails(
   amount: number,
-  type: "airtime" | "data" | "cable" | "education" | "epin" | "electricity",
+  service: "airtime" | "data" | "cable" | "education" | "epin" | "electricity",
   customers: CustomerSettings,
 ) {
-  const chargeKey = `${type}_charge_percentage` as const;
-  const discountKey = `${type}_discount_percentage` as const;
+  const discountKey = `${service}_discount_percentage` as keyof CustomerSettings;
+  const discountPercentage = customers[discountKey] || 0;
 
-  let chargePercentage = customers[chargeKey] || 0;
-  let discountPercentage = customers[discountKey] || 0;
+  const chargeKey = `${service}_charge_percentage` as keyof CustomerSettings;
+  const chargePercentage = customers[chargeKey] || 0;
 
-  let chargeAmount = (chargePercentage / 100) * amount;
-  let discountAmount = (discountPercentage / 100) * amount;
+  const discountAmount = (discountPercentage / 100) * amount;
+  const chargeAmount = (chargePercentage / 100) * amount;
 
-  const details: { [key: string]: string } = {};
+  let finalAmount = amount - discountAmount + chargeAmount;
 
-  if (chargeAmount > 0) {
-    details["Extra Charge"] = formatToNaira(chargeAmount);
-  }
+  let result: Record<string, string> = {
+    "You pay": formatToNaira(finalAmount),
+  };
 
   if (discountAmount > 0) {
-    details["You Save"] = formatToNaira(discountAmount);
+    result = {
+      ...result,
+      "You save": formatToNaira(discountAmount),
+    };
   }
 
-  return details;
+  return result;
 }
 
 export { convertToNaira, formatToNaira, zodAmountValidation, calculateTransactionDetails };

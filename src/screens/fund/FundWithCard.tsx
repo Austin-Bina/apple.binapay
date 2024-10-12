@@ -38,7 +38,7 @@ export default function FundWithCardScreen() {
           <Text variant="bodyMedium" style={tw`text-gray-400`}>
             Use your card to conveniently add funds to your BinaPay wallet.
           </Text>
-          <Banner style={tw`mt-6`} message="Funding wallet with card attracts additional charges of 4% only." />
+          <Banner style={tw`mt-6`} content="Funding wallet with card attracts additional charges of 4% only." />
 
           <View>
             <NairaInput name="amount" control={control} isDisabled />

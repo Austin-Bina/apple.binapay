@@ -1,30 +1,36 @@
-import { AvatarImage } from "@components/avatar";
 import Banner from "@components/ui/banner";
 import EducationEmptyState from "@components/ui/empty-states/education";
 import EducationErrorState from "@components/ui/error-states/education";
+import CustomButton from "@components/ui/form/button";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import NairaInput from "@components/ui/form/NairaInput";
 import CustomTextInput from "@components/ui/form/TextInput";
-import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
+import WalletBalanceHelper from "@components/ui/form/wallet-balance";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import BottomSheetModal from "@components/ui/modals/preview-transaction";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
 import { TransactionForm } from "@enum/transaction";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useWalletBalanceValidation } from "@hooks/transaction";
 import tw from "@lib/tailwind";
 import { EducationStackScreenProps } from "@navigators/types";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
+import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { useGetEducationPlansQuery, useGetEducationServiceDetailsQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { selectUser } from "@store/selectors/auth";
+import { selectSystemSettings } from "@store/selectors/settings";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
-import { formatToNaira } from "@utils/money";
+import { calculateTransactionDetails, zodAmountValidation } from "@utils/money";
 import { getNavigate } from "@utils/navigation";
+import { zodPhoneValidation } from "@utils/phone";
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { RefreshControl, View } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { z } from "zod";
 
 type Props = EducationStackScreenProps<"Educational Payment">;
@@ -32,12 +38,11 @@ type Props = EducationStackScreenProps<"Educational Payment">;
 const schema = z.object({
   provider: z.string(),
   variation_code: z.string(),
-  amount: z.string(),
+  amount: zodAmountValidation(1),
   quantity: z
     .string()
     .transform((val) => {
       const numericValue = parseInt(val);
-      const num = isNaN(numericValue) ? 0 : numericValue;
       return `${numericValue}`;
     })
     .refine(
@@ -49,33 +54,46 @@ const schema = z.object({
         message: "Quantity must be greater than 0",
       },
     ),
-  phone: z.string(),
+  phone: zodPhoneValidation,
   product_name: z.string(),
   profile_code: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
+type InitialQuantityAmounts = Map<string, string>;
 
 export default function EducationPaymentScreen({ route }: Props) {
   const { provider } = route.params;
-  const [isProcessing, setIsProcessing] = useState(false);
 
+  const [initialQuantityAmounts, setInitialQuantityAmounts] = useState<InitialQuantityAmounts>(new Map());
+
+  const queryConfig = useMemo(
+    () => ({
+      refetchOnReconnect: true,
+      refetchOnMountOrArgChange: true,
+      skip: !provider,
+    }),
+    [provider],
+  );
+
+  const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
-  const { data: educationPlans } = useGetEducationPlansQuery();
+  const { customers } = useTypedSelector(selectSystemSettings);
+  const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
+  const { data: educationPlans } = useGetEducationPlansQuery(undefined, queryConfig);
   const {
     data: queryData,
     isFetching,
     error,
     refetch,
-  } = useGetEducationServiceDetailsQuery({
-    service_id: provider,
-  });
-
-  const screenData = queryData;
-  const educationPlan = useMemo(
-    () => educationPlans?.education_plans.find((plan) => plan.serviceId === provider),
-    [provider, educationPlans],
+  } = useGetEducationServiceDetailsQuery(
+    {
+      service_id: provider,
+    },
+    queryConfig,
   );
 
   const { control, setValue, handleSubmit, watch, trigger, reset } = useForm<FormValues>({
@@ -91,16 +109,55 @@ export default function EducationPaymentScreen({ route }: Props) {
     },
   });
 
-  const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const values = watch();
+  const screenData = queryData;
+
+  const educationPlan = useMemo(
+    () => educationPlans?.education_plans.find((plan) => plan.serviceId === provider),
+    [provider, educationPlans],
+  );
 
   useEffect(() => {
+    prefetchSystemSettings();
+  }, []);
+
+  // When quantity changes, update the amount
+  useEffect(() => {
     const quantity = parseInt(values.quantity);
-    if (quantity && !isNaN(quantity)) {
-      const amount = quantity * Number.parseFloat(values.amount);
-      setValue("amount", String(amount));
+    const initialQuantityAmount = initialQuantityAmounts.get(values.variation_code);
+
+    if (quantity && !isNaN(quantity) && initialQuantityAmount) {
+      const amount = quantity * Number.parseFloat(initialQuantityAmount);
+      setValue("amount", String(amount), { shouldDirty: true });
     }
-  }, [values.quantity]);
+  }, [values.quantity, values.variation_code]);
+
+  // Set the initial quantity amounts
+  useEffect(() => {
+    const initialQuantityAmounts: InitialQuantityAmounts = new Map();
+    const fields = screenData?.inputFields;
+
+    if (fields) {
+      fields.forEach((field) => {
+        // Best check if it is the select field
+        if (field.name === "variation_code" && field.options && Array.isArray(field.options)) {
+          field.options.forEach((option) => {
+            initialQuantityAmounts.set(option.variation_code, option.variation_amount);
+          });
+        }
+      });
+
+      setInitialQuantityAmounts(initialQuantityAmounts);
+    }
+  }, [screenData]);
+
+  const walletValidation = useWalletBalanceValidation({
+    amount: parseFloat(values.amount) || 0,
+  });
+
+  const extraPlanDetails = useMemo(() => {
+    return calculateTransactionDetails(parseFloat(values.amount) || 0, "education", customers);
+  }, [values.amount, customers]);
 
   const openBottomSheet = useCallback(() => {
     trigger().then((allGood) => {
@@ -141,14 +198,14 @@ export default function EducationPaymentScreen({ route }: Props) {
     const inputFields = screenData.inputFields;
 
     return inputFields.map((field) => {
-      const options =
-        field.options?.map((option) => ({
+      // Best check if it is the select field
+      if (field.name === "variation_code" && field.options && Array.isArray(field.options)) {
+        const options = field.options.map((option) => ({
           ...option,
           label: option.name,
           id: option.variation_code,
-        })) || [];
+        }));
 
-      if (field.options) {
         return (
           <DropdownMenuField
             key={field.name}
@@ -217,9 +274,21 @@ export default function EducationPaymentScreen({ route }: Props) {
       );
     }
 
+    const transactionDetails = [
+      {
+        label: "Product Name",
+        value: educationPlan.name,
+        icon: educationPlan.logo,
+      },
+      { label: "No of Candidates", value: values.quantity },
+      ...Object.keys(extraPlanDetails).map((key) => ({ label: key, value: extraPlanDetails[key] })),
+    ];
+
     return (
       <Fragment>
-        <ScrollableView contentContainerStyle={tw`px-4 py-5 justify-between`} refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
+        <ScrollableView
+          contentContainerStyle={tw`px-4 py-5 justify-between`}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
           <View>
             <Text variant="titleMedium" style={tw`text-gray-800 mb-2 font-bold`}>
               {screenData.title}
@@ -227,64 +296,28 @@ export default function EducationPaymentScreen({ route }: Props) {
             <Text variant="bodySmall" style={tw`text-gray-500`}>
               {screenData.description}
             </Text>
-            {screenData.banner && <Banner message={screenData.banner} style={tw`my-5`} />}
+            {screenData.banner && <Banner content={screenData.banner} style={tw`my-5`} />}
             {generateFormFields()}
             <View style={tw`mb-5`}>
               <NairaInput name="amount" control={control} isDisabled />
-              <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-                Wallet Balance: {formatToNaira(user?.wallet_balance)}
-              </Text>
+              <WalletBalanceHelper {...walletValidation} />
             </View>
           </View>
-          <View style={tw`px-4 pb-4 pt-1`}>
-            <Button
-              style={tw`w-full rounded-full`}
-              contentStyle={tw`py-2`}
-              labelStyle={tw`text-white text-center text-base font-bold`}
-              disabled={isProcessing}
-              onPress={openBottomSheet}
-              mode="contained">
+          <View style={tw`pb-4 pt-1`}>
+            <CustomButton disabled={!walletValidation.canPay} onPress={openBottomSheet}>
               Continue
-            </Button>
+            </CustomButton>
           </View>
         </ScrollableView>
-
         <BottomSheetModal
           ref={bottomSheet}
-          initialSnapPoints={["50%", "50%"]}
-          closeFilter={closeBottomSheet}
-          children={
-            <View style={tw`p-4`}>
-              <Text variant="titleLarge" style={tw`font-bold text-gray-800 mb-2`}>
-                Confirm Bill Payment
-              </Text>
-              <View>
-                <View style={tw`flex-row justify-between my-2`}>
-                  <Text variant="bodyLarge">Product Name:</Text>
-                  <View style={tw`flex-row items-center gap-2.5`}>
-                    <AvatarImage avatar={educationPlan.logo} size={30} />
-                    <Text style={tw`text-lg font-bold`}>{educationPlan.name}</Text>
-                  </View>
-                </View>
-                <View style={tw`flex-row justify-between my-2`}>
-                  <Text variant="bodyLarge">Amount:</Text>
-                  <Text style={tw`text-lg font-bold`}>{formatToNaira(values.amount)}</Text>
-                </View>
-                {/* <View style={tw`flex-row items-center justify-between my-2`}>
-                  <Text variant="bodyLarge">Name:</Text>
-                  <Text style={tw`text-lg font-bold`}>Abdul Amos</Text>
-                </View> */}
-              </View>
-              <Button
-                mode="contained"
-                onPress={handleMakePayment}
-                style={tw`w-full rounded-full mt-[20%]`}
-                contentStyle={tw`py-2`}
-                labelStyle={tw`text-base`}>
-                Make Payment
-              </Button>
-            </View>
-          }
+          title="Confirm Bill Payment"
+          details={transactionDetails}
+          buttonLabel="Make Payment"
+          onConfirm={handleMakePayment}
+          onDismiss={closeBottomSheet}
+          snapPoints={["50%", "50%"]}
+          disabled={!walletValidation.canPay}
         />
       </Fragment>
     );
@@ -296,8 +329,9 @@ export default function EducationPaymentScreen({ route }: Props) {
         Education Payment
       </Text>
       {dynamicContent()}
+
       <TransactionErrorSheet />
-      <PleaseWaitModal visible={isFetching || isProcessing} />
+      <PleaseWaitModal visible={isFetching} />
     </Screen>
   );
 }

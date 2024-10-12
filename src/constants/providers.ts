@@ -1,6 +1,6 @@
 import { ServiceProvidersMap } from "@type/app";
 
-export const serviceProvidersMap: ServiceProvidersMap = {
+const serviceProvidersMap: ServiceProvidersMap = {
   internet: {
     mtn: {
       id: 1,
@@ -79,13 +79,13 @@ export const serviceProvidersMap: ServiceProvidersMap = {
       id: 1,
       name: "Ikeja Electric Distribution Company (IKEDC)",
       serviceId: "ikedc",
-      logo: "",
+      logo: require("@assets/images/services/ikedc.png"),
     },
     ekedc: {
       id: 2,
       name: "Eko Electricity Distribution Company (EKEDC)",
       serviceId: "ekedc",
-      logo: "",
+      logo: require("@assets/images/services/ekedc.png"),
     },
     aedc: {
       id: 3,
@@ -97,51 +97,115 @@ export const serviceProvidersMap: ServiceProvidersMap = {
       id: 4,
       name: "Kano Electricity Distribution Company (KEDCO)",
       serviceId: "kedco",
-      logo: "",
+      logo: require("@assets/images/services/kedco.png"),
     },
     eedc: {
       id: 5,
       name: "Enugu Electricity Distribution Company (EEDC)",
       serviceId: "eedc",
-      logo: "",
+      logo: require("@assets/images/services/eedc.png"),
     },
-    phed: {
+    phedc: {
       id: 6,
       name: "Port Harcourt Electricity Distribution Company (PHED)",
-      serviceId: "phed",
-      logo: "",
+      serviceId: "phedc",
+      logo: require("@assets/images/services/phed.png"),
     },
     ibedc: {
       id: 7,
       name: "Ibadan Electricity Distribution Company (IBEDC)",
       serviceId: "ibedc",
-      logo: "",
+      logo: require("@assets/images/services/ibedc.png"),
     },
     kaedco: {
       id: 8,
-      name: "Kaduna Electric Distribution Company (KAEDCO)",
+      name: "Kaduna Electric Distribution Company (KAEDC)",
       serviceId: "kaedco",
-      logo: "",
+      logo: require("@assets/images/services/kaedco.png"),
     },
-    jed: {
+    jedc: {
       id: 9,
-      name: "Jos Electricity Distribution Company (JED)",
-      serviceId: "jed",
-      logo: "",
+      name: "Jos Electricity Distribution Company (JEDC)",
+      serviceId: "jedc",
+      logo: require("@assets/images/services/jed.png"),
     },
     bedc: {
       id: 10,
       name: "Benin Electricity Distribution Company (BEDC)",
       serviceId: "bedc",
-      logo: "",
+      logo: require("@assets/images/services/bedc.png"),
     },
     yedc: {
       id: 11,
       name: "Yola Electricity Distribution Company (YEDC)",
       serviceId: "yedc",
-      logo: "",
+      logo: require("@assets/images/services/yedc.png"),
+    },
+    abedc: {
+      id: 12,
+      name: "Aba Electricity Distribution Company (ABEDC)",
+      serviceId: "abedc",
+      logo: require("@assets/images/services/abed.png"),
     },
   },
 };
 
-export const INTERNET_PROVIDERS = ["mtn", "airtel", "9mobile", "glo"] as const;
+const INTERNET_PROVIDERS = ["mtn", "airtel", "9mobile", "glo"] as const;
+
+const providerNumberCodes = {
+  "0701": { network: "Airtel Nigeria", provider: "Airtel" },
+  "07020": { network: "Smile", provider: "Smile" },
+  "07025": { network: "MTN Nigeria (formerly Visafone)", provider: "MTN" },
+  "07026": { network: "MTN Nigeria (formerly Visafone)", provider: "MTN" },
+  "07027": { network: "Multi-Links", provider: "Multi-Links" },
+  "07028": { network: "Starcomms", provider: "Starcomms" },
+  "07029": { network: "Starcomms", provider: "Starcomms" },
+  "0703": { network: "MTN Nigeria", provider: "MTN" },
+  "0704": { network: "MTN Nigeria (formerly Visafone)", provider: "MTN" },
+  "0705": { network: "Globacom", provider: "Glo" },
+  "0706": { network: "MTN Nigeria", provider: "MTN" },
+  "0707": { network: "MTN Nigeria (formerly ZoomMobile)", provider: "MTN" },
+  "0708": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0709": { network: "Multi-Links", provider: "Multi-Links" },
+  "0802": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0803": { network: "MTN Nigeria", provider: "MTN" },
+  "0804": { network: "Mtel", provider: "Mtel" },
+  "0805": { network: "Globacom", provider: "Glo" },
+  "0806": { network: "MTN Nigeria", provider: "MTN" },
+  "0807": { network: "Globacom", provider: "Glo" },
+  "0808": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0809": { network: "9mobile", provider: "9mobile" },
+  "0810": { network: "MTN Nigeria", provider: "MTN" },
+  "0811": { network: "Globacom", provider: "Glo" },
+  "0812": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0813": { network: "MTN Nigeria", provider: "MTN" },
+  "0814": { network: "MTN Nigeria", provider: "MTN" },
+  "0815": { network: "Globacom", provider: "Glo" },
+  "0816": { network: "MTN Nigeria", provider: "MTN" },
+  "0817": { network: "9mobile", provider: "9mobile" },
+  "0818": { network: "9mobile", provider: "9mobile" },
+  "0819": { network: "Starcomms", provider: "Starcomms" },
+  "0909": { network: "9mobile", provider: "9mobile" },
+  "0908": { network: "9mobile", provider: "9mobile" },
+  "0901": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0902": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0903": { network: "MTN Nigeria", provider: "MTN" },
+  "0904": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0905": { network: "Globacom", provider: "Glo" },
+  "0906": { network: "MTN Nigeria", provider: "MTN" },
+  "0907": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0915": { network: "Globacom", provider: "Glo" },
+  "0913": { network: "MTN Nigeria", provider: "MTN" },
+  "0912": { network: "Airtel Nigeria", provider: "Airtel" },
+  "0916": { network: "MTN Nigeria", provider: "MTN" },
+  "0911": { network: "Airtel Nigeria", provider: "Airtel" },
+};
+
+const pluralProviderMap = {
+  mtn: "an MTN",
+  glo: "a Glo",
+  airtel: "an Airtel",
+  "9mobile": "a 9mobile",
+};
+
+export { serviceProvidersMap, INTERNET_PROVIDERS, providerNumberCodes, pluralProviderMap };

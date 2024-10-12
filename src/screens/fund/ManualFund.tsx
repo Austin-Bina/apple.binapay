@@ -5,26 +5,16 @@ import { SCREENS } from "@constants/screens";
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ManualFundStackScreenProps } from "@navigators/types";
-import Paginator from "@screens/onboarding/Paginator";
 import { BankAccount } from "@type/transaction";
 import { formatToNaira } from "@utils/money";
-import React, { useEffect } from "react";
-import { Fragment, useMemo, useRef, useState } from "react";
+import React, { Fragment, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import {
-  Animated,
-  FlatList,
-  ImageBackground,
-  RefreshControl,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import { ActivityIndicator, Avatar, Button, HelperText, IconButton, Text, TouchableRipple } from "react-native-paper";
-import { scale } from "react-native-size-matters";
+import { ImageBackground, RefreshControl, View } from "react-native";
+import { Button, HelperText, IconButton, Text } from "react-native-paper";
 import { z } from "zod";
 import * as Clipboard from "expo-clipboard";
-import { BeautifyCopy } from "@components/icons/svg";
+import { CopyFill } from "@components/icons/svg";
 import API from "@lib/api";
 import { route as apiRoute } from "@helpers/route";
 import { showToast } from "@helpers/toast";
@@ -127,7 +117,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
           {transactionReference && (
             <Banner
               variant="info"
-              message="Deposit initiated, proceed to make payment using the provided account details"
+              content="Deposit initiated, proceed to make payment using the provided account details"
               style={tw`mt-5`}
             />
           )}
@@ -170,7 +160,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
           {selectedBank && <SelectedBankDetails selected={selectedBank} reference={transactionReference} />}
         </View>
 
-        <View style={tw`px-4 pb-4 pt-1 mt-10`}>
+        <View style={tw`pb-4 pt-1 mt-10`}>
           <Button
             mode="contained"
             onPress={onSubmit}
@@ -221,27 +211,29 @@ const SelectedBankDetails: React.FC<SelectedBankDetailsProps> = ({ selected, ref
             <Text style={tw`text-base text-white`}>{selected.account_number}</Text>
             <IconButton
               onPress={() => copyToClipboard(selected.account_number, setAccountNumberCopied)}
-              icon={accountNumberCopied ? "sticker-check" : "content-copy"}
+              icon={accountNumberCopied ? "sticker-check" : (props) => <CopyFill {...props} />}
               iconColor="white"
               style={tw`m-0`}
             />
           </View>
         </View>
         {reference && (
-          <View style={tw`flex-col items-start justify-start`}>
-            <Text style={tw`text-white`}>Reference Number</Text>
-            <View style={tw`flex-row font-bold items-center ml-auto justify-end`}>
-              <Text style={tw`text-base text-white`}>{reference}</Text>
-              <IconButton
-                onPress={() => copyToClipboard(reference, setReferenceNumberCopied)}
-                icon={referenceNumberCopied ? "sticker-check" : "content-copy"}
-                iconColor="white"
-                style={tw`m-0`}
-              />
+          <Fragment>
+            <View style={tw`flex-col items-start justify-start`}>
+              <Text style={tw`text-white`}>Reference Number</Text>
+              <View style={tw`flex-row font-bold items-center ml-auto justify-end`}>
+                <Text style={tw`text-base text-white`}>{reference}</Text>
+                <IconButton
+                  onPress={() => copyToClipboard(reference, setReferenceNumberCopied)}
+                  icon={referenceNumberCopied ? "sticker-check" : (props) => <CopyFill {...props} />}
+                  iconColor="white"
+                  style={tw`m-0`}
+                />
+              </View>
             </View>
-          </View>
+            <Banner content="Kindly ensure you use Reference number as transaction narration. It will be used to verify your transaction." />
+          </Fragment>
         )}
-        <Banner message="Kindly ensure you use Reference number as transaction narration. It will be used to verify your transaction." />
       </View>
     </ImageBackground>
   );

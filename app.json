@@ -41,6 +41,12 @@
         {
           "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data to ensure that your personal information and app data remain secure. Using Face ID provides an extra layer of protection, making sure that only you can access your sensitive data."
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts. We use this permission to fetch your contacts and select a contact to buy or gift services to."
+        }
       ]
     ]
   }

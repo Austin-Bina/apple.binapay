@@ -17,6 +17,7 @@ import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import { selectSystemSettings } from "@store/selectors/settings";
 import { authSliceActions } from "@store/slice/auth";
+import { settingsSliceActions } from "@store/slice/settings";
 import { resetNavigationToDashboard } from "@utils/navigation";
 import { AxiosError } from "axios";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -105,10 +106,10 @@ export default function NinVerificationScreen(props: Props) {
       const { response } = axiosError;
 
       if (response) {
-        const { message, errors } = response.data;
+        const { message, errors, error_code = null } = response.data;
 
         if (message && typeof message === "string") {
-          showToast({ message });
+          showToast({ message, position: Toast.positions.TOP });
         }
 
         if (errors) {
@@ -121,6 +122,15 @@ export default function NinVerificationScreen(props: Props) {
           }
 
           return;
+        }
+
+        if (error_code === "client_insufficient_funds") {
+          return dispatch(
+            settingsSliceActions.setApplicationError({
+              code: "client_insufficient_funds",
+              context: message,
+            }),
+          );
         }
       }
 
@@ -161,7 +171,7 @@ export default function NinVerificationScreen(props: Props) {
           />
 
           <View style={tw`my-4`}>
-            <Banner message="Verifying NIN numbers costs a small fee. We will offset the cost of the verification process. Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free attempts, after which you will be required to pay for the cost of verifying." />
+            <Banner content="Verifying NIN numbers costs a small fee. We will offset the cost of the verification process. Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free attempts, after which you will be required to pay for the cost of verifying." />
           </View>
 
           {/* Display remaining attempts */}
@@ -190,7 +200,7 @@ export default function NinVerificationScreen(props: Props) {
       <BottomSheetModal
         ref={bottomSheet}
         initialSnapPoints={[vs(250), vs(250)]}
-        closeFilter={closeBottomSheet}
+        onDismiss={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
             <Text variant="titleLarge" style={tw`font-bold text-gray-800 mb-2 text-center`}>

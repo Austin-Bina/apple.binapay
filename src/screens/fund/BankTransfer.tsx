@@ -4,18 +4,29 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
 import { useTypedSelector } from "@store/common";
 import { selectIsAccountVerified, selectUser } from "@store/selectors/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImageBackground, View } from "react-native";
 import { Button, IconButton, Text } from "react-native-paper";
 import * as Clipboard from "expo-clipboard";
 import { SCREENS } from "@constants/screens";
 import { getNavigate } from "@utils/navigation";
 import { selectSystemSettings } from "@store/selectors/settings";
+import { CopyFill } from "@components/icons/svg";
+import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
 
 export default function BankTransferScreen() {
   const user = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
   const { customers } = useTypedSelector(selectSystemSettings);
+
+  const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
+
+  useEffect(() => {
+    prefetchSettings();
+  }, []);
 
   const hasDedicatedAccounts = isVerified && user?.accounts && user?.accounts.length > 0;
 
@@ -30,7 +41,7 @@ export default function BankTransferScreen() {
           screen: SCREENS.ACCOUNT_VERIFICATION_OPTIONS,
         },
       },
-    }); 
+    });
   };
   return (
     <Screen>
@@ -45,7 +56,7 @@ export default function BankTransferScreen() {
           </Text>
           {hasDedicatedAccounts && (
             <Banner
-              message={`Automated bank transfer attracts additional charges of ${customers.account_deposit_percentage}% only.`}
+              content={`Automated bank transfer attracts additional charges of ${customers.account_deposit_charge_percentage}% only.`}
             />
           )}
           {hasDedicatedAccounts &&
@@ -66,12 +77,12 @@ export default function BankTransferScreen() {
           {!hasDedicatedAccounts && (
             <Banner
               title="Please verify your account to use this feature"
-              message="This feature is only available for verified users with dedicated accounts."
+              content="This feature is only available for verified users with dedicated accounts."
             />
           )}
         </View>
         {!hasDedicatedAccounts && (
-          <View style={tw`px-4 pb-4 pt-1`}>
+          <View style={tw`pb-4 pt-1`}>
             <Button
               style={tw`w-full rounded-full`}
               contentStyle={tw`py-2`}
@@ -115,7 +126,11 @@ const BankCard: React.FC<BankCardProps> = ({ accountName, bankName, accountNumbe
         <Text style={tw`text-white`}>Account Number</Text>
         <View style={tw`flex-row font-bold items-center`}>
           <Text style={tw`text-base text-white`}>{accountNumber}</Text>
-          <IconButton onPress={copyToClipboard} icon={copied ? "sticker-check" : "content-copy"} iconColor="white" />
+          <IconButton
+            onPress={copyToClipboard}
+            icon={copied ? "sticker-check" : (props) => <CopyFill {...props} />}
+            iconColor="white"
+          />
         </View>
       </View>
     </View>

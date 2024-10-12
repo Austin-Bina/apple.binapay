@@ -1,7 +1,6 @@
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
 import NairaInput from "@components/ui/form/NairaInput";
 import CustomTextInput from "@components/ui/form/TextInput";
-import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
@@ -16,7 +15,7 @@ import { ServicesStackScreenProps } from "@navigators/types";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { useGetCablePlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { selectUser } from "@store/selectors/auth";
-import { addPendingTransaction, setTransactionError } from "@store/slice/transactionSlice";
+import { addPendingTransaction } from "@store/slice/transactionSlice";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, TouchableOpacity, Keyboard, RefreshControl } from "react-native";
@@ -25,10 +24,19 @@ import { ActivityIndicator, Button, Text } from "react-native-paper";
 import { z } from "zod";
 import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import Fuse from "fuse.js";
-import { formatToNaira } from "@utils/money";
+import { calculateTransactionDetails, formatToNaira } from "@utils/money";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { showToast } from "@helpers/toast";
 import { AxiosError } from "axios";
+import { useWalletBalanceValidation } from "@hooks/transaction";
+import WalletBalanceHelper from "@components/ui/form/wallet-balance";
+import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
+import { selectSystemSettings } from "@store/selectors/settings";
+import BottomSheetModal from "@components/ui/modals/preview-transaction";
+import { Colors } from "@constants/theme/colors";
+import Banner from "@components/ui/banner";
+import { zodPhoneValidation } from "@utils/phone";
 
 type Props = ServicesStackScreenProps<"TV Subscription">;
 
@@ -45,13 +53,13 @@ const schema = z.object({
   customer_name: z.string(),
   package: z.string(),
   package_name: z.string(),
-  phone: z.string(),
+  phone: zodPhoneValidation,
   period: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const gotvSubPeriods = [
+const cableSubPeriods = [
   { label: "All", id: "all" },
   { label: "Weekly", id: "week" },
   { label: "Monthly", id: "month" },
@@ -64,7 +72,20 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   const [readyToPay, setReadyToPay] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
 
-  const { data: queryData, isLoading, refetch } = useGetCablePlansQuery();
+  const { customers } = useTypedSelector(selectSystemSettings);
+  const {
+    data: queryData,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetCablePlansQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
+  });
+  const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
+
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
@@ -89,6 +110,14 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   const provider = values.provider;
 
   useEffect(() => {
+    prefetchSystemSettings();
+  }, []);
+
+  const walletValidation = useWalletBalanceValidation({
+    amount: parseFloat(values.amount) || 0,
+  });
+
+  useEffect(() => {
     if (readyToPay && values.smart_card_number) {
       setReadyToPay(false);
       setValue("customer_name", "");
@@ -96,28 +125,65 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   }, [values.smart_card_number]);
 
   const cablePackages = useMemo(() => {
-    if (!queryData?.cable_plans) return [];
-
+    const chargePercentage = customers.cable_discount_percentage;
+    const plans = queryData?.cable_plans[provider] || [];
     const selectedPeriod = values.period;
-    const cablePlans = queryData.cable_plans[provider] || [];
 
+    const chargedPlans = plans.map((plan) => {
+      const planId = plan.id.toString();
+
+      const planAmount = parseFloat(plan.plan_amount);
+      const chargeAmount = (chargePercentage / 100) * planAmount;
+      const newPrice = planAmount + chargeAmount;
+
+      return {
+        id: planId,
+        plan_amount: newPrice,
+        label: `${plan.package} - ${formatToNaira(plan.plan_amount)}`,
+        amount: plan.plan_amount,
+        package_name: plan.package,
+        package: planId,
+      };
+    });
+
+    // Filters will come last
     if (!selectedPeriod) {
-      return cablePlans;
+      return chargedPlans;
     }
 
     if (selectedPeriod === "all") {
-      return cablePlans;
+      return chargedPlans;
     }
 
-    const fuse = new Fuse(cablePlans, {
-      keys: ["package"],
+    const fuse = new Fuse(chargedPlans, {
+      keys: ["package_name"],
       threshold: 0.4,
     });
 
     const filteredPlans = fuse.search(selectedPeriod).map((result) => result.item);
-
     return filteredPlans;
   }, [queryData, values.period, provider]);
+
+  const extraPlanDetails = useMemo(() => {
+    return calculateTransactionDetails(parseFloat(values.amount) || 0, "cable", customers);
+  }, [values.amount, customers]);
+
+  const snapSize = "58%";
+
+  const onSelectProvider = useCallback(
+    (serviceId: string) => {
+      reset({
+        ...values,
+        provider: serviceId,
+        period: "all",
+        customer_name: "",
+        package_name: "",
+        package: "",
+        amount: "0",
+      });
+    },
+    [values],
+  );
 
   const validateCard = async () => {
     const { provider, smart_card_number } = values;
@@ -145,7 +211,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
 
           if (!payload || payload.invalid) {
             setError("smart_card_number", {
-              message: "Could not find card number",
+              message: "Could not find that card number",
             });
           } else {
             setValue("customer_name", payload.name);
@@ -212,6 +278,24 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
     closeBottomSheet();
   });
 
+  const onRefresh = async () => {
+    if (!isFetching) {
+      refetch();
+      prefetchSystemSettings();
+    }
+  };
+
+  const transactionDetails = [
+    {
+      label: "Network",
+      value: values.provider,
+      icon: serviceProvidersMap.entertainment[values.provider].logo,
+    },
+    { label: "Smart-Card Number", value: values.smart_card_number },
+    { label: "Package", value: values.package_name },
+    ...Object.keys(extraPlanDetails).map((key) => ({ label: key, value: extraPlanDetails[key] })),
+  ];
+
   return (
     <Screen>
       <ScrollableView
@@ -228,7 +312,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
             {Object.values(serviceProvidersMap.entertainment).map((provider) => (
               <TouchableOpacity
                 key={provider.serviceId}
-                onPress={() => setValue("provider", provider.serviceId)}
+                onPress={() => onSelectProvider(provider.serviceId)}
                 style={[
                   tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
                   values.provider === provider.serviceId && tw`border-blue-500 border-2`,
@@ -237,6 +321,16 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
               </TouchableOpacity>
             ))}
           </View>
+
+          {isError && !isFetching && (
+            <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
+              <Text variant="bodySmall">We had trouble loading your data plans. Please try again.</Text>
+              <Button onPress={onRefresh} textColor={Colors.primary[500]}>
+                Try again
+              </Button>
+            </View>
+          )}
+
           <View>
             <Controller
               control={control}
@@ -254,6 +348,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
                 />
               )}
             />
+
             {showProgress && (
               <View style={tw`flex-row items-center gap-2`}>
                 <ActivityIndicator animating size="small" aria-label="Reading card number" />
@@ -262,6 +357,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
                 </Text>
               </View>
             )}
+
             {values.customer_name && (
               <View style={tw`flex-row items-center gap-1.5`}>
                 <VerifiedBadge />
@@ -277,41 +373,38 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
             placeholder="Select your period"
             name="period"
             control={control}
-            data={gotvSubPeriods}
+            data={cableSubPeriods}
           />
           <DropdownMenuField
             label="Package"
             placeholder={cablePackages.length === 0 ? "No packages available" : "Select your package"}
             name="package"
             control={control}
-            data={cablePackages.map((plan) => ({
-              label: `${plan.package} - ${formatToNaira(plan.plan_amount)}`,
-              amount: plan.plan_amount,
-              package_name: plan.package,
-              id: plan.id.toString(),
-            }))}
+            data={cablePackages}
             onDataSelect={(plan) => {
               reset({
                 ...values,
-                amount: plan.amount,
-                package: plan.id,
-                package_name: plan.package_name,
+                ...plan,
               });
             }}
           />
           <View style={tw`mb-5`}>
             <NairaInput name="amount" control={control} isDisabled />
-            <Text style={tw`text-primary-900 text-sm mt-2.5`}>
-              Wallet Balance: {formatToNaira(user?.wallet_balance)}
-            </Text>
+            <WalletBalanceHelper {...walletValidation} />
           </View>
         </View>
-        <View style={tw`px-4 pb-4 pt-1`}>
+
+        <Banner
+          style={tw`mb-10`}
+          content={`You get ${customers.cable_discount_percentage}% off when you purchase your TV subscriptions with us`}
+        />
+
+        <View style={tw`pb-4 pt-1`}>
           <Button
             style={tw`w-full rounded-full`}
             contentStyle={tw`py-2`}
             labelStyle={tw`text-white text-center text-base font-bold`}
-            disabled={isProcessing}
+            disabled={isProcessing || !walletValidation.canPay}
             onPress={openBottomSheet}
             mode="contained">
             {!readyToPay ? "Verify" : "Proceed"}
@@ -321,46 +414,15 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
 
       <BottomSheetModal
         ref={bottomSheet}
-        initialSnapPoints={["50%", "50%"]}
-        closeFilter={closeBottomSheet}
-        children={
-          <View style={tw`p-4`}>
-            <Text variant="titleLarge" style={tw`font-bold text-gray-800 mb-2`}>
-              Confirm Bill Payment
-            </Text>
-            <View>
-              <View style={tw`flex-row justify-between my-2`}>
-                <Text variant="bodyLarge">Network:</Text>
-                <View style={tw`flex-row items-center gap-2.5`}>
-                  <Image width={30} source={serviceProvidersMap.entertainment[values.provider].logo} />
-                  <Text style={tw`text-lg font-bold`}>{serviceProvidersMap.entertainment[values.provider].name}</Text>
-                </View>
-              </View>
-              <View style={tw`flex-row justify-between my-2`}>
-                <Text variant="bodyLarge">Amount:</Text>
-                <Text style={tw`text-lg font-bold`}>{formatToNaira(values.amount)}</Text>
-              </View>
-              <View style={tw`flex-row items-center justify-between my-2`}>
-                <Text variant="bodyLarge">Smart-Card Number:</Text>
-                <Text style={tw`text-lg font-bold`}>{values.smart_card_number}</Text>
-              </View>
-              <View style={tw`flex-row items-center justify-between my-2`}>
-                <Text variant="bodyLarge">Package:</Text>
-                <Text style={tw`text-lg font-bold`}>{values.package_name}</Text>
-              </View>
-            </View>
-            <Button
-              mode="contained"
-              onPress={handleMakePayment}
-              style={tw`w-full rounded-full mt-[20%]`}
-              contentStyle={tw`py-2`}
-              labelStyle={tw`text-base`}>
-              Make Payment
-            </Button>
-          </View>
-        }
+        title="Confirm Bill Payment"
+        details={transactionDetails}
+        buttonLabel="Make Payment"
+        onConfirm={handleMakePayment}
+        onDismiss={closeBottomSheet}
+        snapPoints={[snapSize, snapSize]}
+        disabled={!walletValidation.canPay}
       />
-      <PleaseWaitModal visible={isLoading} />
+      <PleaseWaitModal visible={isFetching} />
       <TransactionErrorSheet />
     </Screen>
   );
