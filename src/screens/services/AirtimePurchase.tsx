@@ -62,7 +62,6 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
   const {
     control,
     watch,
-    setValue,
     handleSubmit,
     setError,
     clearErrors,

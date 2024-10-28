@@ -27,7 +27,12 @@ interface EducationResponse {
 
 interface EpinPurchaseResponse {
   service: "epin-purchase";
-  epins_plans: EpinPlan[];
+  epins_plans: {
+    mtn: EpinPlan[];
+    glo: EpinPlan[];
+    airtel: EpinPlan[];
+    "9mobile": EpinPlan[];
+  };
   quantity_options: {
     id: string;
     label: string;

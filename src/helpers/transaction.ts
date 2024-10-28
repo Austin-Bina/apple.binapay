@@ -118,6 +118,7 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
   return match(transaction)
     .with({ wallet_id: P.number, meta: {} }, (walletView) => {
       const { meta: details } = walletView;
+
       const logo = getTransactionIcon(walletView);
       const transactionTitle = details.description;
       const transactionDescription = details.description;
@@ -145,7 +146,7 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
         .otherwise(() => getTransactionDetails({ details: {} }));
 
       // Try to extract the token from elec or cable subscription
-      const hasHighlighted = match(walletView)
+      const withHighlightedResponse = match(walletView)
         .with(
           { payment_transaction: { utilityTransaction: { details: { Token: P.string.minLength(5) } } } },
           ({ payment_transaction }) => {
@@ -155,16 +156,48 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
             const token = details.Token;
 
             return {
-              value: token,
-              copyable: true,
+              hasHighlighted: {
+                value: token,
+                copyable: true,
+              },
             };
           },
         )
         .with({ payment_transaction: { utilityTransaction: { details: { Token: P.string.minLength(0) } } } }, () => ({
-          value: "Please contact support",
-          copyable: false,
+          hasHighlighted: {
+            value: "Please contact support",
+            copyable: false,
+          },
         }))
-        .otherwise(() => null);
+        .otherwise(() => undefined);
+
+      const withEpinsResponse = match(walletView)
+        // Get Epins Token
+        .with(
+          {
+            payment_transaction: {
+              utilityTransaction: { details: { Token: P.array({ serial: P.string, pin: P.string }) } },
+            },
+          },
+          ({ payment_transaction }) => {
+            const { utilityTransaction } = payment_transaction;
+            const { details } = utilityTransaction;
+
+            return {
+              transactionDetails: [],
+              hasDetails: false,
+              hasHighlighted: undefined,
+              epins: details.Token.map((epin) => ({
+                serial: epin.serial,
+                pin: epin.pin,
+                provider: details.provider,
+                amount: details.amount,
+                business_name: details.business_name || "Your Company",
+              })),
+            };
+          },
+        )
+        .otherwise(() => undefined);
 
       const hasDetails = Object.keys(transactionDetails).length > 0;
 
@@ -174,7 +207,8 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
         transactionDetails,
         hasDetails,
         logo,
-        hasHighlighted,
+        ...(withHighlightedResponse ? withHighlightedResponse : {}),
+        ...(withEpinsResponse ? withEpinsResponse : {}),
         transactionDate: format(new Date(walletView.created_at), "MMM dd, yyyy h:mm a"),
       };
     })
@@ -189,15 +223,38 @@ const viewTransactionResponse = (transactionRes: TransactionResponse | null): Vi
     ...data
   } = response;
 
-  const hasHighlighted = transaction?.details?.Token ? { value: transaction.details.Token, copyable: true } : null;
+  let extra = {} as any;
+
+  // const hasHighlighted = transaction?.details?.Token ? { value: transaction.details.Token, copyable: true } : undefined;
   const hasDetails = !!transaction?.details && Object.keys(transaction.details).length > 0;
+
+  if (transaction?.details?.Token) {
+    if (Array.isArray(transaction.details.Token)) {
+      extra = {
+        epins: transaction.details.Token.map((token) => ({
+          serial: token.serial,
+          pin: token.pin,
+          provider: transaction.details.provider,
+          amount: transaction.details.amount,
+          business_name: transaction.details.business_name || "Your Company",
+        })),
+      };
+    } else {
+      extra = {
+        hasHighlighted: {
+          value: transaction.details.Token,
+          copyable: true,
+        },
+      };
+    }
+  }
 
   return {
     transactionTitle: data.title,
     transactionDescription: data.description,
     transactionDetails: hasDetails ? getTransactionDetails({ details: transaction?.details }) : [],
     hasDetails,
-    hasHighlighted,
+    ...extra,
     transactionDate: transaction ? format(new Date(transaction.created_at), "MMM dd, yyyy h:mm a") : "",
     logo: getTransactionIcon(transaction),
   };

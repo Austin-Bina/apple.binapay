@@ -9,6 +9,7 @@ import CopyReferralCode from "@components/ui/widgets/CopyReferralCode";
 import { useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import ScrollableView from "@components/ui/shared/ScrollableView";
+import { route } from "@helpers/route";
 
 type Props = AccountStackScreenProps<"BinaPay Rewards">;
 
@@ -27,6 +28,12 @@ export default function BinaRewardsScreen({ navigation }: Props) {
             Our referral program allows you to earn exciting benefits for every successful referral you make. Spread the
             word and reap the rewards together!
           </Text>
+          {user?.affiliate_id && (
+            <CopyReferralCode
+              referralCode={`${route("auth.register", { type: "web" })}?ref=${user.affiliate_id}`}
+              labelText="Copy Link"
+            />
+          )}
           {user?.affiliate_id && <CopyReferralCode referralCode={user.affiliate_id} />}
         </View>
 

@@ -11,7 +11,6 @@ import WifiIcon from "@assets/icons/wifi.svg";
 import ZapIcon from "@assets/icons/lightning.svg";
 import GraduationCapIcon from "@assets/icons/graduation-cap.svg";
 import BarCodeIcon from "@assets/icons/bar-code.svg";
-import SwapIcon from "@assets/icons/swap.svg";
 import AwardIcon from "@assets/icons/awards.svg";
 import TvIcon from "@assets/icons/tv-screen.svg";
 import AgentIcon from "@assets/icons/man-with-cap.svg";
@@ -110,18 +109,13 @@ export default function ListServicesScreen({ navigation }: Props) {
               });
             }}
           />
-          <IconButtonWithLabel
-            RenderIcon={SwapIcon}
-            size={24}
-            label="Airtime Swap"
-            onPress={openBottomSheet}
-            isDisabled
-          />
           <IconButtonWithLabel RenderIcon={AgentIcon} size={24} label="Agent" onPress={openBottomSheet} />
+          <IconButtonWithLabel RenderIcon={FlightIcon} size={24} label="Book+Flight" onPress={openBottomSheet} />
         </View>
         <View style={tw`flex-row justify-around my-5`}>
-          <IconButtonWithLabel RenderIcon={FlightIcon} size={24} label="Flight" onPress={openBottomSheet} />
           <IconButtonWithLabel RenderIcon={TicketIcon} size={24} label="Tickets" onPress={openBottomSheet} />
+          <View style={tw`flex-1`} />
+          <View style={tw`flex-1`} />
         </View>
         <BottomSheetModal
           ref={bottomSheet}
@@ -135,7 +129,7 @@ export default function ListServicesScreen({ navigation }: Props) {
               <Text variant="titleLarge" style={tw`font-bold mb-2`}>
                 Service Coming Soon
               </Text>
-              <Text variant="bodyMedium" style={[tw`text-center text-gray-500`, {marginBottom: scale(20)}]}>
+              <Text variant="bodyMedium" style={[tw`text-center text-gray-500`, { marginBottom: scale(20) }]}>
                 This service is not available yet. We're actively working to add more features and services to improve
                 your experience. Please check back later for updates.
               </Text>

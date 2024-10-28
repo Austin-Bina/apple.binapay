@@ -38,7 +38,10 @@ export interface UtilityTransaction {
     ported_number: boolean;
     type: string;
     requestId: string;
-    Token?: string;
+    Token?: string | Array<{ serial: string; pin: string }>; // For Epins
+    // Epins
+    quantity?: string;
+    business_name?: string;
   };
   created_at: string;
 }
@@ -78,8 +81,15 @@ export interface ViewTransaction {
   hasDetails: boolean;
   logo: string;
   transactionDate: string;
-  hasHighlighted: {
+  hasHighlighted?: {
     value: string;
     copyable: boolean;
-  } | null;
+  };
+  epins?: Array<{
+    serial: string;
+    pin: string;
+    provider: string;
+    amount: string;
+    business_name: string;
+  }>;
 }

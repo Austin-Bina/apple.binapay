@@ -41,6 +41,7 @@ import { zodPhoneValidation } from "@utils/phone";
 type Props = ServicesStackScreenProps<"TV Subscription">;
 
 const MAX_CARD_NUMBER = 10;
+
 const schema = z.object({
   provider: z.string(),
   amount: z.string().trim(),

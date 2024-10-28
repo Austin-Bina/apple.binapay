@@ -1,3 +1,4 @@
 export const env = {
   BASE_URL: process.env.EXPO_PUBLIC_BINAPAY_BASE_URL,
+  EXPO_PUBLIC_PAYSTACK_KEY: process.env.EXPO_PUBLIC_PAYSTACK_KEY,
 };

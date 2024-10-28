@@ -20,7 +20,7 @@ const serviceProvidersMap: ServiceProvidersMap = {
       id: 3,
       serviceId: "9mobile",
       name: "9Mobile",
-      logo: require("@assets/images/services/nine-mobile.png"),
+      logo: require("@assets/images/services/9mobile.png"),
       type: ["VTU"],
     },
     airtel: {

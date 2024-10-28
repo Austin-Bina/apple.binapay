@@ -2,17 +2,18 @@ import tw from "@lib/tailwind";
 import { useTypedSelector } from "@store/common";
 import { getNavigate } from "@utils/navigation";
 import React, { memo } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { Appbar, Text } from "react-native-paper";
 import { selectUser } from "@store/selectors/auth";
 import { AvatarImage } from "./avatar";
 import { selectNotificationMeta } from "@store/selectors/notification";
 import { HasNotification, NoNotification } from "./icons/svg";
-import { truncateString } from "@utils/index";
+import { s } from "react-native-size-matters";
 
 export default memo(function UserAppbar() {
   const user = useTypedSelector(selectUser);
   const notificationInfo = useTypedSelector(selectNotificationMeta);
+  const { width } = useWindowDimensions();
 
   const hasNotification = notificationInfo.unread_count > 0;
   return (
@@ -31,8 +32,10 @@ export default memo(function UserAppbar() {
         <View style={tw`flex flex-col items-center justify-center rounded-full border border-emerald-100`}>
           <AvatarImage avatar={user?.avatar} size={48} svgProps={{ width: 48, height: 48 }} />
         </View>
-        <View style={tw`flex flex-col items-start justify-start`}>
-          <Text style={tw`text-gray-900 text-xl font-semibold`}>Hi, {truncateString(user?.name, 17)} 👋🏽</Text>
+        <View style={tw.style(`flex flex-col items-start justify-start`, { width: s(width - 150) })}>
+          <Text numberOfLines={1} ellipsizeMode="tail" style={tw`text-gray-900 text-xl font-semibold`}>
+            Hi, {user?.name} 👋🏽
+          </Text>
           <Text style={tw`text-gray-500 text-sm font-medium leading-snug`}>Pay seamlessly with BinaPay!</Text>
         </View>
       </TouchableOpacity>

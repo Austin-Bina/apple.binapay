@@ -4,7 +4,7 @@ import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
 import { useTypedSelector } from "@store/common";
 import { selectIsAccountVerified, selectUser } from "@store/selectors/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ImageBackground, View } from "react-native";
 import { Button, IconButton, Text } from "react-native-paper";
 import * as Clipboard from "expo-clipboard";
@@ -14,11 +14,26 @@ import { selectSystemSettings } from "@store/selectors/settings";
 import { CopyFill } from "@components/icons/svg";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
+import API from "@lib/api";
+import { route } from "@helpers/route";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import { useCreateAccountMutation, useListAccountsQuery } from "@store/redux-api/accountsApi";
+import { selectCanCreateMoreAccounts } from "@store/selectors/accounts";
 
 export default function BankTransferScreen() {
   const user = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
   const { customers } = useTypedSelector(selectSystemSettings);
+
+  const { data: accountsQuery, isLoading } = useListAccountsQuery(undefined, {
+    pollingInterval: 15000,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const [createDedicatedAccount, { isLoading: isCreatingAccount }] = useCreateAccountMutation();
+
+  const canCreateMoreAccounts = useTypedSelector(selectCanCreateMoreAccounts());
 
   const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
     ifOlderThan: MAX_CACHE_AGE_SEC,
@@ -28,7 +43,7 @@ export default function BankTransferScreen() {
     prefetchSettings();
   }, []);
 
-  const hasDedicatedAccounts = isVerified && user?.accounts && user?.accounts.length > 0;
+  const userAccounts = useMemo(() => accountsQuery?.accounts ?? [], [accountsQuery]);
 
   const handleBeginVerification = async () => {
     const { navigate } = await getNavigate();
@@ -43,6 +58,7 @@ export default function BankTransferScreen() {
       },
     });
   };
+
   return (
     <Screen>
       <ScrollableView contentContainerStyle={tw`px-4 py-5 justify-between`}>
@@ -54,13 +70,15 @@ export default function BankTransferScreen() {
             Transfer the desired amount to the following bank account. Once the transfer is complete, your BinaPay
             wallet will be credited
           </Text>
-          {hasDedicatedAccounts && (
+
+          {userAccounts.length > 0 && (
             <Banner
               content={`Automated bank transfer attracts additional charges of ${customers.account_deposit_charge_percentage}% only.`}
             />
           )}
-          {hasDedicatedAccounts &&
-            user.accounts.map((account) => (
+
+          {userAccounts.length > 0 &&
+            userAccounts.map((account) => (
               <View key={account.id}>
                 <ImageBackground
                   source={require("@assets/images/card-background-waves.png")}
@@ -74,14 +92,45 @@ export default function BankTransferScreen() {
               </View>
             ))}
 
-          {!hasDedicatedAccounts && (
+          {!isVerified && (
             <Banner
               title="Please verify your account to use this feature"
               content="This feature is only available for verified users with dedicated accounts."
             />
           )}
+
+          {userAccounts.length === 0 && (
+            <View style={tw`mt-4`}>
+              <Text variant="bodyMedium" style={tw`text-gray-400 mb-6`}>
+                You have not created a wallet for BinaPay. Click the create account button to proceed.
+              </Text>
+              <Button
+                style={tw`w-full rounded-full`}
+                contentStyle={tw`py-2`}
+                mode="contained"
+                onPress={createDedicatedAccount}>
+                Create Accounts
+              </Button>
+            </View>
+          )}
+
+          {canCreateMoreAccounts && (
+            <View style={tw`mt-4`}>
+              <Text variant="bodyMedium" style={tw`text-gray-400 mb-6`}>
+                You can create more accounts for funding your wallet, we give multiple options. Click the create more
+                accounts button to continue.
+              </Text>
+              <Button
+                style={tw`w-full rounded-full`}
+                contentStyle={tw`py-2`}
+                mode="contained"
+                onPress={createDedicatedAccount}>
+                Create More Accounts
+              </Button>
+            </View>
+          )}
         </View>
-        {!hasDedicatedAccounts && (
+        {!isVerified && (
           <View style={tw`pb-4 pt-1`}>
             <Button
               style={tw`w-full rounded-full`}
@@ -93,6 +142,7 @@ export default function BankTransferScreen() {
           </View>
         )}
       </ScrollableView>
+      <PleaseWaitModal visible={isCreatingAccount} />
     </Screen>
   );
 }

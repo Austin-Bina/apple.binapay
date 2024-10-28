@@ -247,7 +247,7 @@ const doLogin = createTypedAsyncThunk<LoginResponse, LoginPayload>(
         return rejectWithValue(response.data);
       }
 
-      return rejectWithValue(error);
+      return rejectWithValue(error?.message);
     }
   },
 );

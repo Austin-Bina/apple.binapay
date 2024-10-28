@@ -40,8 +40,10 @@ export const routes = {
       },
       bank: {
         resolveAccount: "/api/v1/bank/resolve",
-        reserveAccount: "/api/v1/bank/reserve",
+        reserveAccount: "/api/v1/bank/create-dedicated-account",
         list: "/api/v1/banks",
+        listDedicatedAccounts: "/api/v1/bank/list-dva-accounts",
+        createDedicatedAccounts: "/api/v1/bank/create-dedicated-account",
       },
       services: {
         fetch: "/api/v1/payment/fetch",
@@ -77,6 +79,13 @@ export const routes = {
     },
   },
   web: {
-    v1: {},
+    v1: {
+      public: {
+        privacy: "https://binapay.co/terms-and-policy",
+      },
+      auth: {
+        register: "https://binapay.co/register",
+      },
+    },
   },
 };

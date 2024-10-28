@@ -11,7 +11,7 @@ import {
   viewTransactionResponse,
 } from "@helpers/transaction";
 import React, { Fragment, useMemo, useState } from "react";
-import { View, ImageBackground, useWindowDimensions } from "react-native";
+import { View, ImageBackground, useWindowDimensions, ScrollView } from "react-native";
 import { Image } from "react-native-element-image";
 import { IconButton, Text, TouchableRipple } from "react-native-paper";
 import { match } from "ts-pattern";
@@ -25,11 +25,13 @@ import { CopyFill } from "@components/icons/svg";
 import * as Clipboard from "expo-clipboard";
 import Button from "@components/ui/form/button";
 import ScrollableView from "@components/ui/shared/ScrollableView";
+import EpinCardSample from "@components/screens/transactions/epin-sample-card";
 
 type Props = HomeStackScreenProps<typeof SCREENS.VIEW_TRANSACTION>;
 
 export default function ViewTransaction({ route }: Props) {
   const [valueCopied, setValueCopied] = useState(false);
+  const [visibleEpins, setVisibleEpins] = useState(10);
 
   const { transactionId } = route.params;
 
@@ -51,39 +53,25 @@ export default function ViewTransaction({ route }: Props) {
   }, [pendingTransaction]);
 
   const pageData = useMemo(() => {
-    let transactionTitle = defaultTransactionResponse.title;
-    let transactionDescription = defaultTransactionResponse.description;
-    let transactionDetails: ReturnType<typeof getTransactionDetails> = [];
-    let logo = "";
-    let hasDetails = false;
-    let transactionDate = format(new Date(), "MMM dd, yyyy h:mm a");
-    let appLogo = "https://binapay.co/assets/icons/logo-black.svg";
-    let promotionalText = `<p style="margin-bottom: 16px;">Unlock exclusive offers and rewards with <strong>BinaPay</strong>. Stay tuned for exciting promotions!</p>`;
-    let supportEmail = "support@binapay.co";
-    let hasHighlighted = null;
-
-    const data = utilityResponse ? viewTransactionResponse(utilityResponse) : viewTransactionHelper(viewResponse); // Complete wallet transaction
+    const data = utilityResponse ? viewTransactionResponse(utilityResponse) : viewTransactionHelper(viewResponse);
 
     return {
-      transactionTitle,
-      transactionDescription,
-      transactionDetails,
-      hasDetails,
-      logo,
-      transactionDate,
-      appLogo,
-      promotionalText,
-      supportEmail,
-      hasHighlighted,
+      ...defaultTransactionResponse,
+      transactionTitle: defaultTransactionResponse.title,
+      transactionDescription: defaultTransactionResponse.description,
+      transactionDetails: [] as ReturnType<typeof getTransactionDetails>,
+      transactionDate: format(new Date(), "MMM dd, yyyy h:mm a"),
+      appLogo: "https://binapay.co/assets/icons/logo-black.svg",
+      promotionalText: `<p style="margin-bottom: 16px;">Unlock exclusive offers and rewards with <strong>BinaPay</strong>. Stay tuned for exciting promotions!</p>`,
+      supportEmail: "support@binapay.co",
+      hasDetails: false,
+      logo: "",
       ...data,
     };
   }, [viewResponse, utilityResponse]);
 
   const printData = {
-    pageData: {
-      ...pageData,
-      supportEmail: "",
-    },
+    pageData: { ...pageData, supportEmail: "" },
   };
 
   const copyBillPaymentValueToken = async () => {
@@ -92,6 +80,14 @@ export default function ViewTransaction({ route }: Props) {
       setValueCopied(true);
       setTimeout(() => setValueCopied(false), 2000);
     }
+  };
+
+  const handlePrintEpin = () => {
+    // shareTransactionReceipt({ pageData: printData.pageData, getTemplate: generateEpinsTemplate });
+  };
+
+  const loadMoreEpins = () => {
+    setVisibleEpins((prev) => prev + 10);
   };
 
   return (
@@ -152,6 +148,19 @@ export default function ViewTransaction({ route }: Props) {
             </TouchableRipple>
           )}
 
+          {pageData.epins && pageData.epins.length > 0 && (
+            <ScrollView style={tw`mt-5 flex-1`} contentContainerStyle={tw`gap-4`}>
+              {pageData.epins.slice(0, visibleEpins).map((epin, index) => (
+                <EpinCardSample key={index} values={epin} />
+              ))}
+              {visibleEpins < pageData.epins.length && (
+                <Button mode="contained-tonal" onPress={loadMoreEpins} style={tw`py-0`}>
+                  Load More E-Pins
+                </Button>
+              )}
+            </ScrollView>
+          )}
+
           {pageData.hasDetails && (
             <Button
               onPress={() => shareTransactionReceipt(printData)}
@@ -169,5 +178,19 @@ export default function ViewTransaction({ route }: Props) {
       </ScrollableView>
       <PleaseWaitModal visible={isPrinting} dismissable onDismiss={stopSharing} />
     </ImageBackground>
+  );
+}
+
+type EpinListProps = {
+  epins: Array<{ serial: string; pin: string; provider: string; amount: string; business_name: string }>;
+};
+
+function EpinList({ epins }: EpinListProps) {
+  return (
+    <View style={tw``}>
+      {epins.map((epin) => (
+        <EpinCardSample sample={false} values={epin} />
+      ))}
+    </View>
   );
 }

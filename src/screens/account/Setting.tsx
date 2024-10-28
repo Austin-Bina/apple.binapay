@@ -19,7 +19,7 @@ import { AvatarImage } from "@components/avatar";
 import { scale } from "react-native-size-matters";
 import { SCREENS } from "@constants/screens";
 import { Action } from "@components/screens/account";
-import { AccountTier } from "@enum/user";
+import { routes } from "@constants/routes";
 
 type Props = AccountStackScreenProps<"Settings">;
 
@@ -42,6 +42,7 @@ export default function SettingScreen({ navigation }: Props) {
       <Appbar.Header style={tw`bg-white`}>
         <Appbar.Content title="Menu" titleStyle={tw`font-bold`} />
       </Appbar.Header>
+
       <ScrollableView>
         <TouchableRipple
           style={tw`px-4 mb-10`}
@@ -66,6 +67,7 @@ export default function SettingScreen({ navigation }: Props) {
             <Divider />
           </Fragment>
         </TouchableRipple>
+
         <Action
           title="Verification"
           ItemIcon={SpeechBubbleIcon}
@@ -80,6 +82,7 @@ export default function SettingScreen({ navigation }: Props) {
             </View>
           }
         />
+
         <Action
           title="Change Password"
           ItemIcon={KeyIcon}
@@ -87,6 +90,15 @@ export default function SettingScreen({ navigation }: Props) {
             navigation.navigate("Change Password");
           }}
         />
+
+        <Action
+          title="Change Pin"
+          ItemIcon={KeyIcon}
+          onPress={() => {
+            navigation.navigate("Change Password");
+          }}
+        />
+
         <Action
           title="Help & Support"
           ItemIcon={SupportIcon}
@@ -96,11 +108,12 @@ export default function SettingScreen({ navigation }: Props) {
             });
           }}
         />
+
         <Action
           title="Privacy Policy"
           ItemIcon={PrivacyIcon}
           onPress={() => {
-            Linking.openURL("https://binapay.co/privacy");
+            Linking.openURL(routes.web.v1.public.privacy);
           }}
         />
         <View style={tw`my-5`} />

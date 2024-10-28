@@ -1,15 +1,16 @@
 import { Colors } from "@constants/theme/colors";
 import tw from "@lib/tailwind";
-import * as Clipboard from 'expo-clipboard';
+import * as Clipboard from "expo-clipboard";
 import React, { Fragment, useState } from "react";
 import { View } from "react-native";
 import { Text, TouchableRipple, IconButton } from "react-native-paper";
 
 interface Props {
   referralCode: string;
+  labelText?: string;
 }
 
-const CopyReferralCode: React.FC<Props> = ({ referralCode }) => {
+const CopyReferralCode: React.FC<Props> = ({ referralCode, labelText = "Tap to copy referral code" }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
@@ -23,13 +24,10 @@ const CopyReferralCode: React.FC<Props> = ({ referralCode }) => {
       <Text variant="headlineMedium" style={tw`text-center my-0 py-0`}>
         {referralCode}
       </Text>
-      <TouchableRipple
-        onPress={copyToClipboard}
-        style={tw`flex-row items-center justify-center`}
-      >
+      <TouchableRipple onPress={copyToClipboard} style={tw`flex-row items-center justify-center`}>
         <Fragment>
           <Text variant="bodySmall" style={tw`text-gray-400 -mr-1`}>
-            Tap to copy referral code
+            {labelText}
           </Text>
           <IconButton
             icon={copied ? "sticker-check" : "content-copy"}

@@ -13,6 +13,7 @@ import { referralQueryApi } from "./redux-api/referralQueryApi";
 import { notificationsApi } from "./redux-api/notificationApi";
 import { supportApi } from "./redux-api/supportApi";
 import { systemSettingsApi } from "./redux-api/systemSettingsApi";
+import { accountsApi } from "./redux-api/accountsApi";
 
 const defaultReducer = combineReducers({
   auth: authSlice.reducer,
@@ -24,6 +25,7 @@ const defaultReducer = combineReducers({
   [notificationsApi.reducerPath]: notificationsApi.reducer,
   [supportApi.reducerPath]: supportApi.reducer,
   [systemSettingsApi.reducerPath]: systemSettingsApi.reducer,
+  [accountsApi.reducerPath]: accountsApi.reducer,
 });
 
 const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, UnknownAction>(
@@ -46,6 +48,7 @@ const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, Unkno
         [referralQueryApi.reducerPath]: {} as any,
         [supportApi.reducerPath]: {} as any,
         [systemSettingsApi.reducerPath]: {} as any,
+        [accountsApi.reducerPath]: {} as any,
       };
     }
 
@@ -78,6 +81,7 @@ export const store = createStore(
   notificationsApi.middleware,
   supportApi.middleware,
   systemSettingsApi.middleware,
+  accountsApi.middleware,
 );
 
 export const persistor = persistStore(store);

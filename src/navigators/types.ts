@@ -53,6 +53,7 @@ export type AccountParamList = {
   [SCREENS.PROFILE]: undefined;
   [SCREENS.SETTINGS]: undefined;
   [SCREENS.CHANGE_PASSWORD]: undefined;
+  [SCREENS.CHANGE_PIN]: undefined;
   [SCREENS.BINAPAY_REWARDS]: undefined;
   [SCREENS.EARNING_SUMMARY]: undefined;
   [SCREENS.VERIFY_ACCOUNT]: NavigatorScreenParams<KYCParamList>;

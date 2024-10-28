@@ -8,6 +8,7 @@ export const SCREENS = {
   // User Profile
   PROFILE: "Profile",
   CHANGE_PASSWORD: "Change Password",
+  CHANGE_PIN: "Change Pin",
 
   // Add Money
   ADD_MONEY: "Add Money",

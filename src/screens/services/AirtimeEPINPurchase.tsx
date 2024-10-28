@@ -22,8 +22,9 @@ import { useGetEpinPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { selectUser } from "@store/selectors/auth";
 import { selectSystemSettings } from "@store/selectors/settings";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
+import { InternetProviders } from "@type/app";
 import { calculateTransactionDetails, formatToNaira, zodAmountValidation } from "@utils/money";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, TouchableOpacity, FlatList, Keyboard, RefreshControl } from "react-native";
 import { Image } from "react-native-element-image";
@@ -36,13 +37,19 @@ type Props = ServicesStackScreenProps<"Airtime EPIN Purchase">;
 const schema = z.object({
   provider: z.string().min(3),
   amount: zodAmountValidation(100),
-  quantity: z.number().min(1),
-  business_name: z.string(),
+  final_amount: zodAmountValidation(100),
+  quantity: z.string().refine((val) => !isNaN(Number(val)), { message: "Please enter a valid quantity" }),
+  business_name: z.string().trim().min(1, { message: "Please enter a business name" }),
 });
 
 type FormData = z.infer<typeof schema>;
+type InitialQuantityAmounts = Map<string, string>;
+
+const defaultValue = "100";
 
 export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
+  const [initialQuantityAmounts, setInitialQuantityAmounts] = useState<InitialQuantityAmounts>(new Map());
+
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
   const { customers } = useTypedSelector(selectSystemSettings);
@@ -56,8 +63,8 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
     resolver: zodResolver(schema),
     defaultValues: {
       provider: "mtn",
-      amount: "100",
-      quantity: 1,
+      amount: defaultValue,
+      quantity: "1",
       business_name: user?.name,
     },
     mode: "onChange",
@@ -65,16 +72,60 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const values = watch();
+  const provider = values.provider as InternetProviders;
 
   useEffect(() => {
     prefetchSystemSettings();
   }, []);
 
+  useEffect(() => {
+    const quantity = parseInt(values.quantity);
+    const initialQuantityAmount = initialQuantityAmounts.get(values.amount);
+
+    if (quantity && !isNaN(quantity) && initialQuantityAmount) {
+      const amount = quantity * Number.parseFloat(initialQuantityAmount);
+
+      setValue("final_amount", String(amount));
+    }
+  }, [values.quantity, values.amount]);
+
+  useEffect(() => {
+    const initialQuantityAmounts: InitialQuantityAmounts = new Map();
+    const plans = queryData?.epins_plans[provider] || [];
+
+    plans.forEach((plan) => {
+      initialQuantityAmounts.set(plan.id, plan.plan_amount);
+    });
+
+    setInitialQuantityAmounts(initialQuantityAmounts);
+
+    // Set default plan amount
+    const defaultPlan = plans.find((plan) => plan.id === defaultValue);
+    setValue("final_amount", defaultPlan?.plan_amount || "0");
+  }, [queryData, provider]);
+
   const walletValidation = useWalletBalanceValidation({
     amount: parseFloat(values.amount) || 0,
   });
 
-  const epinPlans = queryData?.epins_plans || [];
+  const epinPlans = useMemo(() => {
+    const plans = queryData?.epins_plans[provider] || [];
+
+    const chargedPlans = plans.map((plan) => {
+        const planAmount = parseFloat(`${plan.plan_amount}`);
+
+        return {
+            ...plan,
+            plan_amount: planAmount,
+            amount: plan.id,
+            // For client, update the final amount here, used by reset
+            final_amount: plan.plan_amount,
+        };
+    });
+
+    return chargedPlans;
+}, [queryData]);
+
   const quantityOptions = queryData?.quantity_options || [];
 
   const extraPlanDetails = useMemo(() => {
