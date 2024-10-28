@@ -181,16 +181,3 @@ export default function ViewTransaction({ route }: Props) {
   );
 }
 
-type EpinListProps = {
-  epins: Array<{ serial: string; pin: string; provider: string; amount: string; business_name: string }>;
-};
-
-function EpinList({ epins }: EpinListProps) {
-  return (
-    <View style={tw``}>
-      {epins.map((epin) => (
-        <EpinCardSample sample={false} values={epin} />
-      ))}
-    </View>
-  );
-}

@@ -30,22 +30,24 @@ export default function EpinCardSample(props: PaymentDetailsProps) {
         <View style={tw`flex-row items-center gap-2`}>
           <Text variant="titleMedium">PIN:</Text>
           <Text variant="headlineMedium" style={tw`text-lg font-black`}>
-            1234-9856-2829-4561
+            {values.pin}
           </Text>
         </View>
         <View style={tw`flex-row items-center gap-2`}>
           <Text variant="titleMedium">Serial #:</Text>
-          <Text variant="titleMedium">4134186359470712</Text>
+          <Text variant="titleMedium">{values.serial}</Text>
         </View>
         <Text variant="titleMedium">Dial *555*PIN#, then Send</Text>
       </View>
-      {props.sample && <View style={tw`absolute inset-0 justify-center items-center`}>
-        <Text
-          variant="displayLarge"
-          style={[tw`font-black text-[#FF0000] opacity-60`, { transform: [{ rotate: "10.88deg" }] }]}>
-          SAMPLE
-        </Text>
-      </View>}
+      {props.sample && (
+        <View style={tw`absolute inset-0 justify-center items-center`}>
+          <Text
+            variant="displayLarge"
+            style={[tw`font-black text-[#FF0000] opacity-60`, { transform: [{ rotate: "10.88deg" }] }]}>
+            SAMPLE
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
