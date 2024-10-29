@@ -64,6 +64,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
     defaultValues: {
       provider: "mtn",
       amount: defaultValue,
+      final_amount: "",
       quantity: "1",
       business_name: user?.name,
     },
@@ -257,7 +258,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
           />
 
           <View>
-            <NairaInput name="amount" control={control} isDisabled />
+            <NairaInput name="final_amount" control={control} isDisabled />
             <WalletBalanceHelper {...walletValidation} />
           </View>
 

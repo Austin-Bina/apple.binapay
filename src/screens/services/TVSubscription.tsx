@@ -390,7 +390,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
             }}
           />
           <View style={tw`mb-5`}>
-            <NairaInput name="amount" control={control} isDisabled />
+            <NairaInput name="plan_amount" control={control} isDisabled />
             <WalletBalanceHelper {...walletValidation} />
           </View>
         </View>
