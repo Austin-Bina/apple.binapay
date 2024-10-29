@@ -3,7 +3,7 @@ import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import tw from "@lib/tailwind";
 import { useTypedSelector } from "@store/common";
-import { selectIsAccountVerified, selectUser } from "@store/selectors/auth";
+import { selectIsAccountVerified } from "@store/selectors/auth";
 import { useEffect, useMemo, useState } from "react";
 import { ImageBackground, View } from "react-native";
 import { Button, IconButton, Text } from "react-native-paper";
@@ -14,23 +14,21 @@ import { selectSystemSettings } from "@store/selectors/settings";
 import { CopyFill } from "@components/icons/svg";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
-import API from "@lib/api";
-import { route } from "@helpers/route";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { useCreateAccountMutation, useListAccountsQuery } from "@store/redux-api/accountsApi";
 import { selectCanCreateMoreAccounts } from "@store/selectors/accounts";
 
 export default function BankTransferScreen() {
-  const user = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
   const { customers } = useTypedSelector(selectSystemSettings);
 
-  const { data: accountsQuery, isLoading } = useListAccountsQuery(undefined, {
+  const { data: accountsQuery } = useListAccountsQuery(undefined, {
     pollingInterval: 15000,
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
+  
   const [createDedicatedAccount, { isLoading: isCreatingAccount }] = useCreateAccountMutation();
 
   const canCreateMoreAccounts = useTypedSelector(selectCanCreateMoreAccounts());
@@ -114,7 +112,7 @@ export default function BankTransferScreen() {
             </View>
           )}
 
-          {canCreateMoreAccounts && (
+          {canCreateMoreAccounts && userAccounts.length > 0 && (
             <View style={tw`mt-4`}>
               <Text variant="bodyMedium" style={tw`text-gray-400 mb-6`}>
                 You can create more accounts for funding your wallet, we give multiple options. Click the create more

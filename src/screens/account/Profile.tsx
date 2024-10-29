@@ -66,7 +66,7 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
   };
 
   const onSubmit = handleSubmit(async function (values) {
-    const result = zodPhoneValidation.safeParse([values.phone, "NG"]);
+    const result = zodPhoneValidation.safeParse(values.phone);
 
     if (!result.success) {
       const errorMessage = result.error.errors[0].message;
