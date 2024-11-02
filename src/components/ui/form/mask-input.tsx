@@ -1,4 +1,3 @@
-import { bvn_nin_mask } from "@constants/app";
 import tw from "@lib/tailwind";
 import React from "react";
 import { View, Text } from "react-native";

@@ -6,6 +6,10 @@ export interface DVA {
   account_number: string;
   bank_name: string;
   payment_channel_id: number;
+  fee_type: "percentage" | "flat";
+  charge_percentage: number;
+  flat_fee: number;
+  cap: number;
 }
 
 export interface User {

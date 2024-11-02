@@ -75,7 +75,7 @@ const VerifyEmail: React.FC<Props> = (props) => {
     try {
       setFetching(true);
 
-      const res = await API.post(route("auth.verifyEmail"), {
+      await API.post(route("auth.verifyEmail"), {
         code: values.code,
         email: params.email,
       });
@@ -93,7 +93,7 @@ const VerifyEmail: React.FC<Props> = (props) => {
         if (hasAuthErrorMsg) {
           showToast({ message: message, position: Toast.positions.TOP });
         } else {
-          showToast({ message: "Something went wrong. Please try again." , position: Toast.positions.TOP });
+          showToast({ message: "Something went wrong. Please try again.", position: Toast.positions.TOP });
         }
 
         setError("code", { message });

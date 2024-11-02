@@ -1,10 +1,9 @@
-import React, { Fragment, useState } from "react";
-import { Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Avatar, Button, Icon, IconButton, Modal, Portal, Text, Title, useTheme } from "react-native-paper";
+import React, { useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Avatar, Button, Modal, Portal, Text, Title } from "react-native-paper";
 import { Asset, launchImageLibrary } from "react-native-image-picker";
 import { findFileSize } from "@utils/file";
 import tw from "@lib/tailwind";
-import { Colors } from "@constants/theme/colors";
 import { showToast } from "@helpers/toast";
 
 type ImageInputProps = {

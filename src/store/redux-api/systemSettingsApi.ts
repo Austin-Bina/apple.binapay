@@ -13,9 +13,11 @@ export const systemSettingsApi = createApi({
       query: () => ({
         url: route("account.settings"),
       }),
-      transformResponse: (response: any) => ({
-        customers: response?.system?.customers ?? defaultSystemSettings,
-      }),
+      transformResponse: (response: { system: SystemSettings }) => ({
+        customers: response?.system?.customers ?? defaultSystemSettings.customers,
+        transaction: response?.system.transaction ?? defaultSystemSettings.transaction,
+        bank: response?.system.bank ?? defaultSystemSettings.bank,
+    }),
     }),
   }),
 });

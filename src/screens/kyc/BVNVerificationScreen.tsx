@@ -21,6 +21,7 @@ import { selectUser } from "@store/selectors/auth";
 import { selectSystemSettings } from "@store/selectors/settings";
 import { authSliceActions } from "@store/slice/auth";
 import { settingsSliceActions } from "@store/slice/settings";
+import { formatToNaira } from "@utils/money";
 import { resetNavigationToDashboard } from "@utils/navigation";
 import { AxiosError } from "axios";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -316,7 +317,7 @@ export default function BVNVerificationScreen(props: Props) {
               content={
                 <View style={tw`gap-2`}>
                   <Text style={tw`text-secondary-500 w-full`}>
-                    Verifying NIN numbers costs ${customers.bvn_verification_charge}. But we will offset the cost of the
+                    Verifying NIN numbers costs {formatToNaira(customers.bvn_verification_charge)}. But we will offset the cost of the
                     verification process.
                   </Text>
                   <Text style={tw`text-secondary-500 w-full`}>

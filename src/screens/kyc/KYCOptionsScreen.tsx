@@ -79,9 +79,7 @@ export default function KYCOptionsScreen({ navigation }: Props) {
             <Text style={tw`text-gray-700 text-xl font-semibold`}>Why do we need this?</Text>
 
             <Text style={tw`mt-3 text-gray-500 text-base`}>
-              All services are provided in accordance with the Central Bank of Nigeria's circular on virtual accounts.{" "}
-              <Text variant="bodyMedium">We do not store your BVN on our servers</Text>. It is only used for
-              verification purposes with our payment partners.
+              All services are provided in accordance with the Central Bank of Nigeria's circular on virtual accounts.
             </Text>
           </View>
         </View>

@@ -5,7 +5,7 @@ import tw from "@lib/tailwind";
 import { useTypedSelector } from "@store/common";
 import { selectIsAccountVerified } from "@store/selectors/auth";
 import { useEffect, useMemo, useState } from "react";
-import { ImageBackground, View } from "react-native";
+import { ImageBackground, View, useWindowDimensions } from "react-native";
 import { Button, IconButton, Text } from "react-native-paper";
 import * as Clipboard from "expo-clipboard";
 import { SCREENS } from "@constants/screens";
@@ -17,6 +17,7 @@ import { MAX_CACHE_AGE_SEC } from "@constants/app";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { useCreateAccountMutation, useListAccountsQuery } from "@store/redux-api/accountsApi";
 import { selectCanCreateMoreAccounts } from "@store/selectors/accounts";
+import { formatToNaira } from "@utils/money";
 
 export default function BankTransferScreen() {
   const isVerified = useTypedSelector(selectIsAccountVerified);
@@ -28,7 +29,7 @@ export default function BankTransferScreen() {
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
-  
+
   const [createDedicatedAccount, { isLoading: isCreatingAccount }] = useCreateAccountMutation();
 
   const canCreateMoreAccounts = useTypedSelector(selectCanCreateMoreAccounts());
@@ -69,12 +70,6 @@ export default function BankTransferScreen() {
             wallet will be credited
           </Text>
 
-          {userAccounts.length > 0 && (
-            <Banner
-              content={`Automated bank transfer attracts additional charges of ${customers.account_deposit_charge_percentage}% only.`}
-            />
-          )}
-
           {userAccounts.length > 0 &&
             userAccounts.map((account) => (
               <View key={account.id}>
@@ -85,6 +80,9 @@ export default function BankTransferScreen() {
                     accountName={account.account_name}
                     bankName={account.bank_name}
                     accountNumber={account.account_number}
+                    feeType={account.fee_type}
+                    chargePercentage={account.charge_percentage}
+                    flatFee={account.flat_fee}
                   />
                 </ImageBackground>
               </View>
@@ -97,7 +95,7 @@ export default function BankTransferScreen() {
             />
           )}
 
-          {userAccounts.length === 0 && (
+          {userAccounts.length === 0 && isVerified && (
             <View style={tw`mt-4`}>
               <Text variant="bodyMedium" style={tw`text-gray-400 mb-6`}>
                 You have not created a wallet for BinaPay. Click the create account button to proceed.
@@ -149,38 +147,75 @@ interface BankCardProps {
   accountName: string;
   bankName: string;
   accountNumber: string;
+  feeType: "percentage" | "flat";
+  chargePercentage?: number;
+  flatFee?: number;
 }
 
-const BankCard: React.FC<BankCardProps> = ({ accountName, bankName, accountNumber }) => {
+export const BankCard: React.FC<BankCardProps> = ({
+  accountName,
+  bankName,
+  accountNumber,
+  feeType,
+  chargePercentage,
+  flatFee,
+}) => {
+  const formattedFee = formatToNaira(flatFee);
+
+  return (
+    <View>
+      <DetailRow label="Account Name" value={accountName} />
+      <DetailRow label="Bank Name" value={bankName} />
+      <DetailRow label="Account Number" value={accountNumber} copyable />
+
+      <View style={tw`border-t border-t-white`}>
+        {feeType === "percentage" ? (
+          <Text style={tw`text-white text-lg`}>
+            Service Fee: <Text style={tw`font-bold text-white`}>{chargePercentage}%</Text>
+          </Text>
+        ) : (
+          <Text style={tw`text-white text-lg`}>
+            Service Fee: <Text style={tw`font-bold text-white`}>{formattedFee}</Text>
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
+interface DetailRowProps {
+  label: string;
+  value: string;
+  copyable?: boolean;
+}
+
+const DetailRow = ({ label, value, copyable = false }: DetailRowProps) => {
+  const { width } = useWindowDimensions();
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
-    await Clipboard.setStringAsync(accountNumber);
+    await Clipboard.setStringAsync(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const halfWidth = width - width / 2;
+
   return (
-    <View>
-      <View style={tw`flex-row justify-between`}>
-        <Text style={tw`text-white`}>Account Name</Text>
-        <Text style={tw`text-base font-bold text-white`}>{accountName}</Text>
-      </View>
-      <View style={tw`flex-row justify-between`}>
-        <Text style={tw`text-white`}>Bank Name</Text>
-        <Text style={tw`text-base font-bold text-white`}>{bankName}</Text>
-      </View>
-      <View style={tw`flex-row items-center justify-between`}>
-        <Text style={tw`text-white`}>Account Number</Text>
+    <View style={tw`flex-row justify-between items-center`}>
+      <Text style={[tw`text-white`, { maxWidth: halfWidth }]}>{label}</Text>
+      {copyable ? (
         <View style={tw`flex-row font-bold items-center`}>
-          <Text style={tw`text-base text-white`}>{accountNumber}</Text>
+          <Text style={tw`text-base text-white text-right`}>{value}</Text>
           <IconButton
             onPress={copyToClipboard}
             icon={copied ? "sticker-check" : (props) => <CopyFill {...props} />}
             iconColor="white"
           />
         </View>
-      </View>
+      ) : (
+        <Text style={[tw`text-white font-semibold text-lg text-right`, { maxWidth: halfWidth }]}>{value}</Text>
+      )}
     </View>
   );
 };

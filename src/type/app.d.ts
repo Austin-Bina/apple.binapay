@@ -138,19 +138,69 @@ export interface CustomerSettings {
   nin_verification_charge: number;
 
   // Percentage charges
-  account_deposit_charge_percentage: number;
   data_charge_percentage: number;
-  epin_charge_percentage: number;
+  epin_discount_percentage: number;
 
   // Discounts (for various services)
   airtime_discount_percentage: number;
   electricity_discount_percentage: number;
-  cable_discount_percentage: number;
-  education_discount_percentage: number;
+  cable_charge_percentage: number;
+  education_charge_percentage: number;
 }
+
+export interface TransactionSettings {
+  airtime: {
+    active: boolean;
+    vendor: string;
+    networks: string[];
+  };
+  data: {
+    active: boolean;
+    vendor: string;
+    networks: string[];
+  };
+  education: {
+    active: boolean;
+    vendor: string;
+    networks: string[];
+  };
+  epin: {
+    active: boolean;
+    vendor: string;
+    networks: string[];
+  };
+  electricity: {
+    active: boolean;
+    vendor: string;
+    networks: string[];
+  };
+  active_payment_processors: PaymentProcessor[];
+  payment_provider_fees: {
+    name: PaymentProcessor;
+    charge_percentage: number;
+    cap: number;
+  }[];
+}
+
+export interface BankAccountSettings {
+  accounts: Array<{
+    account_name: string;
+    account_number: string;
+    bank_name: string;
+  }>;
+  manual_funding_enabled: boolean;
+  manual_funding_fee: number;
+  min_transaction_amount: number;
+  max_transaction_amount: number;
+  daily_transaction_limit: number;
+}
+
 export interface SystemSettings {
   customers: CustomerSettings;
+  transaction: TransactionSettings;
+  bank: BankAccountSettings;
 }
+
 export interface PrintProps {
   appLogo: string; // URL for the logo image
   transactionTitle: string; // Title for the transaction

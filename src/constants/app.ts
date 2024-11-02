@@ -11,19 +11,27 @@ const phone_mask = [/\d/, /\d/, /\d/, /\d/, "  ",/\d/, /\d/, /\d/, " ", /\d/, /\
 
 const defaultSystemSettings: SystemSettings = {
   customers: {
-    bvn_verification_limit: 1,
-    nin_verification_limit: 1,
-    bvn_verification_charge: 10,
-    nin_verification_charge: 60,
+      bvn_verification_limit: 1,
+      nin_verification_limit: 1,
+      bvn_verification_charge: 10,
+      nin_verification_charge: 60,
 
-    airtime_discount_percentage: 0,
-    cable_discount_percentage: 2,
-    education_discount_percentage: 2,
+      airtime_discount_percentage: 0,
+      epin_discount_percentage: 0,
 
-    account_deposit_charge_percentage: 2,
-    data_charge_percentage: 4,
-    epin_charge_percentage: 4,
-    electricity_discount_percentage: 4,
+      data_charge_percentage: 4,
+      electricity_discount_percentage: 4,
+      cable_charge_percentage: 4,
+      education_charge_percentage: 4,
+  },
+  transaction: {} as any,
+  bank: {
+      accounts: [],
+      manual_funding_enabled: false,
+      manual_funding_fee: 20,
+      min_transaction_amount: 100,
+      max_transaction_amount: 1000000,
+      daily_transaction_limit: 5,
   },
 };
 

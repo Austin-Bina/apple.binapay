@@ -300,6 +300,14 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           />
 
           <DropdownMenuField
+            label="Data Type"
+            placeholder="Select Data Type"
+            name="type"
+            control={control}
+            data={dataTypes}
+          />
+
+          <DropdownMenuField
             search
             label="Data Bundle"
             placeholder="Select Data Bundle"
@@ -312,14 +320,6 @@ export default function DataPurchaseScreen({ navigation }: Props) {
                 ...plan,
               });
             }}
-          />
-
-          <DropdownMenuField
-            label="Data Type"
-            placeholder="Select Data Type"
-            name="type"
-            control={control}
-            data={dataTypes}
           />
 
           <View>

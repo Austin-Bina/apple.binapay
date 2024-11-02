@@ -126,7 +126,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   }, [values.smart_card_number]);
 
   const cablePackages = useMemo(() => {
-    const chargePercentage = customers.cable_discount_percentage;
+    const chargePercentage = customers.cable_charge_percentage;
     const plans = queryData?.cable_plans[provider] || [];
     const selectedPeriod = values.period;
 
@@ -394,11 +394,6 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
             <WalletBalanceHelper {...walletValidation} />
           </View>
         </View>
-
-        <Banner
-          style={tw`mb-10`}
-          content={`You get ${customers.cable_discount_percentage}% off when you purchase your TV subscriptions with us`}
-        />
 
         <View style={tw`pb-4 pt-1`}>
           <Button

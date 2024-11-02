@@ -7,7 +7,7 @@ import tw from "@lib/tailwind";
 import { ManualFundStackScreenProps } from "@navigators/types";
 import { BankAccount } from "@type/transaction";
 import { formatToNaira } from "@utils/money";
-import React, { Fragment, useEffect } from "react";
+import React, { Fragment } from "react";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ImageBackground, RefreshControl, View } from "react-native";
@@ -21,6 +21,7 @@ import { showToast } from "@helpers/toast";
 import Banner from "@components/ui/banner";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
+import { useGetSystemSettingsQuery } from "@store/redux-api/systemSettingsApi";
 
 type ManualFundViewProps = ManualFundStackScreenProps<typeof SCREENS.MANUAL_FUND>;
 
@@ -35,11 +36,16 @@ type FormValues = z.infer<typeof schema>;
 export default function ManualFundScreen({ navigation, route }: ManualFundViewProps) {
   const [fetchingBanks, setFetchingBanks] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [transactionReference, setTransactionReference] = useState<string | null>(null);
+
+  const { data: queryData, refetch } = useGetSystemSettingsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
+  });
 
   const { control, watch, setValue, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: "onChange",
     defaultValues: {
       amount: route.params.amount,
       narration: "Manual deposit to account",
@@ -49,28 +55,11 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
 
   const { account_number: selectedAccount, narration } = watch();
   const { amount } = route.params;
+  const bankAccounts = queryData?.bank.accounts ?? [];
 
   const selectedBank = useMemo(() => {
     return bankAccounts.find((bank) => bank.account_number === selectedAccount);
   }, [bankAccounts, selectedAccount]);
-
-  useEffect(() => {
-    getBankAccounts();
-  }, [route.params.amount]);
-
-  const getBankAccounts = async () => {
-    try {
-      setFetchingBanks(true);
-
-      const response = await API.get(apiRoute("funding.banks"));
-      const { accounts } = response.data;
-      setBankAccounts(accounts);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setFetchingBanks(false);
-    }
-  };
 
   const onSubmit = handleSubmit(async (data) => {
     if (transactionReference) {
@@ -103,7 +92,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
   return (
     <Screen>
       <ScrollableView
-        refreshControl={<RefreshControl refreshing={false} onRefresh={getBankAccounts} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}
         contentContainerStyle={tw`justify-between px-4 py-5`}>
         <View>
           <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
