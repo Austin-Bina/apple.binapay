@@ -14,7 +14,12 @@
         "EXPO_PUBLIC_PAYSTACK_KEY": "pk_live_a6adf8f4fb1016e3d95838ec71aa700eff8985f0"
       }
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_BINAPAY_BASE_URL": "https://binapay.co",
+        "EXPO_PUBLIC_PAYSTACK_KEY": "pk_live_a6adf8f4fb1016e3d95838ec71aa700eff8985f0"
+      }
+    }
   },
   "submit": {
     "production": {}
