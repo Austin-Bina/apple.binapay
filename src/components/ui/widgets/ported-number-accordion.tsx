@@ -1,8 +1,8 @@
-import { ArrowRight } from "@components/icons/svg";
 import tw from "@lib/tailwind";
 import React, { useState, useRef, useEffect, Fragment } from "react";
 import { View, Animated, StyleSheet, TouchableWithoutFeedback } from "react-native";
-import { Checkbox, HelperText, Text, TouchableRipple } from "react-native-paper";
+import { Checkbox, Text, TouchableRipple } from "react-native-paper";
+import { vs } from "react-native-size-matters";
 
 type Props = {
   onPress: () => void;
@@ -26,12 +26,16 @@ const PortedNumberAccordion = ({ onPress, checked }: Props) => {
   }, [isExpanded]);
 
   const animatedHeight = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 100],
+    inputRange: [0, vs(1)],
+    outputRange: [0, vs(120)],
   });
 
   return (
-    <View style={tw.style("border border-gray-300 rounded-xl my-4 overflow-hidden", checked && "bg-primary-100 border-primary-100")}>
+    <View
+      style={tw.style(
+        "border border-gray-300 rounded-xl my-4 overflow-hidden",
+        checked && "bg-primary-100 border-primary-100",
+      )}>
       <TouchableRipple onPress={onPress} style={tw`flex-row items-center p-1`}>
         <Fragment>
           <Checkbox status={checked ? "checked" : "indeterminate"} />
