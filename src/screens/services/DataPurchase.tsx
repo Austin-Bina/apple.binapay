@@ -14,7 +14,7 @@ import { z } from "zod";
 import ArrowRight from "@assets/icons/arrow-right.svg";
 import NairaInput from "@components/ui/form/NairaInput";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
-import { scale, vs } from "react-native-size-matters";
+import { scale } from "react-native-size-matters";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
@@ -73,7 +73,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       data_amount: "",
       amount: "0",
       payAmount: 0,
-      ported_number: false,
+      ported_number: true,
       type: "",
     },
     mode: "onChange",
