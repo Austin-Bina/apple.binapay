@@ -113,7 +113,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         const newPrice = planAmount + chargeAmount;
 
         return {
-          label: `${plan.plan} - ${formatToNaira(newPrice)} / ${plan.plan_type}`,
+          label: `${plan.plan} - ${formatToNaira(newPrice)} / ${plan.month_validate}`,
           amount: plan.plan_amount,
           data_amount: plan.plan,
           data_bundle: planId,

@@ -76,7 +76,7 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
 
   const onSubmit = handleSubmit(async function (values) {
     try {
-      await storeDispatch(authSliceActions.doCompleteRegister(values));
+      await storeDispatch(authSliceActions.doCompleteRegister(values)).unwrap();
       navigation.navigate("Register Success");
     } catch (error: any) {
       if (error.errors) {
