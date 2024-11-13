@@ -75,7 +75,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
       phone: user?.phone,
       amount: "0",
       type: "VTU",
-      ported_number: false,
+      ported_number: true,
     },
     mode: "onChange",
   });
@@ -116,7 +116,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
       reset({
         ...values,
         provider: serviceId,
-        ported_number: false,
+        ported_number: true,
       });
     },
     [values],

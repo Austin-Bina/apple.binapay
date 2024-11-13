@@ -152,7 +152,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         type: "",
         data_amount: "",
         data_bundle: "",
-        ported_number: false,
+        ported_number: true,
       });
     },
     [values],
