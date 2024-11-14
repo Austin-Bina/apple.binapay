@@ -176,6 +176,16 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
                 )
                 .otherwise(() => false);
 
+              // 4. Invalid vendor error
+              const invalidVendorError = match(result)
+                .with(
+                  {
+                    error_code: P.string.includes("invalid_vendor"),
+                  },
+                  () => true,
+                )
+                .otherwise(() => false);
+
               if (insufficientBalanceError) {
                 dispatch(
                   setTransactionError({
@@ -202,6 +212,11 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
                       "This number seems to be a ported number. Please try the transaction again after selecting 'Is this a ported number?' option.",
                   }),
                 );
+              } else if (invalidVendorError) {
+                const fullResponse = { ...defaultTransactionResponse, ...result, _refetchPrices: true };
+
+                dispatch(removePendingTransaction());
+                dispatch(setTransactionError(fullResponse as TransactionResponse));
               } else {
                 const fullResponse = { ...defaultTransactionResponse, ...result };
                 dispatch(removePendingTransaction());

@@ -48,6 +48,7 @@ const schema = z.object({
   payAmount: z.number(),
   amount: z.string(),
   type: z.string(),
+  vendor: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -56,15 +57,17 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   const [isContactModalVisible, setIsContactModalVisible] = useState(false);
 
   const { data, isFetching, isError, refetch } = useGetDataPlansQuery();
+
   const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
     ifOlderThan: MAX_CACHE_AGE_SEC,
   });
+
   const user = useTypedSelector(selectUser);
   const { customers } = useTypedSelector(selectSystemSettings);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
-  const { control, watch, trigger, clearErrors, setError, reset, handleSubmit } = useForm<FormValues>({
+  const { control, watch, trigger, clearErrors, setError, reset, setValue, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: getDefaultProvider(user?.phone),
@@ -75,12 +78,17 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       payAmount: 0,
       ported_number: true,
       type: "",
+      vendor: data?.vendor,
     },
     mode: "onChange",
   });
 
   const values = watch();
   const provider = values.provider as InternetProviders;
+
+  useEffect(() => {
+    setValue("vendor", data?.vendor);
+}, [data?.vendor]);
 
   useEffect(() => {
     prefetchSystemSettings();

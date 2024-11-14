@@ -20,6 +20,7 @@ import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { SCREENS } from "@constants/screens";
 import RequestOneTimePasswordScreen from "@screens/auth/RequestOneTimePassword";
 import ResetPasswordScreen from "@screens/auth/ResetPassword";
+import UpdatePrompt from "@components/UpdatePrompt";
 
 const Stack = createNativeStackNavigator<StackParamList>();
 
@@ -75,6 +76,7 @@ function Router() {
         </BottomSheetModalProvider>
       </NavigationContainer>
       <PleaseWaitModal visible={isFetchingProfile} />
+      <UpdatePrompt />
     </KeyboardAvoidingView>
   );
 }

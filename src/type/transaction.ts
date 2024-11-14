@@ -59,6 +59,7 @@ export interface TransactionResponse {
   title: string;
   description: string;
   transaction_info: TransactionInfo;
+  _refetchPrices?: boolean;
   errorFields?: {
     name: any;
     message: any;

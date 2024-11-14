@@ -8,6 +8,7 @@ import { Card, Text } from "react-native-paper";
 import tw from "@lib/tailwind";
 import { Colors } from "@constants/theme/colors";
 import { SadFace } from "@components/icons/svg";
+import { resetNavigationToDashboard } from "@utils/navigation";
 
 const TransactionErrorSheet = () => {
   const bottomSheetRef = useRef<BottomSheetModalMethods>(null);
@@ -16,7 +17,11 @@ const TransactionErrorSheet = () => {
 
   const handleDismiss = useCallback(() => {
     dispatch(clearTransactionError());
-  }, [dispatch]);
+
+    if(error?._refetchPrices) {
+      resetNavigationToDashboard();
+    }
+  }, [dispatch, error]);
 
   useEffect(() => {
     if (error) {

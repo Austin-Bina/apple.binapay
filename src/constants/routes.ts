@@ -76,6 +76,9 @@ export const routes = {
         conversations: "/api/v1/support/conversations/:conversationId",
         history: "/api/v1/support/tickets",
       },
+      resources: {
+        checkAppVersion: "/api/v1/resources/check-app-version",
+      },
     },
   },
   web: {

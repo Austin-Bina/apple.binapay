@@ -2,9 +2,11 @@ import { route } from "@helpers/route";
 import { axiosBaseQuery } from "@lib/api";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { CablePlan, DataPlan, EducationPlan, EpinPlan, ServiceDetails } from "@type/app";
+import { defaultQueryOptions } from "@utils/query";
 
 interface DataResponse {
   service: "data" | "airtime" | "cable-tv" | "electricity" | "education";
+  vendor: string;
   data_plans: {
     mtn: DataPlan[];
     glo: DataPlan[];
@@ -15,6 +17,7 @@ interface DataResponse {
 
 interface CableResponse {
   service: "cable-tv";
+  vendor: string;
   cable_plans: {
     [key: string]: CablePlan[];
   };
@@ -22,11 +25,13 @@ interface CableResponse {
 
 interface EducationResponse {
   service: "education";
+  vendor: string;
   education_plans: EducationPlan[];
 }
 
 interface EpinPurchaseResponse {
   service: "epin-purchase";
+  vendor: string;
   epins_plans: {
     mtn: EpinPlan[];
     glo: EpinPlan[];
@@ -49,6 +54,7 @@ export const utilityBillsQueryApi = createApi({
   reducerPath: "utilityBillsApi",
   baseQuery: axiosBaseQuery(),
   tagTypes: ["Data", "Cable", "Education", "Education Service Details", "Epin"],
+  ...defaultQueryOptions,
   endpoints: (builder) => ({
     getDataPlans: builder.query<DataResponse, void>({
       query: () => ({

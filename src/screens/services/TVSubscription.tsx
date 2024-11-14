@@ -56,6 +56,7 @@ const schema = z.object({
   package_name: z.string(),
   phone: zodPhoneValidation,
   period: z.string(),
+  vendor: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -83,6 +84,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
     refetchOnMountOrArgChange: true,
     refetchOnReconnect: true,
   });
+  
   const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
     ifOlderThan: MAX_CACHE_AGE_SEC,
   });
@@ -104,11 +106,16 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
       customer_name: "",
       package_name: "",
       phone: user?.phone,
+      vendor: queryData?.vendor,
     },
   });
 
   const values = watch();
   const provider = values.provider;
+
+  useEffect(() => {
+    setValue("vendor", queryData?.vendor);
+}, [queryData?.vendor]);
 
   useEffect(() => {
     prefetchSystemSettings();

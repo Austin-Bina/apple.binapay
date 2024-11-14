@@ -58,6 +58,10 @@ export default function HomeScreen({ navigation }: Props) {
     ifOlderThan: MAX_CACHE_AGE_SEC,
   });
 
+  const checkAppVersion = useSystemSettingsPrefetch("checkAppVersion", {
+    ifOlderThan: MAX_CACHE_AGE_SEC,
+  });
+
   const prefetchNotifications = useNotificationsPrefetch("fetchNotifications", {
     ifOlderThan: 5,
   });
@@ -75,6 +79,7 @@ export default function HomeScreen({ navigation }: Props) {
 
     prefetchNotifications({ page: 1 });
     prefetchSettings();
+    checkAppVersion();
   }, [dispatch]);
 
   const initCable = useCallback(() => {

@@ -40,6 +40,7 @@ const schema = z.object({
   final_amount: zodAmountValidation(100),
   quantity: z.string().refine((val) => !isNaN(Number(val)), { message: "Please enter a valid quantity" }),
   business_name: z.string().trim().min(1, { message: "Please enter a business name" }),
+  vendor: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -67,6 +68,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
       final_amount: "",
       quantity: "1",
       business_name: user?.name,
+      vendor: queryData?.vendor,
     },
     mode: "onChange",
   });
@@ -74,6 +76,10 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const values = watch();
   const provider = values.provider as InternetProviders;
+
+  useEffect(() => {
+    setValue("vendor", queryData?.vendor);
+}, [queryData?.vendor]);
 
   useEffect(() => {
     prefetchSystemSettings();

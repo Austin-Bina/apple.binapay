@@ -5,7 +5,7 @@ import type { BaseQueryFn } from "@reduxjs/toolkit/query";
 
 const API: AxiosInstance = axios.create({
   baseURL: env.BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
 });
 
 API.interceptors.request.use(
