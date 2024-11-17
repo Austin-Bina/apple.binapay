@@ -54,7 +54,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
-  const { customers } = useTypedSelector(selectSystemSettings);
+  const { customers, transaction } = useTypedSelector(selectSystemSettings);
   const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
     ifOlderThan: MAX_CACHE_AGE_SEC,
   });
@@ -110,6 +110,11 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
     const types = serviceProvidersMap.internet[selected].type;
     return types;
   }, [values.provider]);
+
+  const airtimeProviders = useMemo(
+    () => Object.values(serviceProvidersMap.internet).filter((p) => transaction.airtime.networks.includes(p.serviceId)),
+    [transaction.airtime],
+  );
 
   const onSelectProvider = useCallback(
     (serviceId: string) => {
@@ -189,7 +194,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
             Top up your mobile credit instantly! Enter the details below to purchase airtime for your mobile phone
           </Text>
           <FlatList
-            data={Object.values(serviceProvidersMap.internet)}
+            data={airtimeProviders}
             renderItem={({ item: provider }) => (
               <TouchableOpacity
                 key={provider.serviceId}
@@ -201,6 +206,11 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
                 <Image source={provider.logo} width={scale(45)} />
               </TouchableOpacity>
             )}
+            ListEmptyComponent={
+              <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
+                <Text>No airtime providers available</Text>
+              </View>
+            }
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`items-center`}
@@ -276,7 +286,7 @@ export default function AirtimePurchaseScreen({ navigation }: Props) {
         <Button
           style={tw`w-full rounded-full mt-4`}
           contentStyle={tw`py-2`}
-          disabled={!walletValidation.canPay}
+          disabled={!walletValidation.canPay || airtimeProviders.length === 0}
           labelStyle={tw`text-white text-center text-base font-bold`}
           onPress={openBottomSheet}
           mode="contained">

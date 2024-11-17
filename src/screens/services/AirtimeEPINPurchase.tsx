@@ -53,7 +53,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
   const user = useTypedSelector(selectUser);
   const dispatch = useTypedDispatch();
-  const { customers } = useTypedSelector(selectSystemSettings);
+  const { customers, transaction } = useTypedSelector(selectSystemSettings);
 
   const { data: queryData, isFetching, isError, refetch } = useGetEpinPlansQuery();
   const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
@@ -79,7 +79,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
 
   useEffect(() => {
     setValue("vendor", queryData?.vendor);
-}, [queryData?.vendor]);
+  }, [queryData?.vendor]);
 
   useEffect(() => {
     prefetchSystemSettings();
@@ -119,19 +119,24 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
     const plans = queryData?.epins_plans[provider] || [];
 
     const chargedPlans = plans.map((plan) => {
-        const planAmount = parseFloat(`${plan.plan_amount}`);
+      const planAmount = parseFloat(`${plan.plan_amount}`);
 
-        return {
-            ...plan,
-            plan_amount: planAmount,
-            amount: plan.id,
-            // For client, update the final amount here, used by reset
-            final_amount: plan.plan_amount,
-        };
+      return {
+        ...plan,
+        plan_amount: planAmount,
+        amount: plan.id,
+        // For client, update the final amount here, used by reset
+        final_amount: plan.plan_amount,
+      };
     });
 
     return chargedPlans;
-}, [queryData]);
+  }, [queryData]);
+
+  const dataProviders = useMemo(
+    () => Object.values(serviceProvidersMap.internet).filter((p) => transaction.epin.networks.includes(p.serviceId)),
+    [transaction.epin],
+  );
 
   const quantityOptions = queryData?.quantity_options || [];
 
@@ -200,7 +205,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
             Easily purchase airtime EPIN and print them for distribution. Enter the details below to proceed.
           </Text>
           <FlatList
-            data={Object.values(serviceProvidersMap.internet)}
+            data={dataProviders}
             renderItem={({ item: provider }) => (
               <TouchableOpacity
                 key={provider.serviceId}
@@ -212,6 +217,11 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
                 <Image source={provider.logo} width={scale(45)} />
               </TouchableOpacity>
             )}
+            ListEmptyComponent={
+              <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
+                <Text>No ePIN providers available</Text>
+              </View>
+            }
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`items-center`}
@@ -300,7 +310,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
           contentStyle={tw`py-2`}
           labelStyle={tw`text-white text-center text-base font-bold`}
           onPress={openBottomSheet}
-          disabled={!walletValidation.canPay}
+          disabled={!walletValidation.canPay || dataProviders.length === 0}
           mode="contained">
           Proceed
         </Button>

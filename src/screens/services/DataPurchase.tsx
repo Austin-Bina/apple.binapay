@@ -63,7 +63,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   });
 
   const user = useTypedSelector(selectUser);
-  const { customers } = useTypedSelector(selectSystemSettings);
+  const { customers, transaction } = useTypedSelector(selectSystemSettings);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
@@ -88,7 +88,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   useEffect(() => {
     setValue("vendor", data?.vendor);
-}, [data?.vendor]);
+  }, [data?.vendor]);
 
   useEffect(() => {
     prefetchSystemSettings();
@@ -145,6 +145,11 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       id: type,
     }));
   }, [dataPlans, data]);
+
+  const dataProviders = useMemo(
+    () => Object.values(serviceProvidersMap.internet).filter((p) => transaction.data.networks.includes(p.serviceId)),
+    [transaction.data],
+  );
 
   const extraPlanDetails = useMemo(() => {
     return calculateTransactionDetails(parseFloat(values.amount) || 0, "data", customers);
@@ -240,7 +245,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           </Text>
 
           <FlatList
-            data={Object.values(serviceProvidersMap.internet)}
+            data={dataProviders}
             renderItem={({ item: provider }) => (
               <TouchableOpacity
                 key={provider.serviceId}
@@ -252,6 +257,11 @@ export default function DataPurchaseScreen({ navigation }: Props) {
                 <Image source={provider.logo} width={scale(45)} />
               </TouchableOpacity>
             )}
+            ListEmptyComponent={
+              <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
+                <Text>No data providers available</Text>
+              </View>
+            }
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`items-center`}
@@ -346,7 +356,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         <Button
           style={tw`w-full rounded-full mt-4`}
           contentStyle={tw`py-2`}
-          disabled={!walletValidation.canPay}
+          disabled={!walletValidation.canPay || dataProviders.length === 0}
           labelStyle={tw`text-white text-center text-base font-bold`}
           onPress={openBottomSheet}
           mode="contained">

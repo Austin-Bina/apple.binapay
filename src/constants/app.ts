@@ -24,7 +24,23 @@ const defaultSystemSettings: SystemSettings = {
       cable_charge_percentage: 4,
       education_charge_percentage: 4,
   },
-  transaction: {} as any,
+  transaction: {
+      airtime: {
+          active: true,
+          vendor: "",
+          networks: [],
+      },
+      data: {
+          active: true,
+          vendor: "",
+          networks: [],
+      },
+      epin: {
+          active: true,
+          vendor: "",
+          networks: [],
+      },
+  } as any,
   bank: {
       accounts: [],
       manual_funding_enabled: false,
