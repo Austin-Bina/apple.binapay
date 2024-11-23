@@ -113,7 +113,7 @@ export default function ViewTransaction({ route }: Props) {
                   {pageData.transactionDetails.map((item) => (
                     <View key={item.value} style={tw`flex-row justify-between`}>
                       <Text variant="labelSmall">{item.label}:</Text>
-                      <Text style={[tw`font-bold text-right`, { maxWidth: width - width / 2 }]}>{item.value}</Text>
+                      <Text selectable selectionColor={Colors.primary[200]} style={[tw`font-bold text-right`, { maxWidth: width - width / 2 }]}>{item.value}</Text>
                     </View>
                   ))}
                 </View>

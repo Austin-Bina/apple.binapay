@@ -39,7 +39,14 @@ export const systemSettingsApi = createApi({
         params: { version: currentVersion, os },
       }),
       transformResponse: (response: VersionCheckResponse) => {
-        return  ({...defaultVersionCheckResponse, ...response })
+        return { ...defaultVersionCheckResponse, ...response };
+      },
+      merge: (existing, incoming) => {
+        if (existing.updateAvailable) {
+          return incoming;
+        }
+
+        return existing;
       },
     }),
   }),

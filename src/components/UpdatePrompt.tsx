@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Linking } from "react-native";
 import { Button, Dialog, Paragraph, Portal } from "react-native-paper";
 import tw from "@lib/tailwind";
@@ -8,11 +8,21 @@ import { useTypedDispatch } from "@store/common";
 import { defaultVersionCheckResponse } from "@helpers/notification";
 
 const UpdatePrompt: React.FC = () => {
-  const { data: updateInfo } = useCheckAppVersionQuery();
+  const [skipped, setSkipped] = useState(false);
+
+  const { data: updateInfo } = useCheckAppVersionQuery(undefined, {
+    skip: skipped,
+    pollingInterval: 15000,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    skipPollingIfUnfocused: true,
+  });
+
   const dispatch = useTypedDispatch();
-  
+
   const { latestVersion, updateUrl, isForced, updateAvailable } = updateInfo || defaultVersionCheckResponse;
-  
+
   const dismissAppUpdateModal = () => {
     dispatch(
       systemSettingsApi.util.updateQueryData("checkAppVersion", undefined, (draft) => {
@@ -21,17 +31,21 @@ const UpdatePrompt: React.FC = () => {
         }
       }),
     );
+    setSkipped(true);
   };
-  
+
   const currentVersion = Application.nativeBuildVersion || "";
-  
+
   const handleUpdate = () => {
     Linking.openURL(updateUrl);
   };
 
   return (
     <Portal>
-      <Dialog visible={updateAvailable} onDismiss={isForced ? undefined : dismissAppUpdateModal} dismissable={!isForced}>
+      <Dialog
+        visible={updateAvailable}
+        onDismiss={isForced ? undefined : dismissAppUpdateModal}
+        dismissable={!isForced}>
         <Dialog.Title>Update Available</Dialog.Title>
         <Dialog.Content>
           <Paragraph>

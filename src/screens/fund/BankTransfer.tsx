@@ -6,11 +6,10 @@ import { useTypedSelector } from "@store/common";
 import { selectIsAccountVerified } from "@store/selectors/auth";
 import { useEffect, useMemo, useState } from "react";
 import { ImageBackground, View, useWindowDimensions } from "react-native";
-import { Button, IconButton, Text } from "react-native-paper";
+import { ActivityIndicator, Button, IconButton, Text } from "react-native-paper";
 import * as Clipboard from "expo-clipboard";
 import { SCREENS } from "@constants/screens";
 import { getNavigate } from "@utils/navigation";
-import { selectSystemSettings } from "@store/selectors/settings";
 import { CopyFill } from "@components/icons/svg";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
@@ -18,12 +17,12 @@ import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { useCreateAccountMutation, useListAccountsQuery } from "@store/redux-api/accountsApi";
 import { selectCanCreateMoreAccounts } from "@store/selectors/accounts";
 import { formatToNaira } from "@utils/money";
+import { Colors } from "@constants/theme/colors";
 
 export default function BankTransferScreen() {
   const isVerified = useTypedSelector(selectIsAccountVerified);
-  const { customers } = useTypedSelector(selectSystemSettings);
 
-  const { data: accountsQuery } = useListAccountsQuery(undefined, {
+  const { data: accountsQuery, isLoading } = useListAccountsQuery(undefined, {
     pollingInterval: 15000,
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
@@ -70,6 +69,15 @@ export default function BankTransferScreen() {
             wallet will be credited
           </Text>
 
+          {isLoading && <ActivityIndicator size="large" color={Colors.primary.DEFAULT} />}
+
+          {!isVerified && (
+            <Banner
+              title="Please verify your account to use this feature"
+              content="This feature is only available for verified users with dedicated accounts."
+            />
+          )}
+
           {userAccounts.length > 0 &&
             userAccounts.map((account) => (
               <View key={account.id}>
@@ -87,13 +95,6 @@ export default function BankTransferScreen() {
                 </ImageBackground>
               </View>
             ))}
-
-          {!isVerified && (
-            <Banner
-              title="Please verify your account to use this feature"
-              content="This feature is only available for verified users with dedicated accounts."
-            />
-          )}
 
           {userAccounts.length === 0 && isVerified && (
             <View style={tw`mt-4`}>

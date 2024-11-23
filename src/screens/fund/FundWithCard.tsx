@@ -49,13 +49,12 @@ export default function FundWithCardScreen() {
       <ScrollableView contentContainerStyle={tw`justify-between px-4 py-5`}>
         <View>
           <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-            Fund with Card
+            Fund with Paystack
           </Text>
           <Text variant="bodyMedium" style={tw`text-gray-400`}>
-            Use your card to conveniently add funds to your BinaPay wallet.
+            We support major payment methods such as credit/debit cards, bank transfers, and more.
           </Text>
           <Banner style={tw`mt-6`} content="Funding wallet with card attracts additional charges of 4% only." />
-
           <View>
             <NairaInput name="amount" control={control} />
             <View style={tw`bg-green-50 mt-4 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full`}>
@@ -87,7 +86,8 @@ export default function FundWithCardScreen() {
           billingName={user.name}
           phone={user.phone}
           amount={amount}
-          channels={["card"]}
+          // @ts-ignore
+          channels={["card", "bank_transfer", "ussd", "bank"]}
           onCancel={(e) => {}}
           onSuccess={resetNavigationToDashboard}
           activityIndicatorColor={Colors.primary.DEFAULT}
