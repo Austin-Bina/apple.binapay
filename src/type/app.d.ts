@@ -40,6 +40,9 @@ export interface DataPlan {
   month_validate: string;
   plan: string;
   plan_amount: string;
+  fee: number;
+  fee_type: "flat" | "percentage";
+  vendor: string;
 }
 export interface CablePlan {
   cable: string;
@@ -138,7 +141,6 @@ export interface CustomerSettings {
   nin_verification_charge: number;
 
   // Percentage charges
-  data_charge_percentage: number;
   epin_discount_percentage: number;
 
   // Discounts (for various services)
@@ -177,6 +179,8 @@ export interface TransactionSettings {
   active_payment_processors: PaymentProcessor[];
   payment_provider_fees: {
     name: PaymentProcessor;
+    fee_type: "percentage" | "flat";
+    flat_fee: number;
     charge_percentage: number;
     cap: number;
   }[];

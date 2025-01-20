@@ -1,9 +1,14 @@
-import { CustomerSettings } from "@type/app";
+import { PaymentProcessor } from "@enum/providers";
+import { CustomerSettings, TransactionSettings } from "@type/app";
 import { formatNumber } from "react-native-currency-input";
 import { z } from "zod";
 
-function convertToNaira(rawAmount: number | string = 0, prefix: boolean = true): string {
-  let parsedAmount = typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
+function convertToNaira(
+  rawAmount: number | string = 0,
+  prefix: boolean = true
+): string {
+  let parsedAmount =
+    typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
 
   if (isNaN(parsedAmount)) {
     parsedAmount = 0;
@@ -44,7 +49,8 @@ const zodAmountValidation = (minAmount: number = 0, format = false) =>
   z
     .union([z.string().trim(), z.number()])
     .transform((val) => {
-      const numericValue = typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
+      const numericValue =
+        typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
 
       return `${numericValue}`;
     })
@@ -55,15 +61,16 @@ const zodAmountValidation = (minAmount: number = 0, format = false) =>
       },
       {
         message: `Amount must not be less than ${format ? formatToNaira(minAmount) : minAmount}`,
-      },
+      }
     );
 
 function calculateTransactionDetails(
   amount: number,
   service: "airtime" | "data" | "cable" | "education" | "epin" | "electricity",
-  customers: CustomerSettings,
+  customers: CustomerSettings
 ) {
-  const discountKey = `${service}_discount_percentage` as keyof CustomerSettings;
+  const discountKey =
+    `${service}_discount_percentage` as keyof CustomerSettings;
   const discountPercentage = customers[discountKey] || 0;
 
   const chargeKey = `${service}_charge_percentage` as keyof CustomerSettings;
@@ -88,4 +95,38 @@ function calculateTransactionDetails(
   return result;
 }
 
-export { convertToNaira, formatToNaira, zodAmountValidation, calculateTransactionDetails };
+const calculateSettlementAmount = (
+  amount: number = 0,
+  provider: PaymentProcessor,
+  options: TransactionSettings["payment_provider_fees"] = []
+) => {
+  const providerFee = options.find((opt) => opt.name === provider);
+  let finalAmount = amount;
+
+  if (providerFee) {
+    const type = providerFee.fee_type;
+
+    const feePercentage = providerFee.charge_percentage;
+    const feeCap = providerFee.cap;
+
+    if (type === "percentage") {
+      const calculatedFee = Math.min(amount * (feePercentage / 100), feeCap);
+      finalAmount = amount - calculatedFee;
+    } else if (type === "flat") {
+      finalAmount = amount - Math.min(providerFee.flat_fee, feeCap);
+    }
+  }
+
+  return {
+    amount: finalAmount,
+    config: providerFee,
+  };
+};
+
+export {
+  convertToNaira,
+  formatToNaira,
+  zodAmountValidation,
+  calculateTransactionDetails,
+  calculateSettlementAmount,
+};

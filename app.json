@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.binapay",
@@ -25,7 +27,13 @@
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.binapay"
+      "package": "com.binapay",
+      "permissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ]
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
@@ -49,6 +57,12 @@
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts. We use this permission to fetch your contacts and select a contact to buy or gift services to."
         }
       ]
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/911c2695-3035-4a30-8054-9f2bc7b63ee8"
+    }
   }
 }

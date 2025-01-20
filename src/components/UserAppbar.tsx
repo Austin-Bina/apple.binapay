@@ -32,7 +32,7 @@ export default memo(function UserAppbar() {
         <View style={tw`flex flex-col items-center justify-center rounded-full border border-emerald-100`}>
           <AvatarImage avatar={user?.avatar} size={48} svgProps={{ width: 48, height: 48 }} />
         </View>
-        <View style={tw.style(`flex flex-col items-start justify-start`, { width: s(width - 150) })}>
+        <View style={tw.style(`flex flex-col items-start justify-start`, { width: s(width - 250) })}>
           <Text numberOfLines={1} ellipsizeMode="tail" style={tw`text-gray-900 text-xl font-semibold`}>
             Hi, {user?.name} 👋🏽
           </Text>

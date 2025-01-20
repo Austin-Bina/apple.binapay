@@ -19,7 +19,6 @@ const defaultSystemSettings: SystemSettings = {
       airtime_discount_percentage: 0,
       epin_discount_percentage: 0,
 
-      data_charge_percentage: 4,
       electricity_discount_percentage: 4,
       cable_charge_percentage: 4,
       education_charge_percentage: 4,

@@ -5,9 +5,21 @@ import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { zodResolver } from "@hookform/resolvers/zod";
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FlatList, Keyboard, RefreshControl, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  Keyboard,
+  RefreshControl,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text } from "react-native-paper";
 import { z } from "zod";
@@ -56,18 +68,35 @@ type FormValues = z.infer<typeof schema>;
 export default function DataPurchaseScreen({ navigation }: Props) {
   const [isContactModalVisible, setIsContactModalVisible] = useState(false);
 
-  const { data, isFetching, isError, refetch } = useGetDataPlansQuery();
+  const {
+    data: queryData,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetDataPlansQuery();
 
-  const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
-    ifOlderThan: MAX_CACHE_AGE_SEC,
-  });
+  const prefetchSystemSettings = useSystemSettingsPrefetch(
+    "getSystemSettings",
+    {
+      ifOlderThan: MAX_CACHE_AGE_SEC,
+    }
+  );
 
   const user = useTypedSelector(selectUser);
   const { customers, transaction } = useTypedSelector(selectSystemSettings);
   const dispatch = useTypedDispatch();
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
-  const { control, watch, trigger, clearErrors, setError, reset, setValue, handleSubmit } = useForm<FormValues>({
+  const {
+    control,
+    watch,
+    trigger,
+    clearErrors,
+    setError,
+    reset,
+    setValue,
+    handleSubmit,
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: getDefaultProvider(user?.phone),
@@ -78,7 +107,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       payAmount: 0,
       ported_number: true,
       type: "",
-      vendor: data?.vendor,
+      vendor: "",
     },
     mode: "onChange",
   });
@@ -87,12 +116,8 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   const provider = values.provider as InternetProviders;
 
   useEffect(() => {
-    setValue("vendor", data?.vendor);
-  }, [data?.vendor]);
-
-  useEffect(() => {
     prefetchSystemSettings();
-  }, []);
+  }, [prefetchSystemSettings]);
 
   const revalidatePhone = usePhoneValidation({
     phone: values.phone,
@@ -107,8 +132,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   });
 
   const dataPlans = useMemo(() => {
-    const chargePercentage = customers.data_charge_percentage;
-    const plans = data?.data_plans[provider] || [];
+    const plans = queryData?.data_plans[provider] || [];
     const type = values.type;
 
     const chargedPlans = plans
@@ -117,26 +141,33 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         const planId = plan.id.toString();
 
         const planAmount = parseFloat(plan.plan_amount);
-        const chargeAmount = (chargePercentage / 100) * planAmount;
-        const newPrice = planAmount + chargeAmount;
+        const fee = plan.fee;
+        const feeType = plan.fee_type;
+        const newPrice =
+          feeType === "percentage"
+            ? planAmount * (1 + fee / 100)
+            : planAmount + fee;
 
         return {
-          label: `${plan.plan} - ${formatToNaira(newPrice)} ${plan.month_validate}`,
+          label: `${plan.plan} - ${formatToNaira(newPrice)} ${
+            plan.month_validate
+          }`,
           amount: plan.plan_amount,
           data_amount: plan.plan,
           data_bundle: planId,
           type: plan.plan_type,
           payAmount: newPrice,
           id: planId,
+          vendor: plan.vendor,
         };
       });
 
     return chargedPlans;
-  }, [data, values.provider, values.type, customers]);
+  }, [queryData, values.provider, values.type]);
 
   const dataTypes = useMemo(() => {
     const types = new Set<string>();
-    const plans = data?.data_plans[provider] || [];
+    const plans = queryData?.data_plans[provider] || [];
 
     plans.forEach((plan) => types.add(plan.plan_type));
 
@@ -144,15 +175,22 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       label: type,
       id: type,
     }));
-  }, [dataPlans, data]);
+  }, [dataPlans, queryData]);
 
   const dataProviders = useMemo(
-    () => Object.values(serviceProvidersMap.internet).filter((p) => transaction.data.networks.includes(p.serviceId)),
-    [transaction.data],
+    () =>
+      Object.values(serviceProvidersMap.internet).filter((p) =>
+        transaction.data.networks.includes(p.serviceId)
+      ),
+    [transaction.data]
   );
 
   const extraPlanDetails = useMemo(() => {
-    return calculateTransactionDetails(parseFloat(values.amount) || 0, "data", customers);
+    return calculateTransactionDetails(
+      parseFloat(values.amount) || 0,
+      "data",
+      customers
+    );
   }, [values.amount, customers]);
 
   const snapSize = "58%";
@@ -166,9 +204,10 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         data_amount: "",
         data_bundle: "",
         ported_number: true,
+        vendor: "",
       });
     },
-    [values],
+    [values]
   );
 
   const openBottomSheet = useCallback(async () => {
@@ -217,7 +256,11 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   };
 
   const handleSelectContact = (phoneNumber: string) => {
-    reset({ ...values, phone: phoneNumber, provider: getDefaultProvider(phoneNumber) });
+    reset({
+      ...values,
+      phone: phoneNumber,
+      provider: getDefaultProvider(phoneNumber),
+    });
   };
 
   const transactionDetails = [
@@ -228,20 +271,27 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     },
     { label: "Data Amount", value: values.data_amount },
     { label: "Number", value: values.phone },
-    ...Object.keys(extraPlanDetails).map((key) => ({ label: key, value: extraPlanDetails[key] })),
+    ...Object.keys(extraPlanDetails).map((key) => ({
+      label: key,
+      value: extraPlanDetails[key],
+    })),
   ];
 
   return (
     <Screen>
       <ScrollableView
         contentContainerStyle={tw`justify-between px-4 py-5`}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} />}>
+        refreshControl={
+          <RefreshControl refreshing={false} onRefresh={onRefresh} />
+        }
+      >
         <View>
           <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
             Buy Data Bundle
           </Text>
           <Text variant="bodySmall" style={tw`text-gray-500`}>
-            Stay connected with our data bundles! Select your preferred options below to purchase a data bundle.
+            Stay connected with our data bundles! Select your preferred options
+            below to purchase a data bundle.
           </Text>
 
           <FlatList
@@ -253,7 +303,8 @@ export default function DataPurchaseScreen({ navigation }: Props) {
                 style={[
                   tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
                   values.provider === provider.serviceId && tw`border-blue-500`,
-                ]}>
+                ]}
+              >
                 <Image source={provider.logo} width={scale(45)} />
               </TouchableOpacity>
             )}
@@ -270,7 +321,9 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
           {isError && !isFetching && (
             <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
-              <Text variant="bodySmall">We had trouble loading your data plans. Please try again.</Text>
+              <Text variant="bodySmall">
+                We had trouble loading your data plans. Please try again.
+              </Text>
               <Button onPress={onRefresh} textColor={Colors.primary[500]}>
                 Try again
               </Button>
@@ -280,7 +333,10 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           <Controller
             control={control}
             name="phone"
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
               <MaskedInput
                 mask={phone_mask}
                 label="Phone Number"
@@ -298,7 +354,9 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           <View style={tw`flex-row justify-end`}>
             <TouchableOpacity onPress={handleOpenContactModal}>
               <View style={tw`flex-row items-center gap-1`}>
-                <Text style={tw`text-primary text-xs`}>Select from Contact</Text>
+                <Text style={tw`text-primary text-xs`}>
+                  Select from Contact
+                </Text>
                 <ArrowRight width={20} />
               </View>
             </TouchableOpacity>
@@ -345,8 +403,13 @@ export default function DataPurchaseScreen({ navigation }: Props) {
             <WalletBalanceHelper {...walletValidation} />
           </View>
           {values.data_amount && (
-            <View style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}>
-              <Text variant="bodyMedium" style={tw`text-green-600 text-center font-bold`}>
+            <View
+              style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}
+            >
+              <Text
+                variant="bodyMedium"
+                style={tw`text-green-600 text-center font-bold`}
+              >
                 You get {values.data_amount}
               </Text>
             </View>
@@ -359,7 +422,8 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           disabled={!walletValidation.canPay || dataProviders.length === 0}
           labelStyle={tw`text-white text-center text-base font-bold`}
           onPress={openBottomSheet}
-          mode="contained">
+          mode="contained"
+        >
           Proceed
         </Button>
       </ScrollableView>
