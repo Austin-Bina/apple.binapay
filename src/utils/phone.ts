@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { CountryCode, parsePhoneNumber } from "libphonenumber-js/min";
-import { CountryCode as ModalCountryCode } from "react-native-country-picker-modal";
 import { providerNumberCodes } from "@constants/providers";
 
 const phoneSchema = z
   .string()
-  .transform((val) => formatPhone(val))
+  .transform((val) => formatPhone(val.replace(/\s+/g, '')))
   .refine((phone) => {
     try {
       const parsed = parsePhoneNumber(phone, "NG");
