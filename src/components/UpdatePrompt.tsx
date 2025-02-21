@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Linking } from "react-native";
 import { Button, Dialog, Paragraph, Portal } from "react-native-paper";
 import tw from "@lib/tailwind";
@@ -7,20 +7,15 @@ import { systemSettingsApi, useCheckAppVersionQuery } from "@store/redux-api/sys
 import { useTypedDispatch } from "@store/common";
 import { defaultVersionCheckResponse } from "@helpers/notification";
 
-const UpdatePrompt: React.FC = () => {
-  const [skipped, setSkipped] = useState(false);
+interface UpdatePromptProps {
+  onDismiss: () => void;
+}
 
-  const { data: updateInfo } = useCheckAppVersionQuery(undefined, {
-    skip: skipped,
-    pollingInterval: 15000,
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-    skipPollingIfUnfocused: true,
-  });
-
+const UpdatePrompt: React.FC<UpdatePromptProps> = ({ onDismiss }) => {
   const dispatch = useTypedDispatch();
+  const currentVersion = Application.nativeBuildVersion || "";
 
+  const { data: updateInfo } = useCheckAppVersionQuery(undefined);
   const { latestVersion, updateUrl, isForced, updateAvailable } = updateInfo || defaultVersionCheckResponse;
 
   const dismissAppUpdateModal = () => {
@@ -29,12 +24,10 @@ const UpdatePrompt: React.FC = () => {
         if (draft) {
           draft.updateAvailable = false;
         }
-      }),
+      })
     );
-    setSkipped(true);
+    onDismiss();
   };
-
-  const currentVersion = Application.nativeBuildVersion || "";
 
   const handleUpdate = () => {
     Linking.openURL(updateUrl);
@@ -49,15 +42,16 @@ const UpdatePrompt: React.FC = () => {
         <Dialog.Title>Update Available</Dialog.Title>
         <Dialog.Content>
           <Paragraph>
-            A new version of the app is available. Your current version is {currentVersion}, and the latest version is{" "}
-            {latestVersion}.
-          </Paragraph>
-          <Paragraph style={tw`mt-2`}>
-            {isForced ? "This update is required to continue using the app." : "Would you like to update now?"}
+            A new version ({latestVersion}) of the app is available. Your current version is {currentVersion}.
+            {isForced ? " This update is required to continue using the app." : ""}
           </Paragraph>
         </Dialog.Content>
         <Dialog.Actions>
-          {!isForced && <Button onPress={dismissAppUpdateModal}>Later</Button>}
+          {!isForced && (
+            <Button onPress={dismissAppUpdateModal} style={tw`mr-2`}>
+              Later
+            </Button>
+          )}
           <Button mode="contained" onPress={handleUpdate}>
             Update Now
           </Button>

@@ -30,7 +30,7 @@ const defaultReducer = combineReducers({
 
 const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, UnknownAction>(
   {
-    key: "Root",
+    key: "binapay",
     version: 1,
     storage: ExpoFileSystemStorage,
     blacklist: ["transaction", "settings", utilityBillsQueryApi.reducerPath],

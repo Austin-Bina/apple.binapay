@@ -20,6 +20,7 @@ import {
   Inter_800ExtraBold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import { AppVersionProvider } from "@providers/app-version-provider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -49,7 +50,7 @@ function BinaPay() {
           },
           { text: "OK", onPress: () => BackHandler.exitApp() },
         ],
-        { cancelable: false },
+        { cancelable: false }
       );
       return true;
     };
@@ -73,7 +74,10 @@ function BinaPay() {
     prepare();
 
     return () => {
-      BackHandler.removeEventListener("hardwareBackPress", handleBackButtonClick);
+      BackHandler.removeEventListener(
+        "hardwareBackPress",
+        handleBackButtonClick
+      );
     };
   }, []);
 
@@ -94,18 +98,24 @@ function BinaPay() {
 
   return (
     <ToastRootSiblingParent>
-      <GestureHandlerRootView style={tw`flex-1 relative`} onLayout={onLayoutRootView}>
-        <React.Fragment>
-          <StatusBar style="dark" animated backgroundColor="white" />
-          <Provider store={store}>
-            <PersistGate loading={<ActivityIndicator size="small" />} persistor={persistor}>
-              <PaperProvider theme={defaultTheme}>
+      <GestureHandlerRootView
+        style={tw`flex-1 relative`}
+        onLayout={onLayoutRootView}
+      >
+        <StatusBar style="dark" animated backgroundColor="white" />
+        <Provider store={store}>
+          <PersistGate
+            loading={<ActivityIndicator size="small" />}
+            persistor={persistor}
+          >
+            <PaperProvider theme={defaultTheme}>
+              <AppVersionProvider>
                 <NoNetworkBar />
                 <Router />
-              </PaperProvider>
-            </PersistGate>
-          </Provider>
-        </React.Fragment>
+              </AppVersionProvider>
+            </PaperProvider>
+          </PersistGate>
+        </Provider>
       </GestureHandlerRootView>
     </ToastRootSiblingParent>
   );

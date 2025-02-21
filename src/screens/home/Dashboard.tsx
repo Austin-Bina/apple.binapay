@@ -55,15 +55,11 @@ export default function HomeScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
 
   const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
-    force: true,
-  });
-
-  const checkAppVersion = useSystemSettingsPrefetch("checkAppVersion", {
-    force: true,
+    ifOlderThan: MAX_CACHE_AGE_SEC,
   });
 
   const prefetchNotifications = useNotificationsPrefetch("fetchNotifications", {
-    force: true,
+    ifOlderThan: 5,
   });
 
   const balanceNaira = useMemo(() => formatToNaira(user?.wallet_balance), [user?.wallet_balance]);
@@ -79,7 +75,6 @@ export default function HomeScreen({ navigation }: Props) {
 
     prefetchNotifications({ page: 1 });
     prefetchSettings();
-    checkAppVersion();
   }, [dispatch]);
 
   const initCable = useCallback(() => {
