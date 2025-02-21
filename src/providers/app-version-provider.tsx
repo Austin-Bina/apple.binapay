@@ -5,23 +5,29 @@ import UpdatePrompt from "@components/UpdatePrompt";
 export const AppVersionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [skipped, setSkipped] = useState(false);
+  const [skippedVersion, setSkippedVersion] = useState<string | null>(null);
 
-  useCheckAppVersionQuery(undefined, {
+  const { data: updateInfo } = useCheckAppVersionQuery(undefined, {
     pollingInterval: 300000,
     refetchOnReconnect: true,
     skipPollingIfUnfocused: true,
-    skip: skipped,
   });
 
-  const handleDismiss = () => {
-    setSkipped(true);
+  const shouldShowPrompt = updateInfo?.updateAvailable && 
+    (updateInfo.isForced || updateInfo.latestVersion !== skippedVersion);
+
+  const handleDismiss = (version: string) => {
+    setSkippedVersion(version);
   };
 
   return (
     <Fragment>
       {children}
-      <UpdatePrompt onDismiss={handleDismiss} />
+      <UpdatePrompt 
+        visible={Boolean(shouldShowPrompt)}
+        updateInfo={updateInfo}
+        onDismiss={handleDismiss}
+      />
     </Fragment>
   );
 };

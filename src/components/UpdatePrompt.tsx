@@ -3,30 +3,29 @@ import { Linking } from "react-native";
 import { Button, Dialog, Paragraph, Portal } from "react-native-paper";
 import tw from "@lib/tailwind";
 import * as Application from "expo-application";
-import { systemSettingsApi, useCheckAppVersionQuery } from "@store/redux-api/systemSettingsApi";
-import { useTypedDispatch } from "@store/common";
-import { defaultVersionCheckResponse } from "@helpers/notification";
+import { VersionCheckResponse } from "@store/redux-api/systemSettingsApi";
 
 interface UpdatePromptProps {
-  onDismiss: () => void;
+  visible: boolean;
+  updateInfo: VersionCheckResponse | undefined;
+  onDismiss: (version: string) => void;
 }
 
-const UpdatePrompt: React.FC<UpdatePromptProps> = ({ onDismiss }) => {
-  const dispatch = useTypedDispatch();
+const UpdatePrompt: React.FC<UpdatePromptProps> = ({ 
+  visible, 
+  updateInfo, 
+  onDismiss 
+}) => {
   const currentVersion = Application.nativeBuildVersion || "";
 
-  const { data: updateInfo } = useCheckAppVersionQuery(undefined);
-  const { latestVersion, updateUrl, isForced, updateAvailable } = updateInfo || defaultVersionCheckResponse;
+  if (!updateInfo || !visible) {
+    return null;
+  }
 
-  const dismissAppUpdateModal = () => {
-    dispatch(
-      systemSettingsApi.util.updateQueryData("checkAppVersion", undefined, (draft) => {
-        if (draft) {
-          draft.updateAvailable = false;
-        }
-      })
-    );
-    onDismiss();
+  const { latestVersion, updateUrl, isForced } = updateInfo;
+
+  const handleDismiss = () => {
+    onDismiss(latestVersion);
   };
 
   const handleUpdate = () => {
@@ -36,8 +35,8 @@ const UpdatePrompt: React.FC<UpdatePromptProps> = ({ onDismiss }) => {
   return (
     <Portal>
       <Dialog
-        visible={updateAvailable}
-        onDismiss={isForced ? undefined : dismissAppUpdateModal}
+        visible={visible}
+        onDismiss={isForced ? undefined : handleDismiss}
         dismissable={!isForced}>
         <Dialog.Title>Update Available</Dialog.Title>
         <Dialog.Content>
@@ -48,7 +47,7 @@ const UpdatePrompt: React.FC<UpdatePromptProps> = ({ onDismiss }) => {
         </Dialog.Content>
         <Dialog.Actions>
           {!isForced && (
-            <Button onPress={dismissAppUpdateModal} style={tw`mr-2`}>
+            <Button onPress={handleDismiss} style={tw`mr-2`}>
               Later
             </Button>
           )}

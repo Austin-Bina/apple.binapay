@@ -7,7 +7,7 @@ import { SystemSettings } from "@type/app";
 import * as Application from "expo-application";
 import { Platform } from "react-native";
 
-type VersionCheckResponse = {
+export type VersionCheckResponse = {
   updateAvailable: boolean;
   latestVersion: string;
   updateUrl: string;
@@ -40,13 +40,6 @@ export const systemSettingsApi = createApi({
       }),
       transformResponse: (response: VersionCheckResponse) => {
         return { ...defaultVersionCheckResponse, ...response };
-      },
-      merge: (existing, incoming) => {
-        if (existing.updateAvailable) {
-          return incoming;
-        }
-
-        return existing;
       },
     }),
   }),
