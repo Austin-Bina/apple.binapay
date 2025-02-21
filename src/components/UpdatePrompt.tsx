@@ -18,35 +18,31 @@ const UpdatePrompt: React.FC<UpdatePromptProps> = ({
 }) => {
   const currentVersion = Application.nativeBuildVersion || "";
 
-  if (!updateInfo || !visible) {
-    return null;
-  }
-
-  const { latestVersion, updateUrl, isForced } = updateInfo;
-
   const handleDismiss = () => {
-    onDismiss(latestVersion);
+    if (!updateInfo) return;
+    onDismiss(updateInfo.latestVersion);
   };
 
   const handleUpdate = () => {
-    Linking.openURL(updateUrl);
+    if (!updateInfo) return;
+    Linking.openURL(updateInfo.updateUrl);
   };
 
   return (
     <Portal>
       <Dialog
-        visible={visible}
-        onDismiss={isForced ? undefined : handleDismiss}
-        dismissable={!isForced}>
+        visible={visible && !!updateInfo}
+        onDismiss={updateInfo?.isForced ? undefined : handleDismiss}
+        dismissable={!updateInfo?.isForced}>
         <Dialog.Title>Update Available</Dialog.Title>
         <Dialog.Content>
           <Paragraph>
-            A new version ({latestVersion}) of the app is available. Your current version is {currentVersion}.
-            {isForced ? " This update is required to continue using the app." : ""}
+            A new version ({updateInfo?.latestVersion}) of the app is available. Your current version is {currentVersion}.
+            {updateInfo?.isForced ? " This update is required to continue using the app." : ""}
           </Paragraph>
         </Dialog.Content>
         <Dialog.Actions>
-          {!isForced && (
+          {!updateInfo?.isForced && (
             <Button onPress={handleDismiss} style={tw`mr-2`}>
               Later
             </Button>
