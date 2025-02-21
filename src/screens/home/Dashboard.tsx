@@ -55,15 +55,15 @@ export default function HomeScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
 
   const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
-    ifOlderThan: MAX_CACHE_AGE_SEC,
+    force: true,
   });
 
   const checkAppVersion = useSystemSettingsPrefetch("checkAppVersion", {
-    ifOlderThan: MAX_CACHE_AGE_SEC,
+    force: true,
   });
 
   const prefetchNotifications = useNotificationsPrefetch("fetchNotifications", {
-    ifOlderThan: 5,
+    force: true,
   });
 
   const balanceNaira = useMemo(() => formatToNaira(user?.wallet_balance), [user?.wallet_balance]);
