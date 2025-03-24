@@ -71,10 +71,29 @@ export const TabBar = () => {
                 if (event.defaultPrevented) {
                   preventDefault();
                 } else {
-                  navigation.dispatch({
-                    ...CommonActions.navigate(route.name, route.params),
-                    target: state.key,
-                  });
+                  // Reset Services stack to List screen when Services tab is pressed
+                  if (route.name === "Services") {
+                    navigation.dispatch({
+                      ...CommonActions.reset({
+                        index: 0,
+                        routes: [
+                          {
+                            name: "Services",
+                            state: {
+                              routes: [{ name: "List" }],
+                              index: 0,
+                            },
+                          },
+                        ],
+                      }),
+                      target: state.key,
+                    });
+                  } else {
+                    navigation.dispatch({
+                      ...CommonActions.navigate(route.name, route.params),
+                      target: state.key,
+                    });
+                  }
                 }
               }}
               renderIcon={({ route, focused, color }) => {
