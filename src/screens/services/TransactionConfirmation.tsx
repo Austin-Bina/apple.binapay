@@ -1,8 +1,8 @@
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import React, { useEffect, useState } from "react";
-import { View, Keyboard } from "react-native";
-import { Text } from "react-native-paper";
+import { View, Keyboard, TouchableOpacity } from "react-native";
+import { Text, useTheme } from "react-native-paper";
 import Screen from "@components/ui/shared/Screen";
 import OtpInput from "@components/ui/form/OtpInput";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
@@ -53,6 +53,7 @@ const sources = {
 
 export default function TransactionConfirmationScreen({ navigation, route }: Props) {
   const [fetching, setFetching] = useState(false);
+  const theme = useTheme();
 
   const dispatch = useTypedDispatch();
   const pendingTransaction = useTypedSelector((state) =>
@@ -69,6 +70,10 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
 
   const { pin } = watch();
   const { transactionId } = route.params;
+
+  const handleCancel = () => {
+    navigation.goBack();
+  };
 
   useEffect(() => {
     if (pin.length === maximumLength) {
@@ -241,15 +246,32 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
 
   return (
     <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
-        <View>
-          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Enter PIN</Text>
-          <Text style={tw`w-full text-gray-500 font-normal`}>Enter your 4 digit transaction PIN to continue.</Text>
-          <View style={tw`my-10`}>
-            <View style={tw`flex flex-row items-center justify-center`}>
-              <OtpInput control={control} maximumLength={maximumLength} name="pin" />
-            </View>
-          </View>
+      <View style={tw`flex-1 px-4 pt-6`}>
+        <View style={tw`items-start mb-2`}>
+          <Text style={tw`text-gray-900 text-2xl font-bold`}>Enter PIN</Text>
+          <Text style={tw`text-gray-500 mt-2`}>
+            Enter your 4 digit transaction PIN to continue
+          </Text>
+        </View>
+        
+        <View style={tw`my-10 w-full items-center`}>
+          <OtpInput 
+            control={control} 
+            maximumLength={maximumLength} 
+            name="pin"
+            secureTextEntry={true}
+          />
+        </View>
+        
+        <View style={tw`mt-6`}>
+          <TouchableOpacity 
+            style={tw`flex-row items-center`}
+            onPress={handleCancel}
+          >
+            <Text style={[tw`text-base font-medium`, { color: theme.colors.primary }]}>
+              Cancel Transaction
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
       <PleaseWaitModal visible={fetching} />
