@@ -79,9 +79,9 @@ export default function FundWithPaystackScreen() {
     if (!config) return "Processing fees apply";
     
     if (config.fee_type === "percentage") {
-      return `${config.charge_percentage}% fee (capped at ${formatToNaira(config.cap)})`;
+      return `${config.charge_percentage}% fee`;
     } else if (config.fee_type === "flat") {
-      return `flat fee of ${formatToNaira(config.flat_fee)} (capped at ${formatToNaira(config.cap)})`;
+      return `flat fee of ${formatToNaira(config.flat_fee)}`;
     }
     
     return "Processing fees apply";
