@@ -227,15 +227,15 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   const handleSelectBundle = useCallback(
     (plan: any) => {
-      // Only change necessary fields, don't reset the entire form
-      setValue("data_bundle", plan.data_bundle);
-      setValue("data_amount", plan.data_amount);
-      setValue("amount", plan.amount);
-      if (plan.vendor) {
-        setValue("vendor", plan.vendor);
-      }
+      reset({
+        ...values,
+        data_bundle: plan.data_bundle,
+        data_amount: plan.data_amount,
+        amount: plan.amount,
+        vendor: plan.vendor,
+      });
     },
-    [setValue]
+    [reset, values]
   );
 
   const handleSelectContact = useCallback(

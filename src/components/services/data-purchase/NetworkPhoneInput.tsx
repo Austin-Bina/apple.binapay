@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, TouchableOpacity, Modal, Dimensions, Animated, Pressable, ScrollView } from "react-native";
-import { IconButton, Text, useTheme } from "react-native-paper";
+import { IconButton, Text } from "react-native-paper";
 import tw from "@lib/tailwind";
 import {
   Controller,
@@ -12,7 +12,6 @@ import MaskedInput from "@components/ui/form/mask-input";
 import { phone_mask } from "@constants/app";
 import { User, X, Check } from "lucide-react-native";
 import { AvatarImage } from "@components/avatar";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface NetworkPhoneInputProps {
   control: Control<any>;
@@ -29,12 +28,9 @@ const NetworkPhoneInput = ({
   dataProviders,
   onOpenContactModal,
 }: NetworkPhoneInputProps) => {
-  const theme = useTheme();
   const values = watch();
   const [networkModalVisible, setNetworkModalVisible] = useState(false);
-  const { bottom: safeAreaBottom } = useSafeAreaInsets();
-  const windowWidth = Dimensions.get("window").width;
-  
+
   // Animation for modal
   const animatedScale = useMemo(() => new Animated.Value(0.9), []);
   const animatedOpacity = useMemo(() => new Animated.Value(0), []);
@@ -70,7 +66,7 @@ const NetworkPhoneInput = ({
     reset({
       ...values,
       provider: serviceId,
-      data_bundle: "",
+      data_bundle: undefined,
       data_amount: "",
       amount: "0",
       type: "",
