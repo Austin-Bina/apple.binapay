@@ -1,8 +1,8 @@
 import Screen from "@components/ui/shared/Screen";
 import tw from "@lib/tailwind";
-import React, { Fragment } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import { Linking, View } from "react-native";
-import { Appbar, Divider, Text, TouchableRipple } from "react-native-paper";
+import { Appbar, Divider, Text, TouchableRipple, ActivityIndicator } from "react-native-paper";
 import AngledRightArrow from "@assets/icons/angled-right-arrow.svg";
 import SpeechBubbleIcon from "@assets/icons/speech-bubble-check.svg";
 import KeyIcon from "@assets/icons/key.svg";
@@ -20,6 +20,9 @@ import { scale } from "react-native-size-matters";
 import { SCREENS } from "@constants/screens";
 import { Action } from "@components/screens/account";
 import { routes } from "@constants/routes";
+import { useAppVersion } from "@providers/app-version-provider";
+import { showToast } from "@helpers/toast";
+import UpdatesIcon from "@assets/icons/bar-code.svg";
 
 type Props = AccountStackScreenProps<"Settings">;
 
@@ -30,12 +33,37 @@ export default function SettingScreen({ navigation }: Props) {
 
   const isBvnVerified = useTypedSelector(selectIsBvnVerified);
   const isNinVerified = useTypedSelector(selectIsNinVerified);
+  const { checkForUpdates, isCheckingForUpdates, currentVersion, buildNumber } = useAppVersion();
+  const [wasChecking, setWasChecking] = useState(false);
 
   const verificationStatusText = isBvnVerified || isNinVerified ? "Verified" : "Not verified";
 
   const handleLogout = () => {
     dispatch(authSliceActions.doLogout());
   };
+  
+  const handleCheckForUpdates = () => {
+    checkForUpdates();
+    
+    showToast({ 
+      message: "Checking for updates...",
+      duration: 2000,
+    });
+  };
+
+  useEffect(() => {
+    if (isCheckingForUpdates) {
+      setWasChecking(true);
+    } else if (wasChecking) {
+      showToast({ 
+        message: "You're using the latest version",
+        duration: 2000,
+      });
+      setWasChecking(false);
+    }
+  }, [isCheckingForUpdates, wasChecking]);
+
+  const formattedVersion = `${currentVersion}${buildNumber ? ` (${buildNumber})` : ''}`;
 
   return (
     <Screen>
@@ -116,11 +144,31 @@ export default function SettingScreen({ navigation }: Props) {
             Linking.openURL(routes.web.v1.public.privacy);
           }}
         />
+        
+        <Action
+          title="Check for Updates"
+          ItemIcon={UpdatesIcon}
+          onPress={handleCheckForUpdates}
+          badgeElement={
+            <View style={tw`flex-row items-center`}>
+              {isCheckingForUpdates && (
+                <ActivityIndicator size={16} color="#4F46E5" style={tw`mr-2`} />
+              )}
+              <View style={tw`bg-blue-50 rounded-full py-1 px-3`}>
+                <Text style={tw`text-blue-600 text-xs font-medium`}>v{formattedVersion}</Text>
+              </View>
+            </View>
+          }
+        />
+        
         <View style={tw`my-5`} />
         <Action title="Logout" backgroundColor="#FEF2F2" ItemIcon={LogoutIcon} onPress={handleLogout} />
-        <Text variant="bodyMedium" style={tw`text-gray-400 text-center mt-10`}>
-          BinaPay v1.0.0.0
-        </Text>
+        
+        <View style={tw`items-center my-10`}>
+          <Text variant="bodyMedium" style={tw`text-gray-400 text-center`}>
+            BinaPay v{formattedVersion}
+          </Text>
+        </View>
       </ScrollableView>
       <PleaseWaitModal visible={isLoggingIn} />
     </Screen>

@@ -9,7 +9,7 @@ import { Provider } from "react-redux";
 import { persistor, store } from "@store/main";
 import { PersistGate } from "redux-persist/integration/react";
 import NoNetworkBar from "@components/ui/widgets/no-network-bar";
-import { Alert, BackHandler } from "react-native";
+import { BackHandler, View } from "react-native";
 import { RootSiblingParent as ToastRootSiblingParent } from "react-native-root-siblings";
 import { defaultTheme } from "@constants/theme/md-theme";
 import {
@@ -21,11 +21,13 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { AppVersionProvider } from "@providers/app-version-provider";
+import { Dialog, Button, Portal, Text } from "react-native-paper";
 
 SplashScreen.preventAutoHideAsync();
 
 function BinaPay() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const [exitDialogVisible, setExitDialogVisible] = useState(false);
 
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -39,19 +41,7 @@ function BinaPay() {
     // ErrorHelper.init();
 
     const handleBackButtonClick = () => {
-      Alert.alert(
-        "Exit",
-        "Are you sure you want to exit the app?",
-        [
-          {
-            text: "Cancel",
-            onPress: () => {},
-            style: "cancel",
-          },
-          { text: "OK", onPress: () => BackHandler.exitApp() },
-        ],
-        { cancelable: false }
-      );
+      setExitDialogVisible(true);
       return true;
     };
 
@@ -96,6 +86,14 @@ function BinaPay() {
     return null;
   }
 
+  const handleExitCancel = () => {
+    setExitDialogVisible(false);
+  };
+
+  const handleExitConfirm = () => {
+    BackHandler.exitApp();
+  };
+
   return (
     <ToastRootSiblingParent>
       <GestureHandlerRootView
@@ -112,6 +110,42 @@ function BinaPay() {
               <AppVersionProvider>
                 <NoNetworkBar />
                 <Router />
+                <Portal>
+                  <Dialog
+                    visible={exitDialogVisible}
+                    onDismiss={handleExitCancel}
+                    style={tw`p-4 bg-white rounded-xl`}>
+                    <View style={tw`items-center pb-2`}>
+                      <View style={tw`justify-center h-16 w-16 items-center p-4 bg-blue-50 rounded-3xl mb-2.5`}>
+                        <Text style={tw`text-3xl`}>👋</Text>
+                      </View>
+                      <Dialog.Title style={tw`text-xl font-semibold text-gray-800`}>
+                        Exit Application
+                      </Dialog.Title>
+                    </View>
+                    <Dialog.Content>
+                      <Text style={tw`text-gray-600 text-center`}>
+                        Are you sure you want to exit the BinaPay app?
+                      </Text>
+                    </Dialog.Content>
+                    <Dialog.Actions style={tw`p-4`}>
+                      <Button 
+                        mode="outlined" 
+                        onPress={handleExitCancel} 
+                        style={tw`mr-2 flex-1 border-gray-300`}
+                        labelStyle={tw`text-gray-700`}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        mode="contained" 
+                        onPress={handleExitConfirm}
+                        style={tw`flex-1 bg-primary-600`}
+                        labelStyle={tw`text-white`}>
+                        Exit
+                      </Button>
+                    </Dialog.Actions>
+                  </Dialog>
+                </Portal>
               </AppVersionProvider>
             </PaperProvider>
           </PersistGate>
