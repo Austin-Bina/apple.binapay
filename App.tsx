@@ -38,8 +38,6 @@ function BinaPay() {
   });
 
   useEffect(() => {
-    // ErrorHelper.init();
-
     const handleBackButtonClick = () => {
       setExitDialogVisible(true);
       return true;
@@ -91,6 +89,7 @@ function BinaPay() {
   };
 
   const handleExitConfirm = () => {
+    setExitDialogVisible(false);
     BackHandler.exitApp();
   };
 
