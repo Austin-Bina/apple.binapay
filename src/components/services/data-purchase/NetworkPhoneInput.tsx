@@ -153,9 +153,9 @@ const NetworkPhoneInput = ({
   ), [networkModalVisible, values.provider, dataProviders, contentMaxHeight, handleNetworkChange, animatedScale, animatedOpacity]);
 
   return (
-    <View style={tw`mb-5`}>
+    <View style={tw`mt-2 mb-5`}>
       <View style={tw`min-h-[70px]`}>
-        <View style={tw`flex-row items-center gap-3`}>
+        <View style={tw`flex-row items-start gap-3`}>
           {/* Custom Network Dropdown Button */}
           <Pressable
             style={tw.style(
@@ -181,7 +181,7 @@ const NetworkPhoneInput = ({
 
           {/* Phone Input */}
           <View style={tw`flex-1 relative`}>
-            <View style={tw`flex-row items-center`}>
+            <View style={tw`flex-row items-start`}>
               <View style={tw`flex-1 mr-2`}>
                 <Controller
                   control={control}
@@ -212,6 +212,7 @@ const NetworkPhoneInput = ({
                 mode="contained"
                 iconColor={tw.color("primary")}
                 containerColor={tw.color('primary-50')}
+                style={tw`mt-0`}
               />
             </View>
           </View>
