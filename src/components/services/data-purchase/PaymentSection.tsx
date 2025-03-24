@@ -5,7 +5,7 @@ import tw from '@lib/tailwind';
 import { Control } from 'react-hook-form';
 import NairaInput from '@components/ui/form/NairaInput';
 import WalletBalanceHelper from '@components/ui/form/wallet-balance';
-import { Package } from 'lucide-react-native';
+import { Package, CreditCard } from 'lucide-react-native';
 
 interface PaymentSectionProps {
   control: Control<any>;
@@ -40,17 +40,22 @@ const PaymentSection = ({ control, dataAmount, walletValidation }: PaymentSectio
     }
   }, [dataAmount, fadeAnim, scaleAnim]);
 
-  // Memoize wallet balance helper to prevent unnecessary re-renders
   const walletBalanceComponent = useMemo(() => (
     <WalletBalanceHelper {...walletValidation} />
   ), [walletValidation]);
 
   // Calculate a fixed height for the data amount message container to prevent layout shifts
-  const messageContainerHeight = dataAmount ? 80 : 0;
+  const messageContainerHeight = dataAmount ? 150 : 0;
 
   return (
     <View style={tw`mb-5`}>
-      <NairaInput name="payAmount" control={control} isDisabled />
+      <View style={tw`mb-3`}>
+        <NairaInput 
+          name="amount" 
+          control={control} 
+          isDisabled 
+        />
+      </View>
       
       {walletBalanceComponent}
 
@@ -59,20 +64,28 @@ const PaymentSection = ({ control, dataAmount, walletValidation }: PaymentSectio
         {dataAmount && (
           <Animated.View
             style={[
-              tw`bg-green-50 flex-row justify-center items-center p-3 rounded-xl gap-2 w-full my-4`,
+              tw`bg-green-50 rounded-2xl shadow-sm overflow-hidden mt-4`,
               {
                 opacity: fadeAnim,
                 transform: [{ scale: scaleAnim }]
               }
             ]}
           >
-            <Package size={20} color={tw.color('green-600')} />
-            <Text
-              variant="bodyMedium"
-              style={tw`text-green-600 text-center font-medium`}
-            >
-              You will get <Text style={tw`font-bold`}>{dataAmount}</Text>
-            </Text>
+            <View style={tw`px-5 py-3 border-b border-green-100`}>
+              <Text style={tw`text-green-800 font-bold`}>Bundle Summary</Text>
+            </View>
+            
+            <View style={tw`p-4 flex-row items-center`}>
+              <View style={tw`h-10 w-10 rounded-full bg-green-100 justify-center items-center mr-3`}>
+                <Package size={18} color={tw.color('green-600')} />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-gray-600 text-xs mb-0.5`}>You will receive</Text>
+                <Text style={tw`text-green-700 font-bold text-base`}>
+                  {dataAmount}
+                </Text>
+              </View>
+            </View>
           </Animated.View>
         )}
       </View>

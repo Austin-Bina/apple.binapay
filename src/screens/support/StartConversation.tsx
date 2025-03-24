@@ -36,8 +36,7 @@ const emptyReceiptInfo = {
 };
 
 type FormValues = z.infer<typeof schema>;
-type Props = SupportStackScreenProps<typeof SCREENS.SUPPORT_START_CONVERSATION>;
-export default function StartConversation({ navigation, route }: Props) {
+export default function StartConversation({ navigation, route }: any) {
   const { departmentId } = route.params;
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -53,7 +52,7 @@ export default function StartConversation({ navigation, route }: Props) {
   const { control, handleSubmit, setError, setValue, watch, reset } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      description: "",
+      description: route.params?.initialMessage || "",
       attachment: "",
     },
   });

@@ -9,6 +9,7 @@ import { getNavigate } from "@utils/navigation";
 import { SCREENS } from "@constants/screens";
 import { getTransactionIcon, upperCaseFirst } from "@utils/index";
 import { P, match } from "ts-pattern";
+import { TransactionStatus } from "@enum/transaction";
 
 const formatDate = (date: string) => {
   return format(new Date(date), "MMM dd, yyyy h:mm a");
@@ -114,6 +115,15 @@ const navigateToTransaction = async (args: GetTransData) => {
   }
 };
 
+const getTransactionStatus = (transaction: WalletTransaction | UtilityTransaction) => {
+  return match(transaction)
+    .with({ payment_transaction: { utilityTransaction: { status: P.string } } }, ({ payment_transaction }) => {
+      const { utilityTransaction } = payment_transaction;
+      return utilityTransaction.status;
+    })
+    .otherwise(() => TransactionStatus.Successful);
+};
+
 const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTransaction | null => {
   return match(transaction)
     .with({ wallet_id: P.number, meta: {} }, (walletView) => {
@@ -122,6 +132,18 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
       const logo = getTransactionIcon(walletView);
       const transactionTitle = details.description;
       const transactionDescription = details.description;
+      
+      const transactionReference = match(walletView)
+        .with(
+          { payment_transaction: { utilityTransaction: { status: P.string } } },
+          ({ payment_transaction }) => {
+            const { utilityTransaction } = payment_transaction;
+            return utilityTransaction.id;
+          }
+        )
+        .otherwise(() => walletView.payment_transaction?.id || "");
+      
+      const transactionStatus = getTransactionStatus(walletView);
 
       const transactionDetails = match(walletView)
         .with({ payment_transaction: { utilityTransaction: { details: {} } } }, ({ payment_transaction }) => {
@@ -207,6 +229,8 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
         transactionDetails,
         hasDetails,
         logo,
+        status: transactionStatus,
+        reference: transactionReference,
         ...(withHighlightedResponse ? withHighlightedResponse : {}),
         ...(withEpinsResponse ? withEpinsResponse : {}),
         transactionDate: format(new Date(walletView.created_at), "MMM dd, yyyy h:mm a"),
@@ -267,4 +291,5 @@ export {
   formatDate,
   viewTransactionHelper,
   viewTransactionResponse,
+  getTransactionStatus,
 };

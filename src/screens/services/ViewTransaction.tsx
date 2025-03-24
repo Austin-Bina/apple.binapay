@@ -3,15 +3,22 @@ import tw from "@lib/tailwind";
 import { HomeStackScreenProps } from "@navigators/types";
 import { useTypedSelector } from "@store/common";
 import { getPendingTransaction } from "@store/slice/transactionSlice";
-import { resetNavigationToDashboard } from "@utils/navigation";
+import { resetNavigationToDashboard, getNavigate } from "@utils/navigation";
 import {
   defaultTransactionResponse,
   getTransactionDetails,
   viewTransactionHelper,
   viewTransactionResponse,
 } from "@helpers/transaction";
+import { getStatusIconName } from "@helpers/transaction-status";
 import React, { Fragment, useMemo, useState } from "react";
-import { View, ImageBackground, useWindowDimensions, ScrollView } from "react-native";
+import {
+  View,
+  ImageBackground,
+  useWindowDimensions,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { Image } from "react-native-element-image";
 import { IconButton, Text, TouchableRipple } from "react-native-paper";
 import { match } from "ts-pattern";
@@ -26,23 +33,32 @@ import * as Clipboard from "expo-clipboard";
 import Button from "@components/ui/form/button";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import EpinCardSample from "@components/screens/transactions/epin-sample-card";
+import { TransactionStatus } from "@enum/transaction";
+import StatusBadge from "@components/ui/transaction/StatusBadge";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Props = HomeStackScreenProps<typeof SCREENS.VIEW_TRANSACTION>;
 
-export default function ViewTransaction({ route }: Props) {
+export default function ViewTransaction({ route, navigation }: Props) {
   const [valueCopied, setValueCopied] = useState(false);
   const [visibleEpins, setVisibleEpins] = useState(10);
 
   const { transactionId } = route.params;
 
-  const { shareTransactionReceipt, isPrinting, printingError, stopSharing } = useShareTransactionReceipt();
+  const { shareTransactionReceipt, isPrinting, printingError, stopSharing } =
+    useShareTransactionReceipt();
   const insets = useSafeAreaInsets();
-  const pendingTransaction = useTypedSelector((state) => getPendingTransaction(state.transaction, transactionId));
+  const pendingTransaction = useTypedSelector((state) =>
+    getPendingTransaction(state.transaction, transactionId)
+  );
   const { width } = useWindowDimensions();
 
   const utilityResponse = useMemo(() => {
     return match(pendingTransaction)
-      .with({ data: { response: { transaction_info: { transaction: {} } } } }, ({ data }) => data.response)
+      .with(
+        { data: { response: { transaction_info: { transaction: {} } } } },
+        ({ data }) => data.response
+      )
       .otherwise(() => null);
   }, [pendingTransaction]);
 
@@ -53,7 +69,9 @@ export default function ViewTransaction({ route }: Props) {
   }, [pendingTransaction]);
 
   const pageData = useMemo(() => {
-    const data = utilityResponse ? viewTransactionResponse(utilityResponse) : viewTransactionHelper(viewResponse);
+    const data = utilityResponse
+      ? viewTransactionResponse(utilityResponse)
+      : viewTransactionHelper(viewResponse);
 
     return {
       ...defaultTransactionResponse,
@@ -66,9 +84,15 @@ export default function ViewTransaction({ route }: Props) {
       supportEmail: "support@binapay.co",
       hasDetails: false,
       logo: "",
+      status: TransactionStatus.Successful, // Default status if not provided
+      reference: "",
       ...data,
     };
   }, [viewResponse, utilityResponse]);
+
+  const isPending = useMemo(() => {
+    return pageData.status === TransactionStatus.Pending;
+  }, [pageData.status]);
 
   const printData = {
     pageData: { ...pageData, supportEmail: "" },
@@ -90,8 +114,44 @@ export default function ViewTransaction({ route }: Props) {
     setVisibleEpins((prev) => prev + 10);
   };
 
+  const handleContactSupport = async () => {
+    try {
+      // Get transaction reference
+      const { reference } = pageData;
+
+      // Store the transaction reference in AsyncStorage
+      // Support department can retrieve this when opened
+      await AsyncStorage.setItem(
+        "SUPPORT_TRANSACTION_REFERENCE",
+        reference || "unknown"
+      );
+      await AsyncStorage.setItem(
+        "SUPPORT_INITIAL_MESSAGE",
+        `I need help with transaction reference: ${reference || "unknown"}`
+      );
+
+      const { navigate } = await getNavigate();
+      
+      navigate(SCREENS.MAIN, {
+        screen: SCREENS.MENU,
+        params: {
+          screen: SCREENS.SUPPORT_STACK,
+          params: {
+            screen: SCREENS.DEPARTMENT_AND_HISTORY_TAB,
+            params: undefined,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error navigating to support:", error);
+    }
+  };
+
   return (
-    <ImageBackground source={require("@assets/images/background-without-logo.png")} style={tw`flex-1 justify-between`}>
+    <ImageBackground
+      source={require("@assets/images/background-without-logo.png")}
+      style={tw`flex-1 justify-between`}
+    >
       <ScrollableView contentContainerStyle={tw`justify-between px-4 py-5`}>
         <Image
           source={require("@assets/images/logo-with-name.png")}
@@ -101,24 +161,75 @@ export default function ViewTransaction({ route }: Props) {
           })}
         />
 
-        <View style={tw`bg-white w-full p-4 rounded-3xl border border-primary-200`}>
+        {isPending && (
+          <Banner
+            title="Transaction Processing"
+            content="Your transaction is currently being processed. This may take a few minutes."
+          />
+        )}
+
+        <View
+          style={tw`bg-white w-full p-4 rounded-3xl border border-primary-200 ${isPending ? "opacity-80" : ""}`}
+        >
           <View>
             <View>
-              <Text style={tw`font-bold text-lg text-center text-primary-900 mb-2.5`}>{pageData.transactionTitle}</Text>
+              <Text
+                style={tw`font-bold text-lg text-center text-primary-900 mb-2.5`}
+              >
+                {pageData.transactionTitle}
+              </Text>
+              {isPending && (
+                <View
+                  style={tw`flex-row justify-center items-center gap-1 mb-2`}
+                >
+                  <IconButton
+                    icon={getStatusIconName(TransactionStatus.Pending)}
+                    iconColor="#FDB022" // Hardcoded amber/yellow color
+                    size={16}
+                    style={tw`p-0 m-0`}
+                  />
+                  <Text style={tw`text-yellow-600 text-sm`}>Processing...</Text>
+                </View>
+              )}
             </View>
             <View style={tw`items-center justify-around p-0`}>
-              <Image width={60} height={60} style={tw`bg-transparent rounded-lg`} source={{ uri: pageData.logo }} />
+              <Image
+                width={60}
+                height={60}
+                style={tw`bg-transparent rounded-lg`}
+                source={{ uri: pageData.logo }}
+              />
               {pageData.hasDetails ? (
                 <View style={tw`gap-2 my-5 w-full`}>
                   {pageData.transactionDetails.map((item) => (
                     <View key={item.value} style={tw`flex-row justify-between`}>
                       <Text variant="labelSmall">{item.label}:</Text>
-                      <Text selectable selectionColor={Colors.primary[200]} style={[tw`font-bold text-right`, { maxWidth: width - width / 2 }]}>{item.value}</Text>
+                      <Text
+                        selectable
+                        selectionColor={Colors.primary[200]}
+                        style={[
+                          tw`font-bold text-right`,
+                          { maxWidth: width - width / 2 },
+                        ]}
+                      >
+                        {item.value}
+                      </Text>
                     </View>
                   ))}
+                  <View style={tw`flex-row justify-between mt-2`}>
+                    <Text variant="labelSmall">Status:</Text>
+                    <StatusBadge
+                      status={pageData.status || TransactionStatus.Successful}
+                      size="medium"
+                      showIcon
+                    />
+                  </View>
                 </View>
               ) : (
-                <Text variant="bodyMedium" style={tw`text-gray-500 text-center`}>
+                <Text
+                  variant="bodyMedium"
+                  style={tw`text-gray-500 text-center`}
+                >
                   {pageData.transactionDescription}
                 </Text>
               )}
@@ -126,19 +237,30 @@ export default function ViewTransaction({ route }: Props) {
           </View>
 
           {printingError && (
-            <Banner variant="error" title="Oops! We could not print the receipt" content={printingError} />
+            <Banner
+              variant="error"
+              title="Oops! We could not print the receipt"
+              content={printingError}
+            />
           )}
 
           {pageData.hasHighlighted && (
             <TouchableRipple
               onPress={copyBillPaymentValueToken}
-              style={tw`flex-row justify-center items-center gap-1 my-5 bg-gray-300 px-2 rounded-md`}>
+              style={tw`flex-row justify-center items-center gap-1 my-5 bg-gray-300 px-2 rounded-md`}
+            >
               <Fragment>
-                <Text style={tw`text-gray-700 text-lg font-bold`}>{pageData.hasHighlighted.value}</Text>
+                <Text style={tw`text-gray-700 text-lg font-bold`}>
+                  {pageData.hasHighlighted.value}
+                </Text>
                 {pageData.hasHighlighted.copyable && (
                   <IconButton
                     onPress={copyBillPaymentValueToken}
-                    icon={valueCopied ? "sticker-check" : (props) => <CopyFill {...props} />}
+                    icon={
+                      valueCopied
+                        ? "sticker-check"
+                        : (props) => <CopyFill {...props} />
+                    }
                     iconColor="white"
                     style={tw`m-0 p-0`}
                     size={24}
@@ -149,35 +271,71 @@ export default function ViewTransaction({ route }: Props) {
           )}
 
           {pageData.epins && pageData.epins.length > 0 && (
-            <ScrollView style={tw`mt-5 flex-1`} contentContainerStyle={tw`gap-4`}>
+            <ScrollView
+              style={tw`mt-5 flex-1`}
+              contentContainerStyle={tw`gap-4`}
+            >
               {pageData.epins.slice(0, visibleEpins).map((epin, index) => (
                 <EpinCardSample key={index} values={epin} />
               ))}
               {visibleEpins < pageData.epins.length && (
-                <Button mode="contained-tonal" onPress={loadMoreEpins} style={tw`py-0`}>
+                <Button
+                  mode="contained-tonal"
+                  onPress={loadMoreEpins}
+                  style={tw`py-0`}
+                >
                   Load More E-Pins
                 </Button>
               )}
             </ScrollView>
           )}
 
-          {pageData.hasDetails && (
+          <View style={tw`flex-col gap-3 mt-6`}>
+            {pageData.hasDetails && (
+              <Button
+                onPress={() => shareTransactionReceipt(printData)}
+                mode="contained-tonal"
+                style={tw`w-full`}
+                buttonColor={Colors.primary[100]}
+                textColor={Colors.primary[600]}
+              >
+                Share Receipt
+              </Button>
+            )}
+
+            {pageData.epins && pageData.epins.length > 0 && (
+              <Button
+                onPress={handlePrintEpin}
+                mode="contained-tonal"
+                style={tw`w-full`}
+              >
+                Print E-Pins
+              </Button>
+            )}
+
             <Button
-              onPress={() => shareTransactionReceipt(printData)}
-              mode="contained-tonal"
+              onPress={handleContactSupport}
+              mode="outlined"
               style={tw`w-full`}
-              buttonColor={Colors.primary[100]}
-              textColor={Colors.primary[600]}>
-              Share Receipt
+              icon="email-outline"
+            >
+              Contact Support
             </Button>
-          )}
+          </View>
         </View>
-        <Button onPress={resetNavigationToDashboard} mode="contained" style={tw`w-full`}>
+        <Button
+          onPress={resetNavigationToDashboard}
+          mode="contained"
+          style={tw`w-full mt-4`}
+        >
           Continue to Home
         </Button>
       </ScrollableView>
-      <PleaseWaitModal visible={isPrinting} dismissable onDismiss={stopSharing} />
+      <PleaseWaitModal
+        visible={isPrinting}
+        dismissable
+        onDismiss={stopSharing}
+      />
     </ImageBackground>
   );
 }
-

@@ -20,8 +20,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { History, Wallet } from "lucide-react-native";
-
-// Framework
 import tw from "@lib/tailwind";
 import { ServicesStackScreenProps } from "@navigators/types";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
@@ -31,34 +29,24 @@ import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { useGetDataPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { selectSystemSettings } from "@store/selectors/settings";
-
-// Constants and Utils
 import { serviceProvidersMap } from "@constants/providers";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
 import { getDefaultProvider, zodPhoneValidation } from "@utils/phone";
 import { calculateTransactionDetails } from "@utils/money";
 import { SCREENS } from "@constants/screens";
 import { getNavigate } from "@utils/navigation";
-
-// Hooks
 import { usePhoneValidation } from "@hooks/phone";
 import { useWalletBalanceValidation } from "@hooks/transaction";
-
-// Components
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
-import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import BottomSheetModal from "@components/ui/modals/preview-transaction";
 import ContactPickerModal from "@components/ui/modals/pick-contacts";
 import {
   NetworkPhoneInput,
   DataTypesSelection,
   DataBundlesGrid,
-  PortedNumberSection,
   PaymentSection,
 } from "@components/services/data-purchase";
-
-// Types
 import { InternetProviders } from "@type/app";
 
 type Props = ServicesStackScreenProps<"Data Purchase">;
@@ -153,20 +141,22 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     [transaction.data]
   );
 
-
   const dataTypes = useMemo(() => {
     const allTypes = queryData?.popular_data_types || [];
-    
-    const supportedPopularTypes = allTypes.filter(type => 
-      !type.supported_networks || 
-      type.supported_networks.map(n => n.toUpperCase()).includes(provider.toUpperCase())
+
+    const supportedPopularTypes = allTypes.filter(
+      (type) =>
+        !type.supported_networks ||
+        type.supported_networks
+          .map((n) => n.toUpperCase())
+          .includes(provider.toUpperCase())
     );
 
-    const types = supportedPopularTypes.map(type => ({
+    const types = supportedPopularTypes.map((type) => ({
       id: type.type,
       label: type.name,
     }));
-    
+
     return types;
   }, [queryData, provider]);
 
@@ -178,7 +168,6 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       .filter((plan) => (!!type ? plan.plan_type === type : true))
       .map((plan) => {
         const planAmount = parseFloat(plan.plan_amount);
-
 
         return {
           ...plan,
@@ -332,20 +321,20 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           />
 
           {/* Data Type Selection */}
-            <DataTypesSelection
-              dataTypes={dataTypes}
-              selectedType={values.type}
-              onTypeSelect={(type) => {
-                reset({
-                  ...values,
-                  type,
-                  data_bundle: undefined,
-                  data_amount: "",
-                  amount: "0",
-                });
-              }}
-            />
-          
+          <DataTypesSelection
+            dataTypes={dataTypes}
+            selectedType={values.type}
+            onTypeSelect={(type) => {
+              reset({
+                ...values,
+                type,
+                data_bundle: undefined,
+                data_amount: "",
+                amount: "0",
+              });
+            }}
+          />
+
           {/* Data Bundles Grid - Moved up */}
           <DataBundlesGrid
             dataPlans={dataPlans}
@@ -355,9 +344,6 @@ export default function DataPurchaseScreen({ navigation }: Props) {
             onSelectBundle={handleSelectBundle}
             onRetry={onRefresh}
           />
-
-          {/* Ported Number Section - Moved down */}
-          <PortedNumberSection control={control} />
 
           {/* Payment Information */}
           <PaymentSection
@@ -381,12 +367,11 @@ export default function DataPurchaseScreen({ navigation }: Props) {
               labelStyle={tw`text-white text-base font-semibold`}
               onPress={openBottomSheet}
               mode="contained"
-              loading={isFetching}
               icon={({ size, color }) => (
                 <Wallet size={18} color={color} style={tw`mr-1`} />
               )}
             >
-              {isFetching ? "Loading..." : "Proceed to Payment"}
+              Proceed to Payment
             </Button>
           </View>
         </SafeAreaView>
@@ -400,7 +385,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         buttonLabel="Make Payment"
         onConfirm={handleMakePayment}
         onDismiss={closeBottomSheet}
-        snapPoints={["58%", "58%"]}
+        snapPoints={["60%", "60%"]}
         disabled={!walletValidation.canPay}
       />
 
@@ -412,7 +397,6 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       />
 
       <TransactionErrorSheet />
-      <PleaseWaitModal visible={isFetching} />
     </KeyboardAvoidingView>
   );
 }

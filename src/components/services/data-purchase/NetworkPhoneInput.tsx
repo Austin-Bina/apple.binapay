@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, TouchableOpacity, Modal, Dimensions, Animated, Pressable, ScrollView } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { IconButton, Text, useTheme } from "react-native-paper";
 import tw from "@lib/tailwind";
 import {
   Controller,
@@ -73,7 +73,6 @@ const NetworkPhoneInput = ({
       data_bundle: "",
       data_amount: "",
       amount: "0",
-      payAmount: 0,
       type: "",
       vendor: "",
     });
@@ -93,22 +92,22 @@ const NetworkPhoneInput = ({
       animationType="none"
       onRequestClose={() => setNetworkModalVisible(false)}
     >
-      <View style={tw`flex-1 bg-black/30 justify-center items-center px-4`}>
+      <View style={tw`flex-1 bg-black/50 justify-center items-center px-4`}>
         <Animated.View 
           style={[
-            tw`bg-white rounded-xl w-full max-w-md shadow-lg`,
+            tw`bg-white rounded-2xl w-full max-w-md shadow-xl`,
             {
               transform: [{ scale: animatedScale }],
               opacity: animatedOpacity
             }
           ]}
         >
-          <View style={tw`p-4 border-b border-gray-100`}>
-            <View style={tw`flex-row justify-between items-center mb-3`}>
+          <View style={tw`p-5 border-b border-gray-100`}>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
               <Text style={tw`text-gray-900 font-bold text-lg`}>Select Network</Text>
               <TouchableOpacity
                 onPress={() => setNetworkModalVisible(false)}
-                style={tw`p-1.5 rounded-full bg-gray-100`}
+                style={tw`p-2 rounded-full bg-gray-100 active:bg-gray-200`}
               >
                 <X size={18} color={tw.color('gray-600')} />
               </TouchableOpacity>
@@ -125,22 +124,22 @@ const NetworkPhoneInput = ({
                 dataProviders.map((provider) => (
                   <TouchableOpacity
                     key={provider.serviceId}
-                    style={tw`flex-row items-center p-3 rounded-lg ${values.provider === provider.serviceId ? 'bg-primary/5' : ''}`}
+                    style={tw`flex-row items-center p-4 rounded-xl mb-1 ${values.provider === provider.serviceId ? 'bg-primary/10' : 'active:bg-gray-50'}`}
                     onPress={() => handleNetworkChange(provider.serviceId)}
                   >
-                    <View style={tw`h-10 w-10 rounded-full overflow-hidden bg-gray-100 justify-center items-center`}>
+                    <View style={tw`h-12 w-12 rounded-full overflow-hidden bg-gray-100 justify-center items-center shadow-sm`}>
                       <AvatarImage 
                         avatar={provider.logo} 
-                        size={40} 
+                        size={48} 
                         style={tw`rounded-full`}
                       />
                     </View>
-                    <Text style={tw`ml-3 font-medium text-gray-800 flex-1`}>
+                    <Text style={tw`ml-3 font-medium text-base flex-1 ${values.provider === provider.serviceId ? 'text-primary font-bold' : 'text-gray-800'}`}>
                       {provider.name}
                     </Text>
                     {values.provider === provider.serviceId && (
                       <View style={tw`bg-primary rounded-full p-1`}>
-                        <Check size={12} color="white" />
+                        <Check size={16} color="white" />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -154,28 +153,28 @@ const NetworkPhoneInput = ({
   ), [networkModalVisible, values.provider, dataProviders, contentMaxHeight, handleNetworkChange, animatedScale, animatedOpacity]);
 
   return (
-    <View style={tw`mb-4`}>
-      <View style={tw`min-h-[60px]`}>
-        <View style={tw`flex-row items-center gap-2.5`}>
+    <View style={tw`mb-5`}>
+      <View style={tw`min-h-[70px]`}>
+        <View style={tw`flex-row items-center gap-3`}>
           {/* Custom Network Dropdown Button */}
           <Pressable
             style={tw.style(
-              `h-12 w-12 rounded-full justify-center items-center overflow-hidden bg-white shadow-sm flex-shrink-0`,
+              `h-14 w-14 rounded-full justify-center items-center overflow-hidden shadow-md flex-shrink-0`,
               selectedProvider 
-                ? `border-2 border-primary/20`
-                : `border border-gray-200`
+                ? `border-2 border-primary bg-white`
+                : `border border-gray-200 bg-white`
             )}
             onPress={() => setNetworkModalVisible(true)}
           >
             {selectedProvider ? (
               <AvatarImage 
                 avatar={selectedProvider.logo} 
-                size={52} 
-                style={tw`rounded-full`} 
+                size={40} 
+                style={tw`rounded-full bg-white`} 
               />
             ) : (
-              <View style={tw`h-12 w-12 rounded-full bg-gray-50 justify-center items-center`}>
-                <User size={20} color={tw.color("gray-400")} fill={tw.color("gray-100")} />
+              <View style={tw`h-14 w-14 rounded-full bg-gray-100 justify-center items-center`}>
+                <User size={22} color={tw.color("gray-500")} fill={tw.color("gray-200")} />
               </View>
             )}
           </Pressable>
@@ -207,13 +206,13 @@ const NetworkPhoneInput = ({
               </View>
               
               {/* Contact picker button */}
-              <TouchableOpacity
+              <IconButton
+                icon={() => <User size={20} color={tw.color("primary")} />}
                 onPress={onOpenContactModal}
-                style={tw`h-14 w-14 rounded-xl bg-gray-50 justify-center items-center border border-gray-200 shadow-sm flex-shrink-0`}
-                activeOpacity={0.7}
-              >
-                <User size={20} color={tw.color("primary")} />
-              </TouchableOpacity>
+                mode="contained"
+                iconColor={tw.color("primary")}
+                containerColor={tw.color('primary-50')}
+              />
             </View>
           </View>
         </View>

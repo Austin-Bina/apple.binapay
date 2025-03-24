@@ -44,6 +44,7 @@ export interface UtilityTransaction {
     business_name?: string;
   };
   created_at: string;
+  status: TransactionStatus;
 }
 export interface TransactionInfo {
   transaction: UtilityTransaction | null;
@@ -93,4 +94,6 @@ export interface ViewTransaction {
     amount: string;
     business_name: string;
   }>;
+  status?: TransactionStatus;
+  reference?: string;
 }

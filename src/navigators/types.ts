@@ -93,6 +93,7 @@ export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScr
 export type AddMoneyParamList = {
   [SCREENS.MANUAL_FUND_STACK]: NavigatorScreenParams<ManualFundParamList>;
   [SCREENS.FUND_WITH_CARD]: undefined;
+  [SCREENS.FUND_WITH_PAYSTACK]: undefined;
   [SCREENS.FUND_WITH_BANK]: undefined;
   [SCREENS.PAYMENT_SUCCESS]: undefined;
 };
@@ -183,7 +184,10 @@ export type StackNavigationProp<T extends keyof StackParamList> = CompositeNavig
 export type SupportParamList = {
   [SCREENS.DEPARTMENT_AND_HISTORY_TAB]: undefined;
   // [SCREENS.SUPPORT_DEPARTMENT]: undefined;
-  [SCREENS.SUPPORT_START_CONVERSATION]: { departmentId: string };
+  [SCREENS.SUPPORT_START_CONVERSATION]: { 
+    departmentId: string;
+    initialMessage?: string;
+  };
   [SCREENS.SUPPORT_CHAT]: {
     ticketId: string;
     departmentId: string;
@@ -191,7 +195,10 @@ export type SupportParamList = {
   // [SCREENS.SUPPORT_HISTORY]: undefined;
 };
 export type SupportTabsParamList = {
-  [SCREENS.SUPPORT_DEPARTMENT]: undefined;
+  [SCREENS.SUPPORT_DEPARTMENT]: { 
+    initialMessage?: string;
+    transactionReference?: string;
+  } | undefined;
   [SCREENS.SUPPORT_HISTORY]: undefined;
 };
 // export type SupportStackScreenProps<T extends keyof SupportParamList> = NativeStackScreenProps<SupportParamList, T>;

@@ -17,10 +17,12 @@ import { RefreshControl, View } from "react-native";
 import { Button, Divider, ProgressBar, Text } from "react-native-paper";
 import { useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Props = SupportStackScreenProps<typeof SCREENS.SUPPORT_DEPARTMENT>;
-export default function SupportDepartment({ navigation }: Props) {
+export default function SupportDepartment({ navigation, route }: Props) {
   const [isSupportIdError, setIsSupportIdError] = useState(false);
+  const [storedInitialMessage, setStoredInitialMessage] = useState<string>("");
 
   const user = useTypedSelector(selectUser);
   const { data: queryData, isFetching, isError } = useGetSupportDepartmentsQuery();
@@ -42,6 +44,24 @@ export default function SupportDepartment({ navigation }: Props) {
     force: true,
   });
 
+  // Check if there's a stored message from a transaction reference
+  useEffect(() => {
+    const checkStoredMessage = async () => {
+      try {
+        const message = await AsyncStorage.getItem('SUPPORT_INITIAL_MESSAGE');
+        if (message) {
+          setStoredInitialMessage(message);
+          // Clear the stored message so it doesn't show up again if user returns to this screen
+          await AsyncStorage.removeItem('SUPPORT_INITIAL_MESSAGE');
+        }
+      } catch (err) {
+        console.error("Error retrieving support message:", err);
+      }
+    };
+    
+    checkStoredMessage();
+  }, []);
+
   // If is support error, stop retrying
   useEffect(() => {
     if (isSupportIdError) return;
@@ -57,7 +77,12 @@ export default function SupportDepartment({ navigation }: Props) {
   const history = historyQuery?.data.tickets.slice(0, 5) ?? [];
 
   const handleNavigate = (departmentId: string) => {
-    navigation.navigate(SCREENS.SUPPORT_START_CONVERSATION, { departmentId });
+    // Use the stored message from AsyncStorage if it exists, or the route params
+    const initialMessage = storedInitialMessage || route.params?.initialMessage;
+    navigation.navigate(SCREENS.SUPPORT_START_CONVERSATION, { 
+      departmentId,
+      initialMessage
+    });
   };
 
   type HistoryArgs = {

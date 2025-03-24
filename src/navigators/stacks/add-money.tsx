@@ -10,6 +10,7 @@ import { AddMoneyParamList } from "@navigators/types";
 import ManualFundStack from "./manual-fund";
 import BankTransferScreen from "@screens/fund/BankTransfer";
 import FundWithCardScreen from "@screens/fund/FundWithCard";
+import FundWithPaystackScreen from "@screens/fund/FundWithPaystack";
 
 const Stack = createNativeStackNavigator<AddMoneyParamList>();
 
@@ -48,6 +49,7 @@ function AddMoneyStack() {
       })}>
       <Stack.Screen name={SCREENS.FUND_WITH_BANK} component={BankTransferScreen} />
       <Stack.Screen name={SCREENS.FUND_WITH_CARD} component={FundWithCardScreen} />
+      <Stack.Screen name={SCREENS.FUND_WITH_PAYSTACK} component={FundWithPaystackScreen} />
       <Stack.Screen name={SCREENS.PAYMENT_SUCCESS} options={{ headerShown: false }} component={PaymentSuccessScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND_STACK} options={{ headerShown: false }} component={ManualFundStack} />
     </Stack.Navigator>

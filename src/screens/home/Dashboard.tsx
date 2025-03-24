@@ -30,7 +30,7 @@ import { AccountUpdateEventPayload } from "@type/event";
 import { authSliceActions } from "@store/slice/auth";
 import API from "@lib/api";
 import { route } from "@helpers/route";
-import { navigateToTransaction } from "@helpers/transaction";
+import { navigateToTransaction, getTransactionStatus } from "@helpers/transaction";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { useNotificationsPrefetch } from "@store/redux-api/notificationApi";
 import { HorizontalDots, LargeEyeClose, LargeEyeOpen } from "@components/icons/svg";
@@ -40,6 +40,7 @@ import FundAccountSheet from "@components/ui/modals/fund-account";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { getTransactionIcon } from "@utils/index";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
+import StatusBadge from "@components/ui/transaction/StatusBadge";
 
 type Props = HomeStackScreenProps<typeof SCREENS.DASHBOARD>;
 export default function HomeScreen({ navigation }: Props) {
@@ -165,11 +166,11 @@ export default function HomeScreen({ navigation }: Props) {
     });
   };
 
-  const handleFundWithCard = () => {
+  const handleFundWithPaystack = () => {
     closeFundModal();
 
     navigation.navigate(SCREENS.ADD_MONEY, {
-      screen: SCREENS.FUND_WITH_CARD,
+      screen: SCREENS.FUND_WITH_PAYSTACK,
     });
   };
 
@@ -305,7 +306,8 @@ export default function HomeScreen({ navigation }: Props) {
         hide={closeFundModal}
         navigation={{
           handleFundWithBank,
-          handleFundWithCard,
+          handleFundWithCard: handleFundWithPaystack,
+          handleFundWithPaystack,
           handleManualFund,
         }}
       />
@@ -369,9 +371,12 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) =
                   />
                   <View style={tw`flex-1 mx-3`}>
                     <Text style={tw`text-gray-900 text-sm`}>{transaction.meta.description}</Text>
-                    <Text style={tw`text-gray-500 text-xs`}>
-                      {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
-                    </Text>
+                    <View style={tw`flex-row items-center gap-2`}>
+                      <Text style={tw`text-gray-500 text-xs`}>
+                        {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
+                      </Text>
+                      <StatusBadge status={getTransactionStatus(transaction)} />
+                    </View>
                   </View>
                   <Text style={tw`text-gray-900 font-semibold`}>{convertToNaira(transaction.amount, true)}</Text>
                 </Fragment>

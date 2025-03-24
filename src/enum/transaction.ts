@@ -19,4 +19,5 @@ export enum TransactionStatus {
   Cancelled = "cancelled",
   Initiated = "initiated",
   Successful = "successful",
+  Refunded = "refunded",
 }

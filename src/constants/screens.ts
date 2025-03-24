@@ -14,6 +14,7 @@ export const SCREENS = {
   ADD_MONEY: "Add Money",
   FUND_WITH_BANK: "Fund With Bank",
   FUND_WITH_CARD: "Fund With Card",
+  FUND_WITH_PAYSTACK: "Fund With Paystack",
   MANUAL_FUND_STACK: "Manual Fund Stack",
   MANUAL_FUND: "Manual Fund",
   START_MANUAL_FUNDING: "Start Manual Funding",
