@@ -33,15 +33,12 @@ export interface RouteOptions {
 
 export interface DataPlan {
   id: number;
-  dataplan_id: string;
   network: number;
   plan_type: string;
   plan_network: string;
   month_validate: string;
   plan: string;
   plan_amount: string;
-  fee: number;
-  fee_type: "flat" | "percentage";
   vendor: string;
 }
 export interface CablePlan {

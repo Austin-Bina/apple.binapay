@@ -40,7 +40,7 @@ export default function ServicesStack() {
       <Stack.Screen name="List" component={ListServicesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Airtime Purchase" component={AirtimePurchaseScreen} />
       <Stack.Screen name="Airtime EPIN Purchase" component={AirtimeEPINPurchaseScreen} />
-      <Stack.Screen name="Data Purchase" component={DataPurchaseScreen} />
+      <Stack.Screen name="Data Purchase" component={DataPurchaseScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Confirm Transaction" component={TransactionConfirmationScreen} />
       <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen} />
       <Stack.Screen name="Education" options={{ headerShown: false }} component={EducationStack} />

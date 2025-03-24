@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, TouchableOpacity, Alert } from "react-native";
+import { View, TouchableOpacity, Alert, Platform, StyleSheet } from "react-native";
 import * as Contacts from "expo-contacts";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import Fuse from "fuse.js";
 import { formatPhone } from "@utils/phone";
 import BottomSheet from "./BottomSheet/BottomSheet";
 import tw from "@lib/tailwind";
-import { ActivityIndicator, Searchbar, Text, TextInput } from "react-native-paper";
+import { ActivityIndicator, Avatar, Divider, Searchbar, Text, TextInput, useTheme } from "react-native-paper";
 import { showToast } from "@helpers/toast";
 import Toast from "react-native-root-toast";
 import ScrollableView from "../shared/ScrollableView";
@@ -14,6 +14,8 @@ import { match } from "ts-pattern";
 import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
 import CustomTextInput from "../form/TextInput";
 import { debounce } from "@utils/index";
+import { scale } from "react-native-size-matters";
+import { Search, User, Phone, X, UserCheck, Users } from "lucide-react-native";
 
 type Props = {
   isVisible: boolean;
@@ -32,10 +34,11 @@ const ContactPickerModal = ({ index, isVisible, onClose, onSelectContact }: Prop
   const [loading, setLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [pageOffset, setPageOffset] = useState(0);
+  const theme = useTheme();
 
   const bottomSheetRef = useRef<BottomSheetModalMethods>(null);
 
-  const snapPoints = useMemo(() => ["60%", "90%"], []);
+  const snapPoints = useMemo(() => ["65%", "90%"], []);
 
   const loadContacts = async (loadMore = false) => {
     if (loading) return;
@@ -53,7 +56,7 @@ const ContactPickerModal = ({ index, isVisible, onClose, onSelectContact }: Prop
 
     try {
       const { data, hasNextPage: hasMore } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers, Contacts.Fields.Image],
         pageSize: PAGE_SIZE,
         pageOffset: loadMore ? pageOffset : 0,
       });

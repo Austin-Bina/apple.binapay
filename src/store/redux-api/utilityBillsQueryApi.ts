@@ -6,13 +6,18 @@ import { defaultQueryOptions } from "@utils/query";
 
 interface DataResponse {
   service: "data" | "airtime" | "cable-tv" | "electricity" | "education";
-  vendor: string;
   data_plans: {
     mtn: DataPlan[];
     glo: DataPlan[];
     airtel: DataPlan[];
     "9mobile": DataPlan[];
   };
+  popular_data_types: Array<{
+    type: string;
+    name: string;
+    count: number;
+    supported_networks?: string[];
+  }>;
 }
 
 interface CableResponse {
@@ -61,7 +66,7 @@ export const utilityBillsQueryApi = createApi({
         url: route("services.fetch"),
         params: { service: "data" },
       }),
-      providesTags: [{ type: "Cable" }],
+      providesTags: [{ type: "Data" }],
     }),
     getCablePlans: builder.query<CableResponse, void>({
       query: () => ({

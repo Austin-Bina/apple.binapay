@@ -1,10 +1,3 @@
-import Screen from "@components/ui/shared/Screen";
-import ScrollableView from "@components/ui/shared/ScrollableView";
-import { serviceProvidersMap } from "@constants/providers";
-import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import tw from "@lib/tailwind";
-import { ServicesStackScreenProps } from "@navigators/types";
 import React, {
   useCallback,
   useEffect,
@@ -12,52 +5,69 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Controller, useForm } from "react-hook-form";
 import {
-  FlatList,
-  Keyboard,
   RefreshControl,
-  TouchableOpacity,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  Keyboard,
   View,
 } from "react-native";
-import { Image } from "react-native-element-image";
-import { Button, Text } from "react-native-paper";
+import { Appbar, Button, useTheme, Text } from "react-native-paper";
+import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import ArrowRight from "@assets/icons/arrow-right.svg";
-import NairaInput from "@components/ui/form/NairaInput";
-import DropdownMenuField from "@components/ui/form/DropdownMenu";
-import { scale } from "react-native-size-matters";
-import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
+import { History, Wallet } from "lucide-react-native";
+
+// Framework
+import tw from "@lib/tailwind";
+import { ServicesStackScreenProps } from "@navigators/types";
 import { useTypedSelector, useTypedDispatch } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import { TransactionForm } from "@enum/transaction";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import { useGetDataPlansQuery } from "@store/redux-api/utilityBillsQueryApi";
-import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
-import { InternetProviders } from "@type/app";
-import { calculateTransactionDetails, formatToNaira } from "@utils/money";
-import { selectSystemSettings } from "@store/selectors/settings";
-import { usePhoneValidation } from "@hooks/phone";
-import PortedNumberAccordion from "@components/ui/widgets/ported-number-accordion";
-import MaskedInput from "@components/ui/form/mask-input";
-import { MAX_CACHE_AGE_SEC, phone_mask } from "@constants/app";
-import { getDefaultProvider, zodPhoneValidation } from "@utils/phone";
-import { useWalletBalanceValidation } from "@hooks/transaction";
-import WalletBalanceHelper from "@components/ui/form/wallet-balance";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
-import { Colors } from "@constants/theme/colors";
+import { selectSystemSettings } from "@store/selectors/settings";
+
+// Constants and Utils
+import { serviceProvidersMap } from "@constants/providers";
+import { MAX_CACHE_AGE_SEC } from "@constants/app";
+import { getDefaultProvider, zodPhoneValidation } from "@utils/phone";
+import { calculateTransactionDetails } from "@utils/money";
+import { SCREENS } from "@constants/screens";
+import { getNavigate } from "@utils/navigation";
+
+// Hooks
+import { usePhoneValidation } from "@hooks/phone";
+import { useWalletBalanceValidation } from "@hooks/transaction";
+
+// Components
+import ScrollableView from "@components/ui/shared/ScrollableView";
+import TransactionErrorSheet from "@components/ui/modals/TransactionErrorSheet";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import BottomSheetModal from "@components/ui/modals/preview-transaction";
 import ContactPickerModal from "@components/ui/modals/pick-contacts";
+import {
+  NetworkPhoneInput,
+  DataTypesSelection,
+  DataBundlesGrid,
+  PortedNumberSection,
+  PaymentSection,
+} from "@components/services/data-purchase";
+
+// Types
+import { InternetProviders } from "@type/app";
 
 type Props = ServicesStackScreenProps<"Data Purchase">;
 
 const schema = z.object({
   provider: z.string().min(3),
   phone: zodPhoneValidation,
-  data_bundle: z.string(),
+  data_bundle: z.number().optional(),
   data_amount: z.string(),
-  ported_number: z.boolean(),
-  payAmount: z.number(),
   amount: z.string(),
   type: z.string(),
   vendor: z.string().optional(),
@@ -66,8 +76,16 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function DataPurchaseScreen({ navigation }: Props) {
+  const theme = useTheme();
   const [isContactModalVisible, setIsContactModalVisible] = useState(false);
+  const bottomSheet = useRef<BottomSheetModalMethods>(null);
 
+  // Redux state
+  const user = useTypedSelector(selectUser);
+  const { customers, transaction } = useTypedSelector(selectSystemSettings);
+  const dispatch = useTypedDispatch();
+
+  // API queries
   const {
     data: queryData,
     isFetching,
@@ -77,16 +95,10 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   const prefetchSystemSettings = useSystemSettingsPrefetch(
     "getSystemSettings",
-    {
-      ifOlderThan: MAX_CACHE_AGE_SEC,
-    }
+    { ifOlderThan: MAX_CACHE_AGE_SEC }
   );
 
-  const user = useTypedSelector(selectUser);
-  const { customers, transaction } = useTypedSelector(selectSystemSettings);
-  const dispatch = useTypedDispatch();
-  const bottomSheet = useRef<BottomSheetModalMethods>(null);
-
+  // Form setup
   const {
     control,
     watch,
@@ -96,16 +108,15 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     reset,
     setValue,
     handleSubmit,
+    formState: { isValid },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       provider: getDefaultProvider(user?.phone),
       phone: user?.phone,
-      data_bundle: "",
+      data_bundle: undefined,
       data_amount: "",
       amount: "0",
-      payAmount: 0,
-      ported_number: true,
       type: "",
       vendor: "",
     },
@@ -115,67 +126,24 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   const values = watch();
   const provider = values.provider as InternetProviders;
 
-  useEffect(() => {
-    prefetchSystemSettings();
-  }, [prefetchSystemSettings]);
-
+  // Hook for phone validation
   const revalidatePhone = usePhoneValidation({
     phone: values.phone,
     provider: values.provider,
-    portedNumber: values.ported_number,
+    portedNumber: true,
     setError,
     clearErrors,
   });
 
+  // Hook for wallet balance validation
   const walletValidation = useWalletBalanceValidation({
     amount: parseFloat(values.amount) || 0,
   });
 
-  const dataPlans = useMemo(() => {
-    const plans = queryData?.data_plans[provider] || [];
-    const type = values.type;
-
-    const chargedPlans = plans
-      .filter((plan) => (!!type ? plan.plan_type === type : true))
-      .map((plan) => {
-        const planId = plan.id.toString();
-
-        const planAmount = parseFloat(plan.plan_amount);
-        const fee = plan.fee;
-        const feeType = plan.fee_type;
-        const newPrice =
-          feeType === "percentage"
-            ? planAmount * (1 + fee / 100)
-            : planAmount + fee;
-
-        return {
-          label: `${plan.plan} - ${formatToNaira(newPrice)} ${
-            plan.month_validate
-          }`,
-          amount: plan.plan_amount,
-          data_amount: plan.plan,
-          data_bundle: planId,
-          type: plan.plan_type,
-          payAmount: newPrice,
-          id: planId,
-          vendor: plan.vendor,
-        };
-      });
-
-    return chargedPlans;
-  }, [queryData, values.provider, values.type]);
-
-  const dataTypes = useMemo(() => {
-    const types = new Set<string>();
-    const plans = queryData?.data_plans[provider] || [];
-
-    plans.forEach((plan) => types.add(plan.plan_type));
-
-    return Array.from(types).map((type) => ({
-      label: type,
-      id: type,
-    }));
-  }, [dataPlans, queryData]);
+  // Fetch system settings on mount
+  useEffect(() => {
+    prefetchSystemSettings();
+  }, [prefetchSystemSettings]);
 
   const dataProviders = useMemo(
     () =>
@@ -185,43 +153,131 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     [transaction.data]
   );
 
-  const extraPlanDetails = useMemo(() => {
-    return calculateTransactionDetails(
+
+  const dataTypes = useMemo(() => {
+    const allTypes = queryData?.popular_data_types || [];
+    
+    const supportedPopularTypes = allTypes.filter(type => 
+      !type.supported_networks || 
+      type.supported_networks.map(n => n.toUpperCase()).includes(provider.toUpperCase())
+    );
+
+    const types = supportedPopularTypes.map(type => ({
+      id: type.type,
+      label: type.name,
+    }));
+    
+    return types;
+  }, [queryData, provider]);
+
+  const dataPlans = useMemo(() => {
+    const plans = queryData?.data_plans[provider] || [];
+    const type = values.type;
+
+    return plans
+      .filter((plan) => (!!type ? plan.plan_type === type : true))
+      .map((plan) => {
+        const planAmount = parseFloat(plan.plan_amount);
+
+
+        return {
+          ...plan,
+          label: `${plan.plan} - ${planAmount} ${plan.month_validate}`,
+          amount: plan.plan_amount,
+          data_amount: plan.plan,
+          data_bundle: plan.id,
+          type: plan.plan_type,
+          vendor: plan.vendor,
+          month_validate: plan.month_validate,
+        };
+      });
+  }, [queryData, values.provider, values.type]);
+
+  // Auto-select first data type when data is loaded or provider changes
+  useEffect(() => {
+    if (dataTypes.length > 0 && !values.type) {
+      setValue("type", dataTypes[0].id);
+    }
+  }, [dataTypes, setValue, values.type]);
+
+  const transactionDetails = useMemo(() => {
+    const extraPlanDetails = calculateTransactionDetails(
       parseFloat(values.amount) || 0,
       "data",
       customers
     );
-  }, [values.amount, customers]);
 
-  const snapSize = "58%";
+    return [
+      {
+        label: "Network",
+        value: values.provider,
+        icon: serviceProvidersMap.internet[values.provider]?.logo,
+      },
+      { label: "Data Amount", value: values.data_amount },
+      { label: "Number", value: values.phone },
+      ...Object.keys(extraPlanDetails).map((key) => ({
+        label: key,
+        value: extraPlanDetails[key],
+      })),
+    ];
+  }, [
+    values.provider,
+    values.data_amount,
+    values.phone,
+    values.amount,
+    customers,
+  ]);
 
-  const onSelectProvider = useCallback(
-    (serviceId: string) => {
+  // Handlers
+  const onRefresh = useCallback(() => {
+    if (!isFetching) {
+      refetch();
+      prefetchSystemSettings();
+    }
+  }, [isFetching, refetch, prefetchSystemSettings]);
+
+  const handleSelectBundle = useCallback(
+    (plan: any) => {
+      // Only change necessary fields, don't reset the entire form
+      setValue("data_bundle", plan.data_bundle);
+      setValue("data_amount", plan.data_amount);
+      setValue("amount", plan.amount);
+      if (plan.vendor) {
+        setValue("vendor", plan.vendor);
+      }
+    },
+    [setValue]
+  );
+
+  const handleSelectContact = useCallback(
+    (phoneNumber: string) => {
       reset({
         ...values,
-        provider: serviceId,
-        type: "",
-        data_amount: "",
-        data_bundle: "",
-        ported_number: true,
-        vendor: "",
+        phone: phoneNumber,
+        provider: getDefaultProvider(phoneNumber),
       });
     },
-    [values]
+    [values, reset]
   );
 
   const openBottomSheet = useCallback(async () => {
     const valid = await trigger();
     if (valid) {
       Keyboard.dismiss();
-      setTimeout(() => {
-        bottomSheet.current?.present();
-      }, 100);
+      setTimeout(() => bottomSheet.current?.present(), 100);
     }
   }, [trigger]);
 
   const closeBottomSheet = useCallback(() => {
     bottomSheet.current?.dismiss();
+  }, []);
+
+  const navigateToTransactionHistory = useCallback(async () => {
+    const { navigate } = await getNavigate();
+    navigate("Main", {
+      screen: SCREENS.HOME,
+      params: { screen: SCREENS.TRANSACTION_HISTORY },
+    });
   }, []);
 
   const handleMakePayment = handleSubmit((values) => {
@@ -233,201 +289,110 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     };
 
     dispatch(addPendingTransaction(transaction));
-
     closeBottomSheet();
-
     navigation.navigate("Confirm Transaction", {
       transactionId: transaction.id,
     });
   });
 
-  const onRefresh = async () => {
-    if (!isFetching) {
-      refetch();
-      prefetchSystemSettings();
-    }
-  };
-
-  const handleOpenContactModal = () => {
-    setIsContactModalVisible(true);
-  };
-  const handleCloseContactModal = () => {
-    setIsContactModalVisible(false);
-  };
-
-  const handleSelectContact = (phoneNumber: string) => {
-    reset({
-      ...values,
-      phone: phoneNumber,
-      provider: getDefaultProvider(phoneNumber),
-    });
-  };
-
-  const transactionDetails = [
-    {
-      label: "Network",
-      value: values.provider,
-      icon: serviceProvidersMap.internet[values.provider].logo,
-    },
-    { label: "Data Amount", value: values.data_amount },
-    { label: "Number", value: values.phone },
-    ...Object.keys(extraPlanDetails).map((key) => ({
-      label: key,
-      value: extraPlanDetails[key],
-    })),
-  ];
-
   return (
-    <Screen>
-      <ScrollableView
-        contentContainerStyle={tw`justify-between px-4 py-5`}
-        refreshControl={
-          <RefreshControl refreshing={false} onRefresh={onRefresh} />
-        }
-      >
-        <View>
-          <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-            Buy Data Bundle
-          </Text>
-          <Text variant="bodySmall" style={tw`text-gray-500`}>
-            Stay connected with our data bundles! Select your preferred options
-            below to purchase a data bundle.
-          </Text>
-
-          <FlatList
-            data={dataProviders}
-            renderItem={({ item: provider }) => (
-              <TouchableOpacity
-                key={provider.serviceId}
-                onPress={() => onSelectProvider(provider.serviceId)}
-                style={[
-                  tw`p-3 mx-1 border-2 border-primary-100 rounded-xl justify-center items-center`,
-                  values.provider === provider.serviceId && tw`border-blue-500`,
-                ]}
-              >
-                <Image source={provider.logo} width={scale(45)} />
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
-                <Text>No data providers available</Text>
-              </View>
-            }
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={tw`items-center`}
-            style={tw`my-5`}
+    <KeyboardAvoidingView
+      style={tw`flex-1 bg-white`}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+    >
+      <StatusBar backgroundColor="white" barStyle="dark-content" />
+      <SafeAreaView style={tw`flex-1`}>
+        <Appbar.Header style={tw`bg-white`}>
+          <Appbar.BackAction onPress={() => navigation.goBack()} />
+          <Appbar.Content
+            title="Buy Data Bundle"
+            titleStyle={tw`text-lg font-bold text-gray-800`}
           />
-
-          {isError && !isFetching && (
-            <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
-              <Text variant="bodySmall">
-                We had trouble loading your data plans. Please try again.
-              </Text>
-              <Button onPress={onRefresh} textColor={Colors.primary[500]}>
-                Try again
-              </Button>
-            </View>
-          )}
-
-          <Controller
-            control={control}
-            name="phone"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
-              <MaskedInput
-                mask={phone_mask}
-                label="Phone Number"
-                placeholder="080 0000000000"
-                mode="outlined"
-                onBlur={onBlur}
-                value={value}
-                onChangeText={onChange}
-                error={!!error}
-                errorMessage={error?.message}
-              />
-            )}
+          <Appbar.Action
+            icon={() => <History size={24} color={theme.colors.primary} />}
+            onPress={navigateToTransactionHistory}
+            rippleColor="transparent"
           />
+        </Appbar.Header>
 
-          <View style={tw`flex-row justify-end`}>
-            <TouchableOpacity onPress={handleOpenContactModal}>
-              <View style={tw`flex-row items-center gap-1`}>
-                <Text style={tw`text-primary text-xs`}>
-                  Select from Contact
-                </Text>
-                <ArrowRight width={20} />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <Controller
-            control={control}
-            name="ported_number"
-            render={({ field: { value, onChange }, fieldState: { error } }) => (
-              <PortedNumberAccordion
-                onPress={() => {
-                  onChange(!value);
-                }}
-                checked={value}
-              />
-            )}
-          />
-
-          <DropdownMenuField
-            label="Data Type"
-            placeholder="Select Data Type"
-            name="type"
-            control={control}
-            data={dataTypes}
-          />
-
-          <DropdownMenuField
-            search
-            label="Data Bundle"
-            placeholder="Select Data Bundle"
-            name="data_bundle"
-            control={control}
-            data={dataPlans}
-            onDataSelect={(plan) => {
-              reset({
-                ...values,
-                ...plan,
-              });
-            }}
-          />
-
-          <View>
-            <NairaInput name="payAmount" control={control} isDisabled />
-            <WalletBalanceHelper {...walletValidation} />
-          </View>
-          {values.data_amount && (
-            <View
-              style={tw`bg-green-50 flex-row justify-center items-center p-2.5 rounded-xl gap-1 w-full my-5`}
-            >
-              <Text
-                variant="bodyMedium"
-                style={tw`text-green-600 text-center font-bold`}
-              >
-                You get {values.data_amount}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <Button
-          style={tw`w-full rounded-full mt-4`}
-          contentStyle={tw`py-2`}
-          disabled={!walletValidation.canPay || dataProviders.length === 0}
-          labelStyle={tw`text-white text-center text-base font-bold`}
-          onPress={openBottomSheet}
-          mode="contained"
+        <ScrollableView
+          contentContainerStyle={tw`pb-24 px-4`}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={onRefresh} />
+          }
         >
-          Proceed
-        </Button>
-      </ScrollableView>
+          {/* Network Provider & Phone Input - Side by side */}
+          <NetworkPhoneInput
+            control={control}
+            watch={watch}
+            reset={reset}
+            dataProviders={dataProviders}
+            onOpenContactModal={() => setIsContactModalVisible(true)}
+          />
 
+          {/* Data Type Selection */}
+            <DataTypesSelection
+              dataTypes={dataTypes}
+              selectedType={values.type}
+              onTypeSelect={(type) => {
+                reset({
+                  ...values,
+                  type,
+                  data_bundle: undefined,
+                  data_amount: "",
+                  amount: "0",
+                });
+              }}
+            />
+          
+          {/* Data Bundles Grid - Moved up */}
+          <DataBundlesGrid
+            dataPlans={dataPlans}
+            selectedBundle={values.data_bundle}
+            isFetching={isFetching}
+            isError={isError}
+            onSelectBundle={handleSelectBundle}
+            onRetry={onRefresh}
+          />
+
+          {/* Ported Number Section - Moved down */}
+          <PortedNumberSection control={control} />
+
+          {/* Payment Information */}
+          <PaymentSection
+            control={control}
+            dataAmount={values.data_amount}
+            walletValidation={walletValidation}
+          />
+        </ScrollableView>
+
+        {/* Fixed bottom button */}
+        <SafeAreaView style={tw`bg-white border-t border-gray-200`}>
+          <View style={tw`px-4 py-3`}>
+            <Button
+              style={tw`rounded-full border`}
+              contentStyle={tw`py-2`}
+              disabled={
+                !walletValidation.canPay ||
+                dataProviders.length === 0 ||
+                !isValid
+              }
+              labelStyle={tw`text-white text-base font-semibold`}
+              onPress={openBottomSheet}
+              mode="contained"
+              loading={isFetching}
+              icon={({ size, color }) => (
+                <Wallet size={18} color={color} style={tw`mr-1`} />
+              )}
+            >
+              {isFetching ? "Loading..." : "Proceed to Payment"}
+            </Button>
+          </View>
+        </SafeAreaView>
+      </SafeAreaView>
+
+      {/* Modals */}
       <BottomSheetModal
         ref={bottomSheet}
         title="Confirm Data Bundle Purchase"
@@ -435,18 +400,19 @@ export default function DataPurchaseScreen({ navigation }: Props) {
         buttonLabel="Make Payment"
         onConfirm={handleMakePayment}
         onDismiss={closeBottomSheet}
-        snapPoints={[snapSize, snapSize]}
+        snapPoints={["58%", "58%"]}
         disabled={!walletValidation.canPay}
       />
+
       <ContactPickerModal
         index={1}
         isVisible={isContactModalVisible}
-        onClose={handleCloseContactModal}
+        onClose={() => setIsContactModalVisible(false)}
         onSelectContact={handleSelectContact}
       />
 
       <TransactionErrorSheet />
       <PleaseWaitModal visible={isFetching} />
-    </Screen>
+    </KeyboardAvoidingView>
   );
 }
