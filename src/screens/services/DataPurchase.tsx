@@ -48,6 +48,7 @@ import {
   PaymentSection,
 } from "@components/services/data-purchase";
 import { InternetProviders } from "@type/app";
+import { DataBundlesGridRef } from "@components/services/data-purchase/DataBundlesGrid";
 
 type Props = ServicesStackScreenProps<"Data Purchase">;
 
@@ -67,6 +68,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   const theme = useTheme();
   const [isContactModalVisible, setIsContactModalVisible] = useState(false);
   const bottomSheet = useRef<BottomSheetModalMethods>(null);
+  const dataBundlesGridRef = useRef<DataBundlesGridRef>(null);
 
   // Redux state
   const user = useTypedSelector(selectUser);
@@ -228,6 +230,18 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     [reset, values]
   );
 
+  const handleTypeSelect = useCallback((type: string) => {
+    reset({
+      ...values,
+      type,
+      data_bundle: undefined,
+      data_amount: "",
+      amount: "0",
+    });
+    // Reset the scroll position in the data bundles grid
+    dataBundlesGridRef.current?.resetScroll();
+  }, [reset, values]);
+
   const handleSelectContact = useCallback(
     (phoneNumber: string) => {
       reset({
@@ -314,19 +328,12 @@ export default function DataPurchaseScreen({ navigation }: Props) {
           <DataTypesSelection
             dataTypes={dataTypes}
             selectedType={values.type}
-            onTypeSelect={(type) => {
-              reset({
-                ...values,
-                type,
-                data_bundle: undefined,
-                data_amount: "",
-                amount: "0",
-              });
-            }}
+            onTypeSelect={handleTypeSelect}
           />
 
           {/* Data Bundles Grid - Moved up */}
           <DataBundlesGrid
+            ref={dataBundlesGridRef}
             dataPlans={dataPlans}
             selectedBundle={values.data_bundle}
             isFetching={isFetching}

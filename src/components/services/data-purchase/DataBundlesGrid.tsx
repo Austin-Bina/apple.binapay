@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useImperativeHandle, forwardRef, useRef, useMemo } from "react";
 import { View, Dimensions } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import tw from "@lib/tailwind";
@@ -7,7 +7,7 @@ import { formatToNaira } from "@utils/money";
 import { Button } from "react-native-paper";
 import { Colors } from "@constants/theme/colors";
 import { DataPlan } from "@type/app";
-import ScrollableGrid from "@components/ui/scrollable-grid";
+import ScrollableGrid, { ScrollableGridRef } from "@components/ui/scrollable-grid";
 import { scale, verticalScale } from "react-native-size-matters";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -16,6 +16,11 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = scale(90);
 const CARD_HEIGHT = verticalScale(70);
 const CARD_MARGIN = 4;
+const NUM_ROWS = 3;
+
+export interface DataBundlesGridRef {
+  resetScroll: () => void;
+}
 
 interface DataBundlesGridProps {
   dataPlans: DataPlan[];
@@ -26,15 +31,29 @@ interface DataBundlesGridProps {
   onRetry: () => void;
 }
 
-const DataBundlesGrid = ({
+const DataBundlesGrid = forwardRef<DataBundlesGridRef, DataBundlesGridProps>(({
   dataPlans,
   selectedBundle,
   isFetching,
   isError,
   onSelectBundle,
   onRetry,
-}: DataBundlesGridProps) => {
+}, ref) => {
   const theme = useTheme();
+  const scrollableGridRef = useRef<ScrollableGridRef>(null);
+
+  // Calculate items per row based on screen width
+  const itemsPerRow = useMemo(() => 
+    Math.floor((SCREEN_WIDTH - 40) / (CARD_WIDTH + CARD_MARGIN * 2)),
+    []
+  );
+
+  // Expose resetScroll method to parent component
+  useImperativeHandle(ref, () => ({
+    resetScroll: () => {
+      scrollableGridRef.current?.resetScroll();
+    }
+  }));
 
   // Custom renderItem function to maintain the same appearance
   const renderDataBundleItem = useCallback((item: DataPlan, isSelected: boolean) => (
@@ -71,38 +90,46 @@ const DataBundlesGrid = ({
     </View>
   ), []);
 
+  const getGridHeight = useCallback(() => 
+    (CARD_HEIGHT + 5 + CARD_MARGIN * 2) * NUM_ROWS,
+    []
+  );
+
   // Custom empty state
   const renderEmptyState = useCallback(() => (
-    <View style={tw`bg-gray-50 p-6 rounded-xl items-center my-4`}>
+    <View style={[tw`bg-gray-50 rounded-xl items-center justify-center`, { height: getGridHeight() }]}>
       <WifiOff size={28} color={tw.color("gray-500")} />
       <Text style={tw`mt-3 text-gray-500 text-center font-medium`}>
         No data bundles available for the selected type
       </Text>
     </View>
-  ), []);
+  ), [getGridHeight]);
 
   // Custom error state
   const renderErrorState = useCallback(() => (
-    <View style={tw`bg-red-50 p-4 rounded-xl my-4 flex-row items-center`}>
-      <RefreshCw size={20} color={tw.color("red-500")} />
-      <View style={tw`ml-2 flex-1`}>
-        <Text variant="bodySmall" style={tw`text-red-600 mb-1`}>
-          We had trouble loading your data plans. Please try again.
-        </Text>
-        <Button
-          onPress={onRetry}
-          textColor={Colors.primary[500]}
-          style={tw`self-start p-0 m-0`}
-        >
-          Try again
-        </Button>
+    <View style={[tw`bg-red-50 rounded-xl items-center justify-center`, { height: getGridHeight() }]}>
+      <View style={tw`flex-row items-center`}>
+        <RefreshCw size={20} color={tw.color("red-500")} />
+        <View style={tw`ml-2 flex-1`}>
+          <Text variant="bodySmall" style={tw`text-red-600 mb-1`}>
+            We had trouble loading your data plans. Please try again.
+          </Text>
+          <Button
+            onPress={onRetry}
+            textColor={Colors.primary[500]}
+            style={tw`self-start p-0 m-0`}
+          >
+            Try again
+          </Button>
+        </View>
       </View>
     </View>
-  ), [onRetry]);
+  ), [onRetry, getGridHeight]);
 
   return (
-    <View style={tw`mb-5`}>
+    <View style={tw`mb-3`}>
       <ScrollableGrid
+        ref={scrollableGridRef}
         data={dataPlans.map(plan => ({ ...plan, id: plan.id }))}
         selectedItemId={selectedBundle}
         onSelectItem={onSelectBundle}
@@ -115,9 +142,9 @@ const DataBundlesGrid = ({
         itemWidth={CARD_WIDTH}
         itemHeight={CARD_HEIGHT}
         itemMargin={CARD_MARGIN}
-        itemsPerRow={Math.floor((SCREEN_WIDTH - 40) / (CARD_WIDTH + CARD_MARGIN * 2))}
-        numRows={3}
-        containerStyle={tw`mb-5`}
+        itemsPerRow={itemsPerRow}
+        numRows={NUM_ROWS}
+        containerStyle={tw`mb-3`}
         itemContainerStyle={[
           tw`p-1 rounded-lg shadow-sm border relative`,
         ]}
@@ -132,11 +159,11 @@ const DataBundlesGrid = ({
         paginationActiveDotStyle={{
           backgroundColor: theme.colors.primary,
         }}
-        loadingContainerStyle={tw`items-center py-8 my-4 bg-gray-50 rounded-xl`}
+        loadingContainerStyle={tw`bg-gray-50 rounded-xl`}
         loadingTextStyle={tw`text-gray-500 mt-3`}
       />
     </View>
   );
-};
+});
 
 export default DataBundlesGrid;

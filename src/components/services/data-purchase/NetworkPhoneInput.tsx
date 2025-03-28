@@ -149,7 +149,7 @@ const NetworkPhoneInput = ({
   ), [networkModalVisible, values.provider, dataProviders, contentMaxHeight, handleNetworkChange, animatedScale, animatedOpacity]);
 
   return (
-    <View style={tw`mt-2 mb-5`}>
+    <View style={tw`mt-2`}>
       <View style={tw`min-h-[70px]`}>
         <View style={tw`flex-row items-start gap-3`}>
           {/* Custom Network Dropdown Button */}

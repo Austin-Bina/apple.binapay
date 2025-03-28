@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import {
   View,
   TouchableOpacity,
@@ -17,6 +17,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 interface GridItem {
   id: string | number;
   [key: string]: any;
+}
+
+export interface ScrollableGridRef {
+  resetScroll: () => void;
 }
 
 interface ScrollableGridProps<T extends GridItem> {
@@ -58,49 +62,66 @@ interface ScrollableGridProps<T extends GridItem> {
   emptyTextStyle?: StyleProp<TextStyle>;
 }
 
-function ScrollableGrid<T extends GridItem>({
-  // Data and selection
-  data = [],
-  selectedItemId,
-  onSelectItem,
-  
-  // Layout configuration
-  itemsPerRow = 3,
-  numRows = 3,
-  itemWidth = 100,
-  itemHeight = 80,
-  itemMargin = 4,
-  
-  // Loading and error states
-  isLoading = false,
-  isError = false,
-  onRetry = () => {},
-  
-  // Custom renderers
-  renderItem,
-  renderEmpty,
-  renderLoading,
-  renderError,
-  
-  // Styling
-  containerStyle,
-  itemContainerStyle,
-  selectedItemStyle,
-  paginationContainerStyle,
-  paginationDotStyle,
-  paginationActiveDotStyle,
-  loadingContainerStyle,
-  loadingTextStyle,
-  errorContainerStyle,
-  errorTextStyle,
-  emptyContainerStyle,
-  emptyTextStyle,
-}: ScrollableGridProps<T>) {
+const ScrollableGrid = forwardRef<ScrollableGridRef, ScrollableGridProps<any>>((
+  {
+    // Data and selection
+    data = [],
+    selectedItemId,
+    onSelectItem,
+    
+    // Layout configuration
+    itemsPerRow = 3,
+    numRows = 3,
+    itemWidth = 100,
+    itemHeight = 80,
+    itemMargin = 4,
+    
+    // Loading and error states
+    isLoading = false,
+    isError = false,
+    onRetry = () => {},
+    
+    // Custom renderers
+    renderItem,
+    renderEmpty,
+    renderLoading,
+    renderError,
+    
+    // Styling
+    containerStyle,
+    itemContainerStyle,
+    selectedItemStyle,
+    paginationContainerStyle,
+    paginationDotStyle,
+    paginationActiveDotStyle,
+    loadingContainerStyle,
+    loadingTextStyle,
+    errorContainerStyle,
+    errorTextStyle,
+    emptyContainerStyle,
+    emptyTextStyle,
+  },
+  ref
+) => {
   const [currentPage, setCurrentPage] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+  
+  // Expose methods via ref
+  useImperativeHandle(ref, () => ({
+    resetScroll: () => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      setCurrentPage(0);
+    }
+  }));
   
   // Calculate grid dimensions
   const gridWidth = useMemo(() => SCREEN_WIDTH - 32, []);
   
+  // Calculate content height once
+  const getContentHeight = useCallback(() => {
+    return numRows * (itemHeight + 5 + itemMargin * 2);
+  }, [numRows, itemHeight, itemMargin]);
+
   // Organize data into pages and rows
   const { pages, totalPages } = useMemo(() => {
     const rows = [];
@@ -124,7 +145,7 @@ function ScrollableGrid<T extends GridItem>({
   }, [gridWidth]);
 
   // Default item renderer
-  const defaultRenderItem = useCallback((item: T, isSelected: boolean) => (
+  const defaultRenderItem = useCallback((item: any, isSelected: boolean) => (
     <View style={tw`justify-center items-center`}>
       <Text style={[tw`text-sm font-bold text-gray-800 text-center`, isSelected && tw`text-blue-600`]}>
         {item.title || `Item ${item.id}`}
@@ -138,36 +159,54 @@ function ScrollableGrid<T extends GridItem>({
   ), []);
 
   // Default loading state renderer
-  const defaultRenderLoading = useCallback(() => (
-    <View style={[tw`items-center justify-center p-8 bg-gray-50 rounded-xl my-4`, loadingContainerStyle]}>
-      <ActivityIndicator size="small" color="#0066cc" />
-      <Text style={[tw`mt-3 text-gray-500 text-sm`, loadingTextStyle]}>Loading items...</Text>
-    </View>
-  ), [loadingContainerStyle, loadingTextStyle]);
+  const defaultRenderLoading = useCallback(() => {
+    return (
+      <View style={[
+        tw`items-center justify-center bg-gray-50 rounded-xl`,
+        { height: getContentHeight() },
+        loadingContainerStyle
+      ]}>
+        <ActivityIndicator size="small" color="#0066cc" />
+        <Text style={[tw`mt-3 text-gray-500 text-sm`, loadingTextStyle]}>Loading items...</Text>
+      </View>
+    );
+  }, [loadingContainerStyle, loadingTextStyle, getContentHeight]);
 
   // Default error state renderer
-  const defaultRenderError = useCallback(() => (
-    <View style={[tw`p-4 bg-red-50 rounded-xl my-4 items-center`, errorContainerStyle]}>
-      <Text style={[tw`text-red-700 text-sm mb-2`, errorTextStyle]}>
-        Failed to load items. Please try again.
-      </Text>
-      <TouchableOpacity style={tw`px-4 py-2 bg-red-500 rounded-md`} onPress={onRetry}>
-        <Text style={tw`text-white font-bold text-sm`}>Retry</Text>
-      </TouchableOpacity>
-    </View>
-  ), [errorContainerStyle, errorTextStyle, onRetry]);
+  const defaultRenderError = useCallback(() => {
+    return (
+      <View style={[
+        tw`bg-red-50 rounded-xl items-center justify-center`,
+        { height: getContentHeight() },
+        errorContainerStyle
+      ]}>
+        <Text style={[tw`text-red-700 text-sm mb-2`, errorTextStyle]}>
+          Failed to load items. Please try again.
+        </Text>
+        <TouchableOpacity style={tw`px-4 py-2 bg-red-500 rounded-md`} onPress={onRetry}>
+          <Text style={tw`text-white font-bold text-sm`}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }, [errorContainerStyle, errorTextStyle, onRetry, getContentHeight]);
 
   // Default empty state renderer
-  const defaultRenderEmpty = useCallback(() => (
-    <View style={[tw`items-center justify-center p-8 bg-gray-50 rounded-xl my-4`, emptyContainerStyle]}>
-      <Text style={[tw`text-gray-500 text-sm`, emptyTextStyle]}>
-        No items available
-      </Text>
-    </View>
-  ), [emptyContainerStyle, emptyTextStyle]);
+  const defaultRenderEmpty = useCallback(() => {
+    return (
+      <View style={[
+        tw`items-center justify-center bg-gray-50 rounded-xl`,
+        { height: getContentHeight() },
+        emptyContainerStyle
+      ]}>
+        <Text style={[tw`text-gray-500 text-sm`, emptyTextStyle]}>
+          No items available
+        </Text>
+      </View>
+    );
+  }, [emptyContainerStyle, emptyTextStyle, getContentHeight]);
 
   // Render grid item
-  const renderGridItem = useCallback(({ item }: { item: T }) => {
+  const renderGridItem = useCallback(({ item }: { item: any }) => {
     const isSelected = selectedItemId !== undefined && item.id === selectedItemId;
     
     return (
@@ -202,66 +241,83 @@ function ScrollableGrid<T extends GridItem>({
   // Render main content
   const renderContent = useCallback(() => {
     if (isLoading) {
-      return renderLoading ? renderLoading() : defaultRenderLoading();
+      return (
+        <>
+          {renderLoading ? renderLoading() : defaultRenderLoading()}
+          <View style={tw`h-2`} />
+        </>
+      );
     }
 
     if (isError) {
-      return renderError ? renderError() : defaultRenderError();
+      return (
+        <>
+          {renderError ? renderError() : defaultRenderError()}
+          <View style={tw`h-2`} />
+        </>
+      );
     }
 
     if (data.length === 0) {
-      return renderEmpty ? renderEmpty() : defaultRenderEmpty();
+      return (
+        <>
+          {renderEmpty ? renderEmpty() : defaultRenderEmpty()}
+          <View style={tw`h-2`} />
+        </>
+      );
     }
 
     return (
       <>
-        <FlatList
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          data={pages}
-          keyExtractor={(_, index) => `page_${index}`}
-          renderItem={({ item: pageRows }) => (
-            <View style={{ width: gridWidth, paddingHorizontal: 2 }}>
-              {pageRows.map((row, rowIndex) => (
-                <View
-                  key={`row_${rowIndex}`}
-                  style={tw`flex-row justify-start my-0.5`}
-                >
-                  {row.map((item) => renderGridItem({ item }))}
+        <View style={{ height: getContentHeight(), overflow: 'hidden' }}>
+          <FlatList
+            ref={flatListRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            data={pages}
+            keyExtractor={(_, index) => `page_${index}`}
+            renderItem={({ item: pageRows }) => (
+              <View style={{ width: gridWidth, paddingHorizontal: 2 }}>
+                {pageRows.map((row: any, rowIndex: number) => (
+                  <View
+                    key={`row_${rowIndex}`}
+                    style={tw`flex-row justify-start my-0.5`}
+                  >
+                    {row.map((item: any) => renderGridItem({ item }))}
 
-                  {/* Add empty placeholders if row is not full */}
-                  {Array.from({
-                    length: itemsPerRow - row.length,
-                  }).map((_, i) => (
-                    <View
-                      key={`empty_${i}`}
-                      style={{
-                        width: itemWidth,
-                        height: itemHeight,
-                        margin: itemMargin,
-                      }}
-                    />
-                  ))}
-                </View>
-              ))}
-            </View>
-          )}
-          contentContainerStyle={tw`py-1`}
-          snapToInterval={gridWidth}
-          snapToAlignment="start"
-          decelerationRate="fast"
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          initialNumToRender={2}
-          maxToRenderPerBatch={4}
-          windowSize={3}
-        />
+                    {/* Add empty placeholders if row is not full */}
+                    {Array.from({
+                      length: itemsPerRow - row.length,
+                    }).map((_, i) => (
+                      <View
+                        key={`empty_${i}`}
+                        style={{
+                          width: itemWidth,
+                          height: itemHeight,
+                          margin: itemMargin,
+                        }}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </View>
+            )}
+            snapToInterval={gridWidth}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            initialNumToRender={2}
+            maxToRenderPerBatch={4}
+            windowSize={3}
+          />
+        </View>
 
-        {/* Page indicators */}
-        {totalPages > 1 && (
-          <View style={[tw`flex-row justify-center mt-1.5 mb-1`, paginationContainerStyle]}>
-            {Array.from({ length: totalPages }).map((_, index) => (
+        {/* Pagination container - always present to prevent layout shifts */}
+        <View style={[tw`h-3 flex-row justify-center mt-1`, paginationContainerStyle]}>
+          {totalPages > 1 && 
+            Array.from({ length: totalPages }).map((_, index) => (
               <View
                 key={`indicator_${index}`}
                 style={[
@@ -273,9 +329,9 @@ function ScrollableGrid<T extends GridItem>({
                   ],
                 ]}
               />
-            ))}
-          </View>
-        )}
+            ))
+          }
+        </View>
       </>
     );
   }, [
@@ -290,6 +346,7 @@ function ScrollableGrid<T extends GridItem>({
     itemWidth,
     itemHeight,
     itemMargin,
+    getContentHeight,
     renderLoading,
     renderError,
     renderEmpty,
@@ -301,13 +358,14 @@ function ScrollableGrid<T extends GridItem>({
     paginationContainerStyle,
     paginationDotStyle,
     paginationActiveDotStyle,
+    flatListRef,
   ]);
 
   return (
-    <View style={[tw`mb-5`, containerStyle]}>
+    <View style={[tw`mb-3`, containerStyle]}>
       {renderContent()}
     </View>
   );
-}
+});
 
 export default ScrollableGrid;
