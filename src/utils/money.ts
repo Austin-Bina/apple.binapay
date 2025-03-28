@@ -66,7 +66,7 @@ const zodAmountValidation = (minAmount: number = 0, format = false) =>
 
 function calculateTransactionDetails(
   amount: number,
-  service: "airtime" | "data" | "cable" | "education" | "epin" | "electricity",
+  service: "airtime" | "cable" | "education" | "epin" | "electricity",
   customers: CustomerSettings
 ) {
   const discountKey =

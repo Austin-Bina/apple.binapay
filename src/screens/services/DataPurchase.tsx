@@ -32,7 +32,7 @@ import { selectSystemSettings } from "@store/selectors/settings";
 import { serviceProvidersMap } from "@constants/providers";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
 import { getDefaultProvider, zodPhoneValidation } from "@utils/phone";
-import { calculateTransactionDetails } from "@utils/money";
+import { calculateTransactionDetails, formatToNaira } from "@utils/money";
 import { SCREENS } from "@constants/screens";
 import { getNavigate } from "@utils/navigation";
 import { usePhoneValidation } from "@hooks/phone";
@@ -190,12 +190,6 @@ export default function DataPurchaseScreen({ navigation }: Props) {
   }, [dataTypes, setValue, values.type]);
 
   const transactionDetails = useMemo(() => {
-    const extraPlanDetails = calculateTransactionDetails(
-      parseFloat(values.amount) || 0,
-      "data",
-      customers
-    );
-
     return [
       {
         label: "Network",
@@ -204,17 +198,13 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       },
       { label: "Data Amount", value: values.data_amount },
       { label: "Number", value: values.phone },
-      ...Object.keys(extraPlanDetails).map((key) => ({
-        label: key,
-        value: extraPlanDetails[key],
-      })),
+      { label: 'You Pay', value: formatToNaira(values.amount) }
     ];
   }, [
     values.provider,
     values.data_amount,
     values.phone,
     values.amount,
-    customers,
   ]);
 
   // Handlers
