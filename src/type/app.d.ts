@@ -35,7 +35,6 @@ export interface DataPlan {
   id: number;
   network: number;
   plan_type: string;
-  plan_network: string;
   month_validate: string;
   plan: string;
   plan_amount: string;
