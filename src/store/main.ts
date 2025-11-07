@@ -1,11 +1,11 @@
 import { combineReducers, configureStore, Middleware, StoreEnhancer, UnknownAction } from "@reduxjs/toolkit";
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from "redux-persist";
 import { createLogMiddleware } from "./middleware/log";
-import { setupListeners } from "@reduxjs/toolkit/query";
+import { setupListeners } from "@reduxjs/toolkit/query/react";
 import { authSlice, initialState as initialAuthState } from "./slice/auth";
 import { settingsSlice } from "./slice/settings";
 import { initialTransactionState, transactionSlice } from "./slice/transactionSlice";
-import devToolsEnhancer from "redux-devtools-expo-dev-plugin";
+import { devToolsEnhancer } from "@redux-devtools/extension";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
 import { utilityBillsQueryApi } from "./redux-api/utilityBillsQueryApi";
 import { accountTransactionsApi } from "./redux-api/accountTransactionsApi";

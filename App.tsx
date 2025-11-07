@@ -36,7 +36,10 @@ function BinaPay() {
     Inter_700Bold,
     Inter_800ExtraBold,
   });
-
+/**
+ * justice version
+ */
+  /*
   useEffect(() => {
     const handleBackButtonClick = () => {
       setExitDialogVisible(true);
@@ -68,6 +71,36 @@ function BinaPay() {
       );
     };
   }, []);
+*/
+
+/**
+ * my version
+ */
+useEffect(() => {
+  const handleBackButtonClick = () => {
+    setExitDialogVisible(true);
+    return true;
+  };
+
+  const subscription = BackHandler.addEventListener(
+    "hardwareBackPress",
+    handleBackButtonClick
+  );
+
+  async function prepare() {
+    try {
+      setAppIsReady(true);
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  prepare();
+
+  return () => subscription.remove(); // ✅ correct cleanup
+}, []);
+//end here
+
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady && fontsLoaded) {

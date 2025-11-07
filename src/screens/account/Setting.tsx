@@ -120,6 +120,14 @@ export default function SettingScreen({ navigation }: Props) {
         />
 
         <Action
+          title="Manage Bank Accounts"
+          ItemIcon={KeyIcon}
+          onPress={() => {
+            navigation.navigate("Bank Accounts");
+          }}
+        />
+
+        <Action
           title="Change Pin"
           ItemIcon={KeyIcon}
           onPress={() => {

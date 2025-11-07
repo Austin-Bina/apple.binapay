@@ -84,7 +84,9 @@ const renderAvatar = ({ currentMessage }: AvatarProps<IMessage>) => {
   return (
     currentMessage?.user?.avatar && (
       <AvatarImage
-        avatar={currentMessage.user.avatar}
+        avatar={typeof currentMessage.user.avatar === "string" ? currentMessage.user.avatar : undefined}
+        /*        avatar={currentMessage.user.avatar} */
+
         style={tw.style("bg-transparent")}
         svgProps={{ width: scale(30), height: scale(30) }}
       />

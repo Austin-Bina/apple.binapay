@@ -30,17 +30,22 @@ function Router() {
 
   const isAuthenticated = isLoggedIn && !isNewUser;
 
+  console.log("Router mounted. isLoggedIn:", isLoggedIn, "| isNewUser:", isNewUser, "| isAuthenticated:", isAuthenticated);
+
   return (
     <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
       <NavigationContainer ref={navigationRef}>
         <BottomSheetModalProvider>
           <Stack.Navigator
-            initialRouteName="Onboarding"
+             initialRouteName={isAuthenticated ? SCREENS.MAIN : SCREENS.ONBOARDING}
+
             screenOptions={({ navigation }) => ({
               headerStyle: tw`bg-white`,
               headerShadowVisible: false,
               headerTitle: "",
               headerShown: true,
+             
+             
               headerLeft: () => (
                 <View style={tw`mr-2.5 overflow-hidden p-0.5`}>
                   <TouchableRipple
@@ -51,6 +56,8 @@ function Router() {
                   </TouchableRipple>
                 </View>
               ),
+
+              
             })}>
             {isAuthenticated ? (
               <React.Fragment>

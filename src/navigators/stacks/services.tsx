@@ -11,6 +11,7 @@ import TransactionConfirmationScreen from "@screens/services/TransactionConfirma
 import ElectricityPurchaseScreen from "@screens/services/ElectricityPurchase";
 import AirtimeEPINPurchaseScreen from "@screens/services/AirtimeEPINPurchase";
 import TVSubscriptionScreen from "@screens/services/TVSubscription";
+import ConvertCryptoWrapper from "@helpers/ConvertCryptoWrapper";
 import EducationStack from "./education";
 import { SCREENS } from "@constants/screens";
 
@@ -28,11 +29,16 @@ export default function ServicesStack() {
         headerLeft: () => (
           <TouchableRipple
             onPress={() => {
-              navigation.replace(SCREENS.MAIN, {
-                screen: SCREENS.HOME,
-              });
+              navigation.getParent()?.reset({
+  routes: [
+    {
+      name: SCREENS.MAIN, // root Tab navigator
+      params: { screen: SCREENS.DASHBOARD }, // nested Home
+    },
+  ],
+});
             }}
-            style={tw`mr-2.5 overflow-hidden p-0.5`}>
+            style={tw`mr-2.5 overflow-hidden p-0.5 mt-8`}>
             <LeftArrowIcon width={38} height={38} />
           </TouchableRipple>
         ),
@@ -45,6 +51,7 @@ export default function ServicesStack() {
       <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen} />
       <Stack.Screen name="Education" options={{ headerShown: false }} component={EducationStack} />
       <Stack.Screen name="TV Subscription" component={TVSubscriptionScreen} />
-    </Stack.Navigator>
+      <Stack.Screen name="Convert Crypto" component={ConvertCryptoWrapper} />   
+ </Stack.Navigator>
   );
 }

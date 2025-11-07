@@ -16,6 +16,13 @@ import { IconButton } from "react-native-paper";
 import { Colors } from "@constants/theme/colors";
 
 const onboarding = [
+
+   {
+    title: "Buy & Sell Crypto",
+    description:
+      "Buy and sell Bitcoin and other coins instantly with BinaPay. Enjoy the best exchange rates, lightning-fast transactions, and a secure trading experience — all in one place.",
+    background: require("@assets/images/slides/background-slide-5.png"),
+  },
   {
     title: "Airtime Purchase",
     description:

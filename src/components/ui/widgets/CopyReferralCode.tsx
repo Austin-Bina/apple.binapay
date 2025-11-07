@@ -20,6 +20,26 @@ const CopyReferralCode: React.FC<Props> = ({ referralCode, labelText = "Tap to c
   };
 
   return (
+  <TouchableRipple
+    onPress={copyToClipboard}
+    style={tw`self-center flex-row items-center gap-2 px-3 py-1 rounded-full border border-gray-300 bg-gray-50`}
+  >
+    <Fragment>
+      <Text style={tw`text-sm font-medium text-gray-700`}>{referralCode}</Text>
+      <IconButton
+        icon={copied ? "check" : "content-copy"}
+       iconColor={copied ? Colors.gray[50] : Colors.primary[600]}
+       style={tw`m-0 bg-primary-100 rounded-full`}
+        size={18}
+      />
+    </Fragment>
+  </TouchableRipple>
+);
+
+/**
+ * justice version
+ *//*
+  return (
     <View style={tw`my-5 py-2 rounded-2xl border border-gray-100`}>
       <Text variant="headlineMedium" style={tw`text-center my-0 py-0`}>
         {referralCode}
@@ -38,6 +58,8 @@ const CopyReferralCode: React.FC<Props> = ({ referralCode, labelText = "Tap to c
       </TouchableRipple>
     </View>
   );
+
+  */
 };
 
 export default CopyReferralCode;

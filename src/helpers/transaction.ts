@@ -10,6 +10,7 @@ import { SCREENS } from "@constants/screens";
 import { getTransactionIcon, upperCaseFirst } from "@utils/index";
 import { P, match } from "ts-pattern";
 import { TransactionStatus } from "@enum/transaction";
+import { formatTransactionAmount } from "../utils/transactionutils";
 
 const formatDate = (date: string) => {
   return format(new Date(date), "MMM dd, yyyy h:mm a");
@@ -157,7 +158,9 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
           // UtilityTransaction is null, it is probably a wallet transaction
           return getTransactionDetails({
             details: {
-              "Transaction Amount": convertToNaira(walletView.amount, true),
+            /*  "Transaction Amount": convertToNaira(walletView.amount, true),  */ //justice version
+            "Transaction Amount": formatTransactionAmount(walletView),
+
               Description: walletView.meta.description,
               "Transaction Date": format(new Date(walletView.created_at), "MMM dd, yyyy h:mm a"),
               Destination: "Binapay Wallet",

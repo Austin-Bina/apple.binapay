@@ -169,11 +169,11 @@ export default function NinVerificationScreen(props: Props) {
               />
             )}
           />
-
+{/*}
           <View style={tw`my-4`}>
             <Banner content="Verifying NIN numbers costs a small fee. We will offset the cost of the verification process. Please kindly review your NIN to ensure it is correct. You are only allowed a limited number of free attempts, after which you will be required to pay for the cost of verifying." />
           </View>
-
+*/}
           {/* Display remaining attempts */}
           {formattedRemainingAttempts !== null && (
             <View style={tw`p-2 bg-gray-50`}>

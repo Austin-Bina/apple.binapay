@@ -12,6 +12,8 @@ import EarningSummaryScreen from "@screens/account/EarningSummary";
 import { SCREENS } from "@constants/screens";
 import KYCStack from "./verify-account";
 import SupportStack from "./support";
+import BankAccountsScreen from "@screens/account/BankAccounts";
+import CryptoAssets from "@screens/home/CryptoAssets";
 
 const Stack = createNativeStackNavigator<AccountParamList>();
 
@@ -30,16 +32,16 @@ function AccountStack() {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.reset({
-                  routes: [
-                    {
-                      name: "Home",
-                      params: {
-                        screen: "Dashboard",
-                      },
-                    },
-                  ],
-                });
+             navigation.getParent()?.reset({
+           routes: [
+              {
+      name: SCREENS.MAIN, // Tab navigator key
+      params: {
+        screen: SCREENS.DASHBOARD, // nested HomeParamList screen
+      },
+    },
+  ],
+});
               }
             }}
             style={tw`mr-2.5 overflow-hidden p-0.5`}>
@@ -54,6 +56,11 @@ function AccountStack() {
       <Stack.Screen name="Change Password" component={ChangePassword} />
       <Stack.Screen name={SCREENS.VERIFY_ACCOUNT} options={{ headerShown: false }} component={KYCStack} />
       <Stack.Screen name={SCREENS.SUPPORT_STACK} options={{ headerShown: false }} component={SupportStack} />
+      <Stack.Screen name={SCREENS.BANK_ACCOUNTS} options={{ headerShown: false }} component={BankAccountsScreen} />
+
+      {/* Crypto Assets 
+      <Stack.Screen name={SCREENS.CRYPTO_ASSETS} component={CryptoAssets} options={{ title: "All Assets" }} />
+*/}
     </Stack.Navigator>
   );
 }

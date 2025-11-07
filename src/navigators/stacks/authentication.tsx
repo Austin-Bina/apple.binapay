@@ -20,7 +20,7 @@ function AuthStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-8`}>
             <TouchableRipple
               onPress={() => {
                 navigation.goBack();

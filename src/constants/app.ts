@@ -50,5 +50,5 @@ const defaultSystemSettings: SystemSettings = {
   },
 };
 
-const MAX_CACHE_AGE_SEC = 30;
+const MAX_CACHE_AGE_SEC = 400;
 export { systemUser, bvn_nin_mask, phone_mask, defaultSystemSettings, MAX_CACHE_AGE_SEC };

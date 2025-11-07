@@ -14,6 +14,7 @@ import React, { Fragment, useCallback, useMemo, useState } from "react";
 import { FlatList, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Avatar, Divider, Text } from "react-native-paper";
 import StatusBadge from "@components/ui/transaction/StatusBadge";
+import { formatTransactionAmount } from "../../utils/transactionutils";
 
 type Props = HomeStackScreenProps<"Transaction History">;
 
@@ -145,7 +146,8 @@ const TransactionItem = React.memo<TransactionItemProps>(({ item, onSelectTransa
           <StatusBadge status={getTransactionStatus(item)} />
         </View>
       </View>
-      <Text style={tw`text-gray-900 font-semibold`}>{convertToNaira(item.amount, true)}</Text>
+    {/*}  <Text style={tw`text-gray-900 font-semibold`}>{formatTransactionAmount(item.amount, true)}</Text> */}
+      <Text style={tw`text-gray-900 font-semibold`}>{formatTransactionAmount(item)}</Text>
     </Fragment>
   </TouchableOpacity>
 ));

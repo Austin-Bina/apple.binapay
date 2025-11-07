@@ -1,5 +1,5 @@
 import { useTypedSelector } from "@store/common";
-import { selectUserWalletBalance } from "@store/selectors/auth";
+import { selectNairaBalance } from "@store/selectors/auth";
 import { useEffect, useCallback, useState } from "react";
 import * as Print from "expo-print";
 import { shareAsync } from "expo-sharing";
@@ -58,10 +58,13 @@ const useWalletBalanceValidation = ({ amount }: WalletBalanceValidationHook) => 
   const [canPay, setCanPay] = useState(true);
   const [walletError, setWalletError] = useState<string | null>(null);
 
-  const walletBalance = useTypedSelector(selectUserWalletBalance);
+  const walletBalance = useTypedSelector(selectNairaBalance);
 
   const validateBalance = useCallback(() => {
-    if (amount > walletBalance) {
+
+     const balance = Number(walletBalance);
+
+    if (amount > balance) {
       setWalletError("Insufficient funds");
       setCanPay(false);
     } else {

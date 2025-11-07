@@ -8,6 +8,7 @@ import { SCREENS } from "@constants/screens";
 import KYCOptionsScreen from "@screens/kyc/KYCOptionsScreen";
 import BVNVerificationScreen from "@screens/kyc/BVNVerificationScreen";
 import NinVerificationScreen from "@screens/kyc/NINVerificationScreen";
+import PhoneVerificationScreen from "@screens/kyc/PhoneVerificationScreen";
 
 const Stack = createNativeStackNavigator<KYCParamList>();
 
@@ -21,31 +22,31 @@ function KYCStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <TouchableRipple
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.reset({
-                  routes: [
-                    {
-                      name: "Home",
-                      params: {
-                        screen: "Dashboard",
-                      },
-                    },
-                  ],
-                });
-              }
-            }}
-            style={tw`mr-2.5 overflow-hidden p-0.5`}>
-            <LeftArrowIcon width={38} height={38} />
-          </TouchableRipple>
+           <TouchableRipple
+                          onPress={() => {
+                            if (navigation.canGoBack()) {
+                              navigation.goBack();
+                            } else {
+                                          navigation.getParent()?.reset({
+                                        routes: [
+                                           {
+                                   name: SCREENS.MAIN, // Tab navigator key
+                                   params: {
+                                     screen: SCREENS.DASHBOARD, // nested HomeParamList screen
+                                   },
+                                 },
+                               ],
+                             });
+                            }
+                          }}>
+                          <LeftArrowIcon width={38} height={38} />
+                        </TouchableRipple>
         ),
       })}>
         <Stack.Screen name={SCREENS.ACCOUNT_VERIFICATION_OPTIONS} component={KYCOptionsScreen} />
         <Stack.Screen name={SCREENS.BVN_VERIFICATION} component={BVNVerificationScreen} />
         <Stack.Screen name={SCREENS.NIN_VERIFICATION} component={NinVerificationScreen} />
+        <Stack.Screen name={SCREENS.PHONE_VERIFICATION} component={PhoneVerificationScreen} />
     </Stack.Navigator>
   );
 }

@@ -5,7 +5,7 @@ import { ReferralReward } from "@type/user";
 
 type ReferralRewardsResponse = {
   data: ReferralReward[];
-  meta: { has_more: boolean; total: number; total_earnings: number };
+  meta: { has_more: boolean; total: number; total_earnings: number, max_reward_cap: number, reward_per_withdrawal: number  };
 };
 
 type ReferralRewardBody = {

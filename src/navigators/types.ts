@@ -56,6 +56,7 @@ export type AccountParamList = {
   [SCREENS.CHANGE_PIN]: undefined;
   [SCREENS.BINAPAY_REWARDS]: undefined;
   [SCREENS.EARNING_SUMMARY]: undefined;
+  [SCREENS.BANK_ACCOUNTS]: undefined;
   [SCREENS.VERIFY_ACCOUNT]: NavigatorScreenParams<KYCParamList>;
   [SCREENS.SUPPORT_STACK]: NavigatorScreenParams<SupportParamList>;
 };
@@ -83,6 +84,9 @@ export type HomeParamList = {
   [SCREENS.TRANSACTION_HISTORY]: undefined;
   [SCREENS.TRANSACTION_DETAILS]: undefined;
   [SCREENS.VIEW_TRANSACTION]: { transactionId: TransactionForm};
+  [SCREENS.WITHDRAW_MONEY]: NavigatorScreenParams<WithdrawMoneyParamList>;
+  [SCREENS.CRYPTO_ASSETS]: undefined;
+  [SCREENS.SUPPORT_STACK]: NavigatorScreenParams<SupportParamList>;
 };
 export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScreenProps<HomeParamList, T>;
 
@@ -96,6 +100,7 @@ export type AddMoneyParamList = {
   [SCREENS.FUND_WITH_PAYSTACK]: undefined;
   [SCREENS.FUND_WITH_BANK]: undefined;
   [SCREENS.PAYMENT_SUCCESS]: undefined;
+  [SCREENS.DEPOSIT_CRYPTO]: undefined;
 };
 export type AddMoneyStackScreenProps<T extends keyof AddMoneyParamList> = NativeStackScreenProps<AddMoneyParamList, T>;
 
@@ -113,6 +118,19 @@ export type ManualFundStackScreenProps<T extends keyof ManualFundParamList> = Na
   ManualFundParamList,
   T
 >;
+
+/**
+ * Withdraw Param Lists
+ * Group for withdraw related screens
+ */
+export type WithdrawMoneyParamList = {
+  [SCREENS.WITHDRAW_CRYPTO]: undefined;
+  [SCREENS.WITHDRAW_NAIRA]: undefined;
+  [SCREENS.PAYMENT_SUCCESS]: undefined;
+};
+export type WithdrawMoneyStackScreenProps<T extends keyof WithdrawMoneyParamList> =
+  NativeStackScreenProps<WithdrawMoneyParamList, T
+  >;
 
 /**
  * Notification Param Lists
@@ -136,11 +154,13 @@ export type ServicesParamList = {
   "Airtime Purchase": undefined;
   "Data Purchase": undefined;
   "Electricity Bill": undefined;
+  "Convert Crypto": undefined;
   Education: NavigatorScreenParams<EducationParamList>;
   "Airtime EPIN Purchase": undefined;
   "Airtime Swap": undefined;
   "Confirm Transaction": { transactionId: TransactionForm };
   "TV Subscription": undefined;
+
 };
 export type ServicesStackScreenProps<T extends keyof ServicesParamList> = NativeStackScreenProps<ServicesParamList, T>;
 
@@ -165,6 +185,7 @@ export type KYCParamList = {
   [SCREENS.ACCOUNT_VERIFICATION_OPTIONS]: undefined;
   [SCREENS.NIN_VERIFICATION]: undefined;
   [SCREENS.BVN_VERIFICATION]: undefined;
+  [SCREENS.PHONE_VERIFICATION]: undefined;
 };
 export type KYCStackScreenProps<T extends keyof KYCParamList> = NativeStackScreenProps<KYCParamList, T>;
 

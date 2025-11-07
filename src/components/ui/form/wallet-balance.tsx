@@ -4,7 +4,7 @@ import { HelperText } from "react-native-paper";
 import tw from "@lib/tailwind";
 import { formatToNaira } from "@utils/money";
 import { useTypedSelector } from "@store/common";
-import { selectUserWalletBalance } from "@store/selectors/auth";
+import { selectNairaBalance } from "@store/selectors/auth";
 
 type Props = {
   canPay: boolean;
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function WalletBalanceHelper({ canPay, walletError }: Props) {
-  const walletBalance = useTypedSelector(selectUserWalletBalance);
+  const walletBalance = useTypedSelector(selectNairaBalance);
 
   return (
     <View>

@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "Bina Pay",
+    "name": "BinaPay",
     "slug": "BinaPay",
-    "version": "1.0.0",
+    "version": "1.0.5",
     "orientation": "portrait",
+    "runtimeVersion": "1.0.0",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./src/assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
@@ -22,7 +23,7 @@
       }
     },
     "android": {
-      "versionCode": 12,
+      "versionCode": 19,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -30,18 +31,11 @@
       "package": "com.binapay",
       "permissions": [
         "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS",
-        "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ]
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "911c2695-3035-4a30-8054-9f2bc7b63ee8"
-      }
     },
     "plugins": [
       "expo-font",
@@ -58,11 +52,14 @@
         }
       ]
     ],
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "updates": {
-      "url": "https://u.expo.dev/911c2695-3035-4a30-8054-9f2bc7b63ee8"
-    }
+      "url": "https://u.expo.dev/04587ef0-aa8f-4c87-bcde-e89b00d969a3"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "28111690-1e6a-44eb-88de-9e8025f5e7ee"
+      }
+    },
+    "owner": "austin_bina"
   }
 }

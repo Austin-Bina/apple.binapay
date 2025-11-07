@@ -9,6 +9,28 @@ import { Button, Text } from "react-native-paper";
 
 type Props = ManualFundStackScreenProps<typeof SCREENS.MANUAL_FUND_WAIT>;
 export default function ManualFundWaitScreen(props: Props) {
+ /**
+  * my version
+  */
+  
+  useEffect(() => {
+  const handleBackButtonClick = () => {
+    resetNavigationToDashboard();
+    return true;
+  };
+
+  const subscription = BackHandler.addEventListener(
+    "hardwareBackPress",
+    handleBackButtonClick
+  );
+
+  return () => subscription.remove(); // ✅ correct cleanup
+}, []);
+
+/**
+ * justoce version
+ *//*
+
   useEffect(() => {
     const handleBackButtonClick = () => {
       resetNavigationToDashboard;
@@ -21,7 +43,7 @@ export default function ManualFundWaitScreen(props: Props) {
       BackHandler.removeEventListener("hardwareBackPress", handleBackButtonClick);
     };
   }, []);
-
+*/
   return (
     <ImageBackground
       source={require("@assets/images/background-with-logo.png")}

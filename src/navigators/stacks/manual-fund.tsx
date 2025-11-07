@@ -23,22 +23,22 @@ function ManualFundStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-8`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) {
                   navigation.goBack();
                 } else {
-                  navigation.reset({
-                    routes: [
-                      {
-                        name: "Home",
-                        params: {
-                          screen: "Dashboard",
-                        },
-                      },
-                    ],
-                  });
+                              navigation.getParent()?.reset({
+                            routes: [
+                               {
+                       name: SCREENS.MAIN, // Tab navigator key
+                       params: {
+                         screen: SCREENS.DASHBOARD, // nested HomeParamList screen
+                       },
+                     },
+                   ],
+                 });
                 }
               }}>
               <LeftArrowIcon width={38} height={38} />

@@ -83,6 +83,21 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     refetch,
   } = useGetDataPlansQuery();
 
+console.log("📦 Full Response:", JSON.stringify(queryData, null, 2));
+
+// right after your useGetDataPlansQuery
+React.useEffect(() => {
+  console.log("📦 Full Response (data plans):", JSON.stringify(queryData, null, 2));
+}, [queryData]);
+
+// Or subscribe to the selector
+const systemSettings = useTypedSelector(selectSystemSettings);
+React.useEffect(() => {
+  console.log("⚙️ systemSettings.transaction.data.networks:", systemSettings.transaction?.data?.networks);
+}, [systemSettings.transaction?.data?.networks]);
+
+ 
+
   const prefetchSystemSettings = useSystemSettingsPrefetch(
     "getSystemSettings",
     { ifOlderThan: MAX_CACHE_AGE_SEC }
@@ -135,6 +150,8 @@ export default function DataPurchaseScreen({ navigation }: Props) {
     prefetchSystemSettings();
   }, [prefetchSystemSettings]);
 
+  //justice version 
+  /*
   const dataProviders = useMemo(
     () =>
       Object.values(serviceProvidersMap.internet).filter((p) =>
@@ -142,7 +159,35 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       ),
     [transaction.data]
   );
+*/ 
+/**
+ * justice version: the network disapare after few seconds
+ * of mounting on the purchase data screen. so i modified it to Instead of filtering based on systemSettings.transaction.data.networks,
+you can extract available providers directly from queryData.data_plans.
+ */
+const dataProviders = useMemo(() => {
+  const availableNetworks = Object.keys(queryData?.data_plans || {}).filter((key) => {
+    const plans = (queryData?.data_plans as Record<string, any[]>)?.[key] ?? [];
+    return plans.length > 0;
+  });
 
+  return Object.values(serviceProvidersMap.internet).filter((p) =>
+    availableNetworks.includes(p.serviceId)
+  );
+}, [queryData]);
+
+  //  Now safe to log
+React.useEffect(() => {
+  console.log("🔁 Form values changed:", values);
+}, [values]);
+
+React.useEffect(() => {
+  console.log("📶 Providers updated:", dataProviders.length);
+}, [dataProviders]);
+
+  /**
+   * justice version
+   */
   const dataTypes = useMemo(() => {
     const allTypes = queryData?.popular_data_types || [];
 
@@ -150,9 +195,21 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       (type) =>
         !type.supported_networks ||
         type.supported_networks
-          .map((n) => n.toUpperCase())
+          .map((n) => n?.toUpperCase?.() ?? "") // safely convert or fallback
           .includes(provider.toUpperCase())
     );
+
+/**
+ * working version 
+ */ /*
+const supportedPopularTypes = allTypes.filter((type) => {
+  if (!type.supported_networks || !provider) return true;
+
+  return type.supported_networks
+    .map((n) => n?.toUpperCase?.() ?? "") // safely convert or fallback
+    .includes(provider?.toUpperCase?.() ?? "");
+});
+*/
 
     const types = supportedPopularTypes.map((type) => ({
       id: type.type,
@@ -161,6 +218,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
     return types;
   }, [queryData, provider]);
+
 
   const dataPlans = useMemo(() => {
     const plans = queryData?.data_plans[provider] || [];

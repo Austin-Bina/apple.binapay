@@ -84,7 +84,7 @@ export default function EarningSummaryScreen({}: Props) {
                 </Text>
               </View>
               <Chip icon="" mode="flat" style={tw`bg-green-50`} textStyle={tw`text-green-600`}>
-                {formatToNaira(item.reward_amount)}
+                {formatToNaira(item.total_reward_earned)}
               </Chip>
             </View>
           ))}

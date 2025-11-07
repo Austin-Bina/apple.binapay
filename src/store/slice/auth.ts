@@ -4,11 +4,12 @@ import { showToast } from "@helpers/toast";
 import API from "@lib/api";
 import { saveAuthToken } from "@lib/security";
 import { createSlice, createEntityAdapter, PayloadAction, EntityState } from "@reduxjs/toolkit";
-import { User } from "@type/user";
+import { User, WalletBalances, CryptoAsset, Network } from "@type/user";
 import { AxiosError } from "axios";
 import { WalletTransaction } from "@type/transaction";
 import { accountTransactionsApi } from "@store/redux-api/accountTransactionsApi";
 import { createTypedAsyncThunk } from "@store/common";
+import { routes } from "@constants/routes";
 
 interface AuthMetaInfo {
   access_token: string;
@@ -27,11 +28,18 @@ type AccountSummary = {
 
 interface AuthState extends EntityState<User, string> {
   user: User | null;
+   contact?: {
+    phone?: string;
+    whatsapp?: string;
+    support_url?: string;
+  };
   meta: AuthMetaInfo | null;
   isLoggingIn: boolean;
   isFetchingProfile: boolean;
   hasProfileError: boolean;
   newUser: boolean;
+  adminNgnUsdtRate?: { buy: number; sell: number } | null;
+   spreadConfig?: { spreadType: string; spread: number } | null;
 }
 
 interface LoginResponse {
@@ -56,11 +64,13 @@ type UserProfile = {
 export const authAdapter = createEntityAdapter<User>();
 export const initialState: AuthState = authAdapter.getInitialState({
   user: null,
+  
   meta: null,
   isLoggingIn: false,
   isFetchingProfile: false,
   hasProfileError: false,
   newUser: false,
+  adminNgnUsdtRate: null,
 });
 
 export const authSlice = createSlice({
@@ -84,6 +94,22 @@ export const authSlice = createSlice({
     completeOnboarding(state) {
       state.newUser = false;
     },
+
+    
+
+
+updateSpreadConfig(state, action: PayloadAction<{ spreadType: string; spread: number }>) {
+  state.spreadConfig = action.payload;
+},
+
+    updateAdminNgnUsdtRate(state, action: PayloadAction<{ buy: number; sell: number }>) {
+  state.adminNgnUsdtRate = action.payload;
+},
+ updateContact(state, action: PayloadAction<{ phone?: string; whatsapp?: string; support_url?: string }>) {
+      state.contact = action.payload;
+    },
+
+
   },
   extraReducers: (builder) => {
     builder
@@ -136,6 +162,146 @@ export const authSlice = createSlice({
   },
 });
 
+
+const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
+  "auth/fetchUserProfile",
+  async (_, { rejectWithValue, dispatch, getState }) => {
+    try {
+      const state = getState() as any;
+      // Fetch profile first
+      const profileResponse = await API.get(route("account.getProfile"));
+      const { profile, account_summary } = profileResponse.data as AccountSummary;
+
+      // Fetch wallets separately
+      const walletsResponse = await API.get("/api/v1/wallets");
+      const wallets = walletsResponse.data.wallets;
+
+      // Map wallet balances dynamically using slug
+      const walletBalances: WalletBalances = {};
+      wallets.forEach((wallet: any) => {
+        walletBalances[wallet.slug] = {
+          name: wallet.name,
+          balance: wallet.balance.toString(),
+        };
+      });
+
+      // Fetch totalCryptoUsd
+const totalUsdRes = await API.get(routes.api.v1.auth.totalcryptousd);
+const totalCryptoUsd = totalUsdRes.data.totalCryptoUsd ?? 0;
+
+      // Add totalCryptoUsd as a wallet
+walletBalances["crypto_usd"] = {
+  name: "Total Crypto USD",
+  balance: totalCryptoUsd.toString(),
+};
+       // 4️⃣ Fetch crypto assets from API
+      const cryptoRes = await API.get<{ success: boolean; data: CryptoAsset[] }>(
+        routes.api.v1.services.cryptoAssets
+      );
+
+      const cryptoAssets: CryptoAsset[] = cryptoRes.data.data;
+
+       // 4️⃣ Fetch admin NGN/USDT rate and spread
+     
+ const rateRes = await API.get(routes.api.v1.auth.ratesandspread);
+
+ 
+console.log("Full rates and spread response:", rateRes.data);
+
+if (rateRes.data.success) {
+  const { ngn_usdt_rate, spread } = rateRes.data.data;
+
+ if (ngn_usdt_rate) {
+  const { buy_rate, sell_rate } = ngn_usdt_rate;
+  dispatch(
+    authSliceActions.updateAdminNgnUsdtRate({
+      buy: parseFloat(buy_rate),   // convert string to number
+      sell: parseFloat(sell_rate), // convert string to number
+    })
+  );
+}
+
+if (spread) {
+  dispatch(
+    authSliceActions.updateSpreadConfig({
+      spreadType: spread.spread_type,
+      spread: parseFloat(spread.spread), // already fine
+    })
+  );
+}
+
+
+}
+
+
+        // Fetch user bank accounts 
+         const res = await API.get(routes.api.v1.services.wallets.userwallet);
+          const userBankAccounts = res.data.bank_accounts || [];
+
+      
+    
+      
+      // Fetch contact info
+const contactRes = await API.get("/api/v1/contact-settings");
+const contact = contactRes.data?.data || {};
+
+// Save to Redux
+dispatch(authSliceActions.updateContact(contact));
+
+
+      // Merge wallet balances into user profile
+      const userWithWallets = {
+        ...profile,
+        wallet_balances: walletBalances,
+         crypto_assets: cryptoAssets,
+          userBankAccounts,        
+      };
+
+      // Save user to Redux store
+      dispatch(authSliceActions.updateUser(userWithWallets));
+
+      // Update transactions cache
+      dispatch(
+        accountTransactionsApi.util.updateQueryData(
+          "fetchRecentTransactions",
+          undefined,
+          (draft) => {
+            draft.transactions = account_summary.recent_transactions;
+          },
+        ),
+      );
+
+      return { user: userWithWallets };
+    } catch (error: any) {
+      const axiosError = error as AxiosError<any>;
+      const { response } = axiosError;
+
+      if (response?.status === 401) {
+        dispatch(authSliceActions.logout());
+        return rejectWithValue(response.data);
+      }
+
+      if (response) {
+        const message = response.data?.message;
+        showToast({
+          message:
+            typeof message === "string"
+              ? message
+              : "We had issues processing your request. Please try again.",
+        });
+        return rejectWithValue(response.data);
+      }
+
+      return rejectWithValue(error.response?.data);
+    }
+  },
+);
+
+
+/**
+ * Justice code thats working
+ */
+/*
 const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
   "auth/fetchUserProfile",
   async (_, { rejectWithValue, dispatch }) => {
@@ -180,6 +346,9 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
     }
   },
 );
+
+*/
+
 
 const doCompleteRegister = createTypedAsyncThunk<LoginResponse, RegisterPayload>(
   "auth/doRegister",
@@ -257,4 +426,4 @@ const doLogout = createTypedAsyncThunk("auth/doLogout", async (_, { dispatch }) 
   dispatch(authSliceActions.logout());
 });
 
-export const authSliceActions = { ...authSlice.actions, doLogin, doCompleteRegister, fetchUserProfile, doLogout };
+export const authSliceActions = { ...authSlice.actions,  doLogin, doCompleteRegister, fetchUserProfile, doLogout };

@@ -44,7 +44,13 @@ const formatToNaira = (value: string | number = 0) => {
 
   return formattedNumber;
 };
-
+/**
+ * 
+ * @param minAmount justice work, but causing a string and number mismatch
+ * @param format 
+ * @returns 
+ */
+/*
 const zodAmountValidation = (minAmount: number = 0, format = false) =>
   z
     .union([z.string().trim(), z.number()])
@@ -61,6 +67,22 @@ const zodAmountValidation = (minAmount: number = 0, format = false) =>
       },
       {
         message: `Amount must not be less than ${format ? formatToNaira(minAmount) : minAmount}`,
+      }
+    );
+*/
+const zodAmountValidation = (minAmount: number = 0, format = false) =>
+  z
+    .string()
+    .trim()
+    .refine(
+      (val) => {
+        const numericValue = parseFloat(val.replace(/[^0-9.]/g, ""));
+        return !isNaN(numericValue) && numericValue >= minAmount;
+      },
+      {
+        message: `Amount must not be less than ${
+          format ? formatToNaira(minAmount) : minAmount
+        }`,
       }
     );
 

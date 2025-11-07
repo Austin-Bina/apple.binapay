@@ -195,7 +195,7 @@ const NetworkPhoneInput = ({
                       onChangeText={onChange}
                       error={!!error}
                       errorMessage={error?.message}
-                      style={tw`flex-1 h-14`}
+                      style={tw` h-14`}
                     />
                   )}
                 />

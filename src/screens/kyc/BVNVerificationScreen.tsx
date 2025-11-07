@@ -311,7 +311,7 @@ export default function BVNVerificationScreen(props: Props) {
             control={control}
             data={filteredBanks}
           />
-
+{/*}
           <View style={tw`my-4`}>
             <Banner
               content={

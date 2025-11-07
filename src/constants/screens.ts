@@ -21,7 +21,15 @@ export const SCREENS = {
   MANUAL_FUND_PROOF: "Manual Fund Proof",
   MANUAL_FUND_WAIT: "Manual Fund Wait",
   PAYMENT_SUCCESS: "Payment Success",
+  DEPOSIT_CRYPTO: "DepositCrypto",
 
+  //Withdraw Money
+  WITHDRAW_MONEY: "Withdraw Money",
+  WITHDRAW_CRYPTO: "WithdrawCrypto",
+  WITHDRAW_NAIRA: "WithdrawNaira",
+
+  // convert 
+  CONVERT_CRYPTO: "Convert Crypto",
   // Purchases
   AIRTIME_PURCHASE: "Airtime Purchase",
   AIRTIME_EPIN_PURCHASE: "Airtime EPIN Purchase",
@@ -40,6 +48,8 @@ export const SCREENS = {
   // BinaPay
   BINAPAY_REWARDS: "BinaPay Rewards",
   EARNING_SUMMARY: "Earning Summary",
+  BANK_ACCOUNTS: "Bank Accounts",
+  CRYPTO_ASSETS: "Crypto Assets",
 
   // Account Verifications
   VERIFY_ACCOUNT: "Verify Account",
@@ -47,6 +57,8 @@ export const SCREENS = {
   ACCOUNT_VERIFICATION_OPTIONS: "Account Verification Options",
   BVN_VERIFICATION: "BVN Verification",
   NIN_VERIFICATION: "NIN Verification",
+  PHONE_VERIFICATION: "Phone Verification",
+
 
   // Password Recovery
   FORGOT_PASSWORD: "Forgot Password",

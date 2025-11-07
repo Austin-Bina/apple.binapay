@@ -13,6 +13,14 @@ export const routes = {
         changePassword: "/api/v1/auth/change-password",
         logout: "/api/v1/auth/logout",
         getAblyToken: "/api/v1/auth/get-ably-token",
+        nairawithdrawalotp: "/api/v1/withdraw/naira/send-otp",
+        cryptowithdrawalotp: "/api/v1/withdraw/crypto/send-otp",
+        covertcrypto: "/api/v1/convert",
+        ratesandspread: "/api/v1/rates-and-spread",
+        cryptoprices: "/api/v1/crypto-prices",
+        totalcryptousd: "/api/v1/dashboard",
+        phonenotp: "/api/v1/kyc/tier1",
+        verifyphoneotp: "/api/v1/kyc/verify-tier1-otp",
       },
       account: {
         setTransactionPin: "/api/v1/account/set-transaction-pin",
@@ -44,6 +52,13 @@ export const routes = {
         list: "/api/v1/banks",
         listDedicatedAccounts: "/api/v1/bank/list-dva-accounts",
         createDedicatedAccounts: "/api/v1/bank/create-dedicated-account",
+
+     userBankAccounts: {
+    list: "/api/v1/bank-accounts",           // GET
+    create: "/api/v1/bank-accounts",         // POST
+    delete: "/api/v1/bank-accounts/:id",     // DELETE
+  },
+
       },
       services: {
         fetch: "/api/v1/payment/fetch",
@@ -54,10 +69,19 @@ export const routes = {
         cable: "/api/v1/payment/process/cable",
         resolveMeter: "/api/v1/services/resolve-meter",
         resolveCable: "/api/v1/services/resolve-cable",
+        cryptoAssets: "/api/v1/crypto-prices",
+        cryptoDeposits: "/api/v1/crypto-deposits",
         education: {
-          purchase: "/api/v1/education/purchase",
-          serviceDetails: "/api/v1/education/service-details",
+        purchase: "/api/v1/education/purchase",
+       serviceDetails: "/api/v1/education/service-details",      
         },
+
+         wallets: {
+        list: "/api/v1/wallets", 
+        userwallet: "/api/v1/user/wallet",
+        withdrawnaira: "/api/v1/withdraw/naira",
+        withdrawcrypto: "/api/v1/withdraw/crypto",
+      },
       },
       funding: {
         banks: "/api/v1/funding/banks",
@@ -75,6 +99,7 @@ export const routes = {
         addResponse: "/api/v1/support/ticket/:ticketId/add-response",
         conversations: "/api/v1/support/conversations/:conversationId",
         history: "/api/v1/support/tickets",
+        contact: "/api/v1/contact-settings",
       },
       resources: {
         checkAppVersion: "/api/v1/resources/check-app-version",

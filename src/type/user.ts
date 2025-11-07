@@ -1,5 +1,41 @@
 import { AccountStatus, AccountTier } from "@enum/user";
 
+export interface WalletBalances {
+  [slug: string]: { name: string; balance: string; decimal_places?: number };
+}
+
+export interface Network {
+  id: number;
+  name: string;
+  fee: number;
+  min_withdrawal: number;
+  deposit_address: string;
+  qr_code: string | null;
+}
+
+
+export interface CryptoAsset {
+  id: number;
+  name: string;
+  symbol: string;
+  networks: Network[];
+  withdrawal_enabled: boolean;
+conversion_enabled: boolean;
+deposit_enabled: boolean;
+  icon_url?: string;
+  price_usd?: number;
+  balance?: number;
+  decimal_places?: number;
+  min_conversion: number;
+}
+
+export interface userBankAccounts{
+  account_name: string;
+  account_number: string;
+  bank_name: string;
+  id: number;
+}
+
 export interface DVA {
   id: string;
   account_name: string;
@@ -32,8 +68,18 @@ export interface User {
   status: AccountStatus;
   accounts: DVA[];
   wallet_balance: number;
+  wallet_balances?: WalletBalances;
+   wallets?: { slug: string; name: string; balance: number }[];
   created_at: string;
+  phone_verified_at?: string | null;
   verification_attempts: number;
+   crypto_assets?: CryptoAsset[];
+    admin_ngn_usdt_rate?: {
+    buy: number;
+    sell: number;
+  };
+   spreadConfig?: { spreadType: "percent" | "flat"; spread: number };
+   userBankAccounts: userBankAccounts[];
 }
 
 export interface ReferralReward {
@@ -42,6 +88,9 @@ export interface ReferralReward {
   referee_id: string;
   registration_date: string;
   reward_amount: number;
+  total_reward_earned: number;
+  reward_per_withdrawal: number;
+  max_reward_cap: number;
   referee: {
     id: string;
     name: string;
