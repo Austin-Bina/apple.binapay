@@ -88,7 +88,27 @@ export const TabBar = () => {
                       }),
                       target: state.key,
                     });
-                  } else {
+                  } 
+                  
+                   // NEW: Reset Account (Menu) stack to Settings when Menu tab is pressed
+    else if (route.name === "Menu") {
+      navigation.dispatch({
+        ...CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: "Menu",
+              state: {
+                routes: [{ name: "Settings" }], // the initial screen you want
+                index: 0,
+              },
+            },
+          ],
+        }),
+        target: state.key,
+      });
+    } 
+    else {
                     navigation.dispatch({
                       ...CommonActions.navigate(route.name, route.params),
                       target: state.key,

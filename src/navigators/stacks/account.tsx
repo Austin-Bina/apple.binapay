@@ -44,7 +44,7 @@ function AccountStack() {
 });
               }
             }}
-            style={tw`mr-2.5 overflow-hidden p-0.5`}>
+            style={tw`mr-2.5 overflow-hidden p-0.5 mt-8`}>
             <LeftArrowIcon width={38} height={38} />
           </TouchableRipple>
         ),

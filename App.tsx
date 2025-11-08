@@ -3,7 +3,7 @@ import { ActivityIndicator, PaperProvider } from "react-native-paper";
 import Router from "@navigators/MainStack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import tw from "@lib/tailwind";
-import * as SplashScreen from "expo-splash-screen";
+/*import * as SplashScreen from "expo-splash-screen"; */
 import React, { useCallback, useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { persistor, store } from "@store/main";
@@ -22,8 +22,8 @@ import {
 } from "@expo-google-fonts/inter";
 import { AppVersionProvider } from "@providers/app-version-provider";
 import { Dialog, Button, Portal, Text } from "react-native-paper";
-
-SplashScreen.preventAutoHideAsync();
+ 
+/*SplashScreen.preventAutoHideAsync();  */
 
 function BinaPay() {
   const [appIsReady, setAppIsReady] = useState(false);
@@ -109,7 +109,7 @@ useEffect(() => {
       // loading its initial state and rendering its first pixels. So instead,
       // we hide the splash screen once we know the root view has already
       // performed layout.
-      await SplashScreen.hideAsync();
+    /*  await SplashScreen.hideAsync(); */
     }
   }, [appIsReady, fontsLoaded]);
 

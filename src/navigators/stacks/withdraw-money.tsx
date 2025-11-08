@@ -7,6 +7,7 @@ import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import { SCREENS } from "@constants/screens";
 import WithdrawCryptoScreen from "@screens/withdraw/WithdrawCrypto";
 import WithdrawNairaScreen from "@screens/withdraw/WithdrawNaira";
+import BankAccountsScreen from "@screens/account/BankAccounts";
 
 const Stack = createNativeStackNavigator();
 
@@ -20,7 +21,7 @@ const WithdrawMoneyStack = () => {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-8`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) navigation.goBack();
@@ -44,6 +45,13 @@ const WithdrawMoneyStack = () => {
         name={SCREENS.WITHDRAW_NAIRA}
         component={WithdrawNairaScreen}
       />
+
+      <Stack.Screen
+  name={SCREENS.BANK_ACCOUNTS}
+  component={BankAccountsScreen}
+  options={{ headerShown: false }}
+/>
+
     </Stack.Navigator>
   );
 };

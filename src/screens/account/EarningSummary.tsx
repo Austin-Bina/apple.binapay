@@ -11,6 +11,7 @@ import { formatToNaira } from "@utils/money";
 import React, { useMemo, useState } from "react";
 import { RefreshControl, View } from "react-native";
 import { Card, Chip, Text } from "react-native-paper";
+import DefaultAvatar from '@assets/draft/male-avatar-circle.png';
 
 type Props = AccountStackScreenProps<"Earning Summary">;
 
@@ -74,20 +75,30 @@ export default function EarningSummaryScreen({}: Props) {
             </View>
           )}
           {summary.data.map((item) => (
-            <View
-              key={item.id}
-              style={tw`my-1.5 px-2 py-1 rounded-2xl border border-gray-100 flex-row justify-between items-center`}>
-              <View style={tw`flex-row items-center gap-2`}>
-                <AvatarImage avatar={item.referee.avatar} size={48} />
-                <Text variant="titleSmall" style={tw`font-bold text-gray-900`}>
-                  {item.referee.name}
-                </Text>
-              </View>
-              <Chip icon="" mode="flat" style={tw`bg-green-50`} textStyle={tw`text-green-600`}>
-                {formatToNaira(item.total_reward_earned)}
-              </Chip>
-            </View>
-          ))}
+  <View
+  key={item.id}
+  style={tw`my-1.5 px-2 py-1 rounded-2xl border border-gray-100 flex-row justify-between items-center`}
+>
+  <View style={tw`flex-row items-center gap-2 flex-1`}>
+    <AvatarImage avatar={item.referee?.avatar ?? DefaultAvatar} size={48} />
+    <View style={tw`flex-1`}>
+      <Text
+        variant="titleSmall"
+        style={tw`font-bold text-gray-900`}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {item.referee?.name ?? "Unknown Referee"}
+      </Text>
+    </View>
+  </View>
+  <Chip icon="" mode="flat" style={tw`bg-green-50`} textStyle={tw`text-green-600`}>
+    {formatToNaira(item.total_reward_earned)}
+  </Chip>
+</View>
+
+))}
+
         </View>
       </ScrollableView>
     </Screen>

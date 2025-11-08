@@ -234,7 +234,7 @@ return (
       <View>
         <Text style={tw`mb-0.5 text-sm font-medium`}>Deposit Amount</Text>
         <TextInput
-          style={tw`border rounded px-2 py-2 text-sm`}
+  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
           placeholder="Enter amount (e.g. 0.01 BTC)"
           keyboardType="numeric"
           value={amount}
@@ -246,7 +246,7 @@ return (
       <View>
         <Text style={tw`mb-0.5 text-sm font-medium`}>Transaction Hash (Tx ID)</Text>
         <TextInput
-          style={tw`border rounded px-2 py-2 text-sm`}
+  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
           placeholder="Paste transaction hash"
           value={txHash}
           onChangeText={setTxHash}

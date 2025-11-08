@@ -10,7 +10,7 @@
     "splash": {
       "image": "./src/assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#00000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -26,7 +26,7 @@
       "versionCode": 19,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#00000000"
       },
       "package": "com.binapay",
       "permissions": [

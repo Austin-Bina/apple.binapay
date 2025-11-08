@@ -29,6 +29,7 @@ export default function BankAccountsScreen({ navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [alert, setAlert] = useState<{ type: string; message: string } | null>(null);
+const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
 
   const { control, handleSubmit, setValue, watch, trigger, reset } = useForm<FormValues>({
     defaultValues: { account_name: "", account_number: "", bank_code: "" },
@@ -100,8 +101,12 @@ useEffect(() => {
       } else {
         Alert.alert("Verification Failed", "Could not resolve account name.");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+// ✅ Log full Axios error for debugging
+    console.error("Axios error:", error);
+    console.error("Error response data:", error.response?.data);
+    console.error("Error status:", error.response?.status);
+    console.error("Error headers:", error.response?.headers);
       Alert.alert("Error", "Failed to verify account.");
     } finally {
       setVerifying(false);
@@ -124,6 +129,7 @@ useEffect(() => {
       setSubmitting(true);
       const res = await API.post(routes.api.v1.bank.userBankAccounts.create, {
     bank_name: bank.name,
+    bank_code: bank.code, 
     account_number: data.account_number,
     account_name: resolvedAccountName,
     });
@@ -176,128 +182,159 @@ useEffect(() => {
 };
 
   return (
-    <ScrollView contentContainerStyle={tw`p-4 bg-white min-h-full`}>
+    <ScrollView style={tw`flex-1 bg-white`} contentContainerStyle={tw`p-5`}>
       {/* Back button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={tw`mb-4`}>
-        <Text style={tw`text-blue-600`}>← Back</Text>
+        <Text style={tw`text-blue-600 font-medium`}>← Back</Text>
       </TouchableOpacity>
 
-      {/* Alerts */}
-      {alert && (
-        <View
-          style={tw.style(
-            `p-3 rounded mb-4`,
-            alert.type === "success" && "bg-green-100",
-            alert.type === "error" && "bg-red-100",
-            alert.type === "warning" && "bg-yellow-100"
+      {/* Form Card */}
+      <View style={tw`bg-blue-50 rounded-2xl p-5 mb-6 shadow-sm`}>
+        <Text style={tw`text-xl font-semibold text-gray-800 mb-4`}>Add Bank Account</Text>
+
+        {/* Account Number */}
+        <Controller
+          control={control}
+          name="account_number"
+          rules={{ required: "Account number is required", minLength: 10 }}
+          render={({ field: { onChange, value } }) => (
+            <View style={tw`mb-4`}>
+              <Text style={tw`mb-1 font-semibold text-gray-700`}>Account Number</Text>
+              <TextInput
+                style={tw`px-4 py-3 bg-white border border-gray-200 rounded-xl`}
+                placeholder="Enter account number"
+                keyboardType="numeric"
+                value={value}
+                onChangeText={onChange}
+              />
+            </View>
           )}
-        >
-          <Text style={tw`text-sm`}>{alert.message}</Text>
+        />
+
+        {/* Bank Picker */}
+<Controller
+  control={control}
+  name="bank_code"
+  rules={{ required: "Bank is required" }}
+  render={({ field: { onChange, value } }) => (
+    <View style={tw`mb-4`}>
+      <Text style={tw`mb-1 font-semibold text-gray-700`}>Select Bank</Text>
+      {loadingBanks ? (
+        <ActivityIndicator size="small" color="#3B82F6" />
+      ) : (
+        <View style={tw`bg-white border border-gray-200 rounded-xl`}>
+          <Picker
+            selectedValue={value}
+            onValueChange={(val: string) => {
+              onChange(val); // update react-hook-form bank_code
+              const bank = banks.find((b) => b.code === val) ?? null;
+              setSelectedBank(bank);
+              // clear previous resolution if bank changed
+              setResolvedAccountName(null);
+              setIsVerified(false);
+              // optionally set hidden bank_name if you want
+              // setValue("bank_name", bank?.name ?? "");
+            }}
+          >
+            <Picker.Item label="Select bank" value="" />
+            {banks
+              .filter((b) => !!b.code)
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((b) => (
+                <Picker.Item key={b.code} label={b.name} value={b.code} />
+              ))}
+          </Picker>
         </View>
       )}
-
-      {/* Account Number */}
-      <Controller
-        control={control}
-        name="account_number"
-        rules={{ required: "Account number is required", minLength: 10 }}
-        render={({ field: { onChange, value } }) => (
-          <View style={tw`mb-4`}>
-            <Text style={tw`mb-1 font-semibold`}>Account Number</Text>
-            <TextInput
-              style={tw`border rounded p-2`}
-              placeholder="Enter account number"
-              keyboardType="numeric"
-              value={value}
-              onChangeText={onChange}
-            />
-          </View>
-        )}
-      />
-
-      {/* Bank Picker */}
-      <Controller
-        control={control}
-        name="bank_code"
-        rules={{ required: "Bank is required" }}
-        render={({ field: { onChange, value } }) => (
-          <View style={tw`mb-4`}>
-            <Text style={tw`mb-1 font-semibold`}>Select Bank</Text>
-            {loadingBanks ? (
-              <ActivityIndicator size="small" color="#000" />
-            ) : (
-              <Picker selectedValue={value} onValueChange={onChange} style={tw`border rounded`}>
-                <Picker.Item label="Select bank" value="" />
-                {banks
-                  .filter((b) => !!b.code)
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((b) => (
-                    <Picker.Item key={b.code} label={b.name} value={b.code} />
-                  ))}
-              </Picker>
-            )}
-          </View>
-        )}
-      />
-
-      {/* Verify Button */}
-      <TouchableOpacity
-        style={tw`bg-blue-600 py-3 rounded mb-3`}
-        onPress={verifyAccount}
-        disabled={verifying}
-      >
-        <Text style={tw`text-white text-center`}>
-          {verifying ? "Verifying..." : "Verify Account"}
-        </Text>
-      </TouchableOpacity>
-
-      {resolvedAccountName && (
-        <Text style={tw`text-green-600 font-medium mb-4`}>
-          ✅ {resolvedAccountName}
-        </Text>
-      )}
-
-      {/* Save Button */}
-      <TouchableOpacity
-        style={tw`bg-green-600 py-3 rounded`}
-        onPress={handleSubmit(submit)}
-        disabled={submitting}
-      >
-        <Text style={tw`text-white text-center`}>
-          {submitting ? "Saving..." : "Save Account"}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Existing accounts */}
-      {bankAccounts.length > 0 && (
-        <View style={tw`mt-6`}>
-          <Text style={tw`text-lg font-semibold mb-2`}>My Bank Accounts</Text>
-         
-         {bankAccounts.map((acc, index) => (
-  <View key={index} style={tw`border rounded p-3 mb-2 flex-row justify-between items-center`}>
-    <View>
-      <Text style={tw`font-medium`}>
-        {acc.bank_name} - {acc.account_number}
-      </Text>
-      <Text style={tw`text-gray-600`}>{acc.account_name}</Text>
     </View>
-    <TouchableOpacity
-      onPress={() => deleteBankAccount(acc.id)}
-      style={tw`bg-red-600 px-3 py-1 rounded`}
-    >
-      <Text style={tw`text-white`}>Delete</Text>
-    </TouchableOpacity>
-  </View>
-))}
+  )}
+/>
 
+        {/*}
+        <Controller
+          control={control}
+          name="bank_code"
+          rules={{ required: "Bank is required" }}
+          render={({ field: { onChange, value } }) => (
+            <View style={tw`mb-4`}>
+              <Text style={tw`mb-1 font-semibold text-gray-700`}>Select Bank</Text>
+              {loadingBanks ? (
+                <ActivityIndicator size="small" color="#3B82F6" />
+              ) : (
+                <View style={tw`bg-white border border-gray-200 rounded-xl`}>
+                  <Picker selectedValue={value} onValueChange={onChange}>
+                    <Picker.Item label="Select bank" value="" />
+                    {banks
+                      .filter((b) => !!b.code)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((b) => (
+                        <Picker.Item key={b.code} label={b.name} value={b.code} />
+                      ))}
+                  </Picker>
+                </View>
+              )}
+            </View>
+          )}
+        />
+*/}
+
+
+        {/* Verify Button */}
+        <TouchableOpacity
+          style={tw`bg-blue-600 py-3 rounded-xl mb-3`}
+          onPress={verifyAccount}
+          disabled={verifying}
+        >
+          <Text style={tw`text-white text-center font-medium`}>
+            {verifying ? "Verifying..." : "Verify Account"}
+          </Text>
+        </TouchableOpacity>
+
+        {resolvedAccountName && (
+          <Text style={tw`text-blue-600 font-semibold mb-4`}>
+             {resolvedAccountName}
+          </Text>
+        )}
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={tw`bg-blue-700 py-3 rounded-xl`}
+          onPress={handleSubmit(submit)}
+          disabled={submitting}
+        >
+          <Text style={tw`text-white text-center font-medium`}>
+            {submitting ? "Saving..." : "Save Account"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Existing Accounts */}
+      {bankAccounts.length > 0 && (
+        <View>
+          <Text style={tw`text-lg font-semibold text-gray-800 mb-3`}>
+            My Bank Accounts
+          </Text>
+          {bankAccounts.map((acc, index) => (
+            <View
+              key={index}
+              style={tw`bg-white border border-gray-200 rounded-2xl p-4 mb-3 shadow-sm flex-row justify-between items-center`}
+            >
+              <View>
+                <Text style={tw`font-medium text-gray-900`}>
+                  {acc.bank_name} - {acc.account_number}
+                </Text>
+                <Text style={tw`text-gray-500`}>{acc.account_name}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => deleteBankAccount(acc.id)}
+                style={tw`bg-red-500 px-3 py-1 rounded-lg`}
+              >
+                <Text style={tw`text-white font-medium`}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
       )}
-
-      <View style={tw`mt-6`}>
-        <Text style={tw`text-gray-600`}>
-          Add your bank account so you can withdraw funds seamlessly.
-        </Text>
-      </View>
     </ScrollView>
   );
 }

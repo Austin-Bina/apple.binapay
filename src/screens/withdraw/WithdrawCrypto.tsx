@@ -208,20 +208,26 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
         {/* Wallet Address */}
         <Text style={tw`mb-1`}>Wallet Address</Text>
         <TextInput
-          style={tw`border rounded px-2 py-2 mb-4 bg-gray-100`}
-          value={data.wallet_address}
-          onChangeText={(text) => setData((prev) => ({ ...prev, wallet_address: text }))}
-        />
+  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
+  placeholder="Enter wallet address"
+  placeholderTextColor="#9CA3AF"
+  value={data.wallet_address}
+  onChangeText={(text) => setData((prev) => ({ ...prev, wallet_address: text }))}
+/>
+
         {localErrors.wallet_address && <Text style={tw`text-red-500 mb-4`}>{localErrors.wallet_address}</Text>}
 
         {/* Amount */}
         <Text style={tw`mb-1`}>Amount</Text>
         <TextInput
-          style={tw`border rounded px-2 py-2 mb-4 bg-gray-100`}
-          keyboardType="numeric"
-          value={data.amount}
-          onChangeText={(text) => setData((prev) => ({ ...prev, amount: text }))}
-        />
+  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
+  placeholder="Enter amount"
+  placeholderTextColor="#9CA3AF"
+  keyboardType="numeric"
+  value={data.amount}
+  onChangeText={(text) => setData((prev) => ({ ...prev, amount: text }))}
+/>
+
         {localErrors.amount && <Text style={tw`text-red-500 mb-2`}>{localErrors.amount}</Text>}
 
         {/* Balance display */}

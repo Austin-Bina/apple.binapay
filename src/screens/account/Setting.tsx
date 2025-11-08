@@ -23,6 +23,7 @@ import { routes } from "@constants/routes";
 import { useAppVersion } from "@providers/app-version-provider";
 import { showToast } from "@helpers/toast";
 import UpdatesIcon from "@assets/icons/bar-code.svg";
+import AwardIcon from "@assets/icons/awards.svg";
 
 type Props = AccountStackScreenProps<"Settings">;
 
@@ -116,6 +117,14 @@ export default function SettingScreen({ navigation }: Props) {
           ItemIcon={KeyIcon}
           onPress={() => {
             navigation.navigate("Change Password");
+          }}
+        />
+
+         <Action
+          title="BinaPay Rewards"
+          ItemIcon={AwardIcon}
+          onPress={() => {
+            navigation.navigate("BinaPay Rewards");
           }}
         />
 

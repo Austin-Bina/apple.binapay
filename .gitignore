@@ -142,3 +142,9 @@ yarn-error.*
 *.tsbuildinfo
 
 # @end expo-cli
+
+# Keystore and credentials
+*.jks
+*.keystore
+@austinbina__BinaPay-keystore-backup.zip
+BinaPay-keystore-credentials.md
