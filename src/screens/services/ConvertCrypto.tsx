@@ -301,19 +301,19 @@ setSuccessMessage(`You received ${formattedBalance(receivedAmount ?? 0, data.toS
         else {
           Alert.alert("Conversion Failed", res.data?.error || "Conversion failed");
         }
-      } catch (err: any) {
-        let errorMsg = "Unknown error";
+      }catch (err: any) {
+  console.error("Conversion error:", err); // keep full error in console for debugging
 
-        if (err.response) {
-          errorMsg = `Server responded with ${err.response.status}: ${JSON.stringify(err.response.data)}`;
-        } else if (err.request) {
-          errorMsg = `No response received: ${JSON.stringify(err.request)}`;
-        } else {
-          errorMsg = `Error: ${err.message}`;
-        }
+  let userFriendlyMsg = "Something went wrong. Please try again.";
 
-        Alert.alert("Conversion Failed", errorMsg);
-      }
+  // Optional: if you want to show specific backend message without exposing details
+  if (err.response?.data?.message) {
+    userFriendlyMsg = err.response.data.message; 
+  }
+
+  Alert.alert("Conversion Failed", userFriendlyMsg);
+}
+
       finally {
       setSubmitting(false); // ✅ Re-enable button after all outcomes
     }

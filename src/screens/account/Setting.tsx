@@ -24,7 +24,7 @@ import { useAppVersion } from "@providers/app-version-provider";
 import { showToast } from "@helpers/toast";
 import UpdatesIcon from "@assets/icons/bar-code.svg";
 import AwardIcon from "@assets/icons/awards.svg";
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 type Props = AccountStackScreenProps<"Settings">;
 
 export default function SettingScreen({ navigation }: Props) {
@@ -130,7 +130,7 @@ export default function SettingScreen({ navigation }: Props) {
 
         <Action
           title="Manage Bank Accounts"
-          ItemIcon={KeyIcon}
+          ItemIcon={() => <MaterialCommunityIcons name="bank-outline" size={19} color="#1f14f1ff" />}
           onPress={() => {
             navigation.navigate("Bank Accounts");
           }}
