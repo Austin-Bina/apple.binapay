@@ -30,7 +30,7 @@ export default function StartManualFundingScreen({ navigation }: Props) {
     resolver: zodResolver(schema),
     mode: "onChange",
     defaultValues: {
-      amount: "1000",
+      amount: "",
     },
   });
 

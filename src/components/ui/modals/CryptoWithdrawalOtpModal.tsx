@@ -121,14 +121,30 @@ const [successMessage, setSuccessMessage] = useState("");
       setSuccessMessage(`You received ${receivedAmount}.`);
       setShowSuccess(true);
     }
+    
   } catch (e: any) {
+    const status = e.response?.status;
+    const message = e.response?.data?.message;
+
+    // 🔥 1. CHECK FOR BLOCKED USER (403)
+    if (status === 403) {
+      setAlert({
+        type: "error",
+        message: "Your account is temporarily blocked. Please contact support.",
+      });
+      setOtp("");
+      return;  // ⛔ STOP further processing
+    }
+
+    // 🔥 2. HANDLE ALL OTHER ERRORS (normal errors)
     setAlert({
       type: "error",
-      message: e.response?.data?.message || "Invalid OTP",
+      message: message || "Invalid OTP",
     });
     setOtp("");
+
   } finally {
-    setSending(false); // ✅ re-enable button after API call finishes
+    setSending(false);
   }
 };
 

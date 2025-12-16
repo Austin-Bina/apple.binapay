@@ -10,7 +10,7 @@ import { formatToNaira } from "@utils/money";
 import React, { Fragment } from "react";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ImageBackground, RefreshControl, View } from "react-native";
+import { ImageBackground, RefreshControl, View, SafeAreaView } from "react-native";
 import { Button, HelperText, IconButton, Text } from "react-native-paper";
 import { z } from "zod";
 import * as Clipboard from "expo-clipboard";
@@ -98,11 +98,11 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
           <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
             Deposit Money
           </Text>
-          <Text variant="bodyMedium" style={tw`text-gray-400`}>
+       {/*  <Text variant="bodyMedium" style={tw`text-gray-400`}>
             Kindly make a <Text style={tw`font-semibold text-gray-600`}>{formatToNaira(amount)}</Text> deposit to the
             account details below and confirm deposit when it's done.
           </Text>
-
+*/}
           {transactionReference && (
             <Banner
               variant="info"
@@ -124,7 +124,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
             />
           </View>
 
-          {!transactionReference && (
+        {/*}  {!transactionReference && (
             <Controller
               control={control}
               name="narration"
@@ -143,12 +143,12 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
               )}
             />
           )}
-
+*/}
           {EmptyView}
 
           {selectedBank && <SelectedBankDetails selected={selectedBank} reference={transactionReference} />}
         </View>
-
+{/*}
         <View style={tw`pb-4 pt-1 mt-10`}>
           <Button
             mode="contained"
@@ -159,8 +159,24 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
             labelStyle={tw`text-white text-center text-base font-bold`}>
             {transactionReference ? "Money Deposited" : "Initiate Transaction"}
           </Button>
-        </View>
+        </View> */}
       </ScrollableView>
+
+ {/* Fixed bottom button */}
+  <SafeAreaView style={tw`bg-white border-t border-gray-200`}>
+    <View style={tw`px-4 py-10`}>
+      <Button
+        mode="contained"
+        onPress={onSubmit}
+        disabled={isProcessing || fetchingBanks}
+        contentStyle={tw`py-2`}
+        style={tw`w-full rounded-full`}
+        labelStyle={tw`text-white text-center text-base font-bold`}
+      >
+        {transactionReference ? "Money Deposited" : "Initiate Transaction"}
+      </Button>
+    </View>
+  </SafeAreaView>
 
       <PleaseWaitModal visible={isProcessing || fetchingBanks} />
     </Screen>
@@ -227,3 +243,4 @@ const SelectedBankDetails: React.FC<SelectedBankDetailsProps> = ({ selected, ref
     </ImageBackground>
   );
 };
+

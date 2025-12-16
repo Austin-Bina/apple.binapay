@@ -42,3 +42,5 @@ export { default as Tickets } from "./Tickets";
 export { default as TvScreen } from "./TvScreen";
 export { default as VerifiedBadge } from "./VerifiedBadge";
 export { default as Wifi } from "./Wifi";
+export { default as WalletIcon } from "./WalletIcon";
+export { default as CashMinusIcon } from "./CashMinusIcon";

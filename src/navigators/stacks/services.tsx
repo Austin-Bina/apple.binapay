@@ -38,7 +38,7 @@ export default function ServicesStack() {
   ],
 });
             }}
-            style={tw`mr-2.5 overflow-hidden p-0.5 mt-8`}>
+            style={tw`mr-0.1 overflow-hidden p-1 mt-0.1`}>
             <LeftArrowIcon width={38} height={38} />
           </TouchableRipple>
         ),

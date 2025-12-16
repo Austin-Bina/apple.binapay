@@ -142,7 +142,8 @@ export default function RequestOneTimePasswordScreen(props: Props) {
           <View>
             <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>OTP Verification</Text>
             <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>
-              We've sent a 6 digit code to your mail, enter the code to reset your password.
+             We've sent a 6-digit verification code to your email. Please enter the code to reset your password.
+              If you don’t see it in your inbox, kindly check your Spam or Junk folder.
             </Text>
             <View style={tw`mb-10`}>
               <View style={tw`flex flex-row items-center justify-center`}>

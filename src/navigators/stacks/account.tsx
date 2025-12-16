@@ -14,6 +14,8 @@ import KYCStack from "./verify-account";
 import SupportStack from "./support";
 import BankAccountsScreen from "@screens/account/BankAccounts";
 import CryptoAssets from "@screens/home/CryptoAssets";
+import LeaderboardScreen from "@screens/account/LeaderBoard";
+
 
 const Stack = createNativeStackNavigator<AccountParamList>();
 
@@ -44,7 +46,7 @@ function AccountStack() {
 });
               }
             }}
-            style={tw`mr-2.5 overflow-hidden p-0.5 mt-8`}>
+            style={tw`mr-2.5 overflow-hidden p-0.5 mt-0.1`}>
             <LeftArrowIcon width={38} height={38} />
           </TouchableRipple>
         ),
@@ -53,10 +55,11 @@ function AccountStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="BinaPay Rewards" component={BinaRewardsScreen} />
       <Stack.Screen name="Earning Summary" component={EarningSummaryScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} options={{ title: "Referral Leaderboard" }} />
       <Stack.Screen name="Change Password" component={ChangePassword} />
       <Stack.Screen name={SCREENS.VERIFY_ACCOUNT} options={{ headerShown: false }} component={KYCStack} />
       <Stack.Screen name={SCREENS.SUPPORT_STACK} options={{ headerShown: false }} component={SupportStack} />
-      <Stack.Screen name={SCREENS.BANK_ACCOUNTS} options={{ headerShown: false }} component={BankAccountsScreen} />
+      <Stack.Screen name={SCREENS.BANK_ACCOUNTS}  component={BankAccountsScreen} />
 
       {/* Crypto Assets 
       <Stack.Screen name={SCREENS.CRYPTO_ASSETS} component={CryptoAssets} options={{ title: "All Assets" }} />

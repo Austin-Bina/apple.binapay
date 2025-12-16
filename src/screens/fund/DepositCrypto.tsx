@@ -14,16 +14,18 @@ import API from "@lib/api";
 import { useNavigation } from "@react-navigation/native";
 import { selectUser } from "@store/selectors/auth";
 import { routes } from "@constants/routes";
-import { Picker } from '@react-native-picker/picker';
+import DropDownPicker from "react-native-dropdown-picker";
 import { useSelector } from "react-redux";
 import { CryptoAsset as UserCryptoAsset, Network as UserNetwork } from "@type/user"; // adjust path
 import TransactionSuccessModal from "@components/ui/modals/TransactionSuccessModal";
+import ScrollableView from "@components/ui/shared/ScrollableView";
 
 type Network = {
   id: number;
   name: string;
   deposit_address: string;
   qr_code: string | null;
+  network_slug: string;
 };
 
 type CryptoAsset = {
@@ -38,6 +40,8 @@ export default function DepositCryptoScreen({ navigation }: any) {
 
   // Use the correct types from user
 const [cryptoAssets, setCryptoAssets] = useState<UserCryptoAsset[]>(user?.crypto_assets ?? []);
+ const [coinOpen, setCoinOpen] = useState(false);
+const [networkOpen, setNetworkOpen] = useState(false);
 
   const [networks, setNetworks] = useState<UserNetwork[]>([]);
   const [cryptoAsset, setCryptoAsset] = useState<string>("");
@@ -164,102 +168,142 @@ const [cryptoAssets, setCryptoAssets] = useState<UserCryptoAsset[]>(user?.crypto
 };
   
 return (
-  <ScrollView
-    contentContainerStyle={tw`flex-grow bg-white px-3 py-4`}
-    showsVerticalScrollIndicator={false}
-  >
-    <View style={tw`gap-3`}>
-      {/* Coin Picker */}
-      <View>
-        <Text style={tw`mb-1 text-sm font-medium`}>Select Coin</Text>
-        <Picker
-          selectedValue={cryptoAsset}
-          onValueChange={(itemValue) => setCryptoAsset(itemValue)}
-          style={tw`border rounded bg-gray-100 text-sm py-0.2`}
-        >
-          <Picker.Item label="Select Coin" value="" />
-          {cryptoAssets.map((asset) => (
-            <Picker.Item
-              key={asset.id}
-              label={`${asset.symbol.toUpperCase()} ${!asset.deposit_enabled ? "(Disabled)" : ""}`}
-              value={asset.deposit_enabled ? asset.symbol : ""}
+  <View style={tw`flex-1 bg-white`}>
+    
+    <ScrollableView
+     contentContainerStyle={tw`p-4 pb-32 z-10`}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={tw`gap-3`}>
+        {/* Coin Picker */}
+        <View>
+         <Text style={tw`mb-1 text-sm font-medium`}>Select Coin</Text>
+<DropDownPicker
+  open={coinOpen}
+  value={cryptoAsset}
+  items={cryptoAssets.map((asset) => ({
+    label: `${asset.symbol.toUpperCase()} ${!asset.deposit_enabled ? "(Disabled)" : ""}`,
+    value: asset.symbol,
+    disabled: !asset.deposit_enabled, // disables selection
+  }))}
+  setOpen={setCoinOpen}
+  setValue={(callback) => setCryptoAsset(callback(cryptoAsset))}
+  placeholder="Select Coin"
+  style={tw`bg-gray-100 border-gray-300 rounded-lg mb-4`}
+       dropDownContainerStyle={tw`bg-white border-gray-300 rounded-lg`}
+  listMode="SCROLLVIEW"
+  zIndex={3000}
+/>
+
+
+        </View>
+
+        {/* Network Picker */}
+        {networks.length > 0 && (
+          <View>
+          {networks.length > 0 && (
+  <>
+    <Text style={tw`mb-1 text-sm font-medium`}>Select Network</Text>
+    <DropDownPicker
+      open={networkOpen}
+      value={cryptoNetworkId}
+      items={networks.map((n) => ({
+        label: `${n.name} (${n.network_slug})`,
+        value: n.id.toString(),
+      }))}
+      setOpen={setNetworkOpen}
+      setValue={(callback) => setCryptoNetworkId(callback(cryptoNetworkId))}
+      placeholder="Select Network"
+      style={tw`bg-gray-100 border-gray-300 rounded-lg mb-4`}
+       dropDownContainerStyle={tw`bg-white border-gray-300 rounded-lg`}
+      listMode="SCROLLVIEW"
+      zIndex={2000}
+    />
+  </>
+)}
+
+
+          </View>
+        )}
+
+        {/* Wallet Address */}
+        {walletAddress ? (
+          <View>
+            <Text style={tw`mb-0.5 text-sm font-medium`}>Wallet Address</Text>
+            <Text style={tw`p-2 bg-gray-100 rounded text-base break-words`}>
+              {walletAddress}
+            </Text>
+            <TouchableOpacity onPress={copyAddress}>
+              <Text style={tw`text-blue-600 mt-0.5 text-xs`}>Copy Address</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* QR Code */}
+        {qrUrl ? (
+          <View style={tw`items-center`}>
+            <Text style={tw`mb-0.5 text-sm font-medium`}>Scan QR Code</Text>
+            <Image
+              source={{ uri: qrUrl }}
+              style={tw`w-36 h-36 border rounded`}
+              resizeMode="contain"
             />
-          ))}
-        </Picker>
-      </View>
+          </View>
+        ) : null}
 
-      {/* Network Picker */}
-      {networks.length > 0 && (
+        {/* Warning */}
+        {cryptoAsset && cryptoNetworkId ? (
+          <View style={tw`mb-2 p-2 bg-yellow-100 border-l-4 border-yellow-500 rounded`}>
+            <Text style={tw`text-xs text-yellow-800`}>
+              ⚠️ Make sure to send{' '}
+              <Text style={tw`text-blue-600`}>{cryptoAsset.toUpperCase()}</Text>{' '}
+              on the{' '}
+              <Text style={tw`text-blue-600`}>
+                {networks.find(n => n.id === parseInt(cryptoNetworkId))?.name}
+              </Text>{' '}
+              network, and click "I've Sent the Funds" after completing the transfer.
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Tx Hash */}
         <View>
-          <Text style={tw`mb-1 text-sm font-medium`}>Select Network</Text>
-          <Picker
-            selectedValue={cryptoNetworkId}
-            onValueChange={(itemValue) => setCryptoNetworkId(itemValue)}
-            style={tw`border rounded bg-gray-100 text-sm py-0.`}
-          >
-            <Picker.Item label="Select Network" value="" />
-            {networks.map((network) => (
-              <Picker.Item key={network.id} label={network.name} value={network.id.toString()} />
-            ))}
-          </Picker>
-        </View>
-      )}
-
-      {/* Wallet Address */}
-      {walletAddress ? (
-        <View>
-          <Text style={tw`mb-0.5 text-sm font-medium`}>Wallet Address</Text>
-          <Text style={tw`p-4 bg-gray-100 rounded text-xs break-words`}>
-            {walletAddress}
-          </Text>
-          <TouchableOpacity onPress={copyAddress}>
-            <Text style={tw`text-blue-600 mt-0.5 text-xs`}>Copy Address</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {/* QR Code */}
-      {qrUrl ? (
-        <View style={tw`items-center`}>
-          <Text style={tw`mb-0.5 text-sm font-medium`}>Scan QR Code</Text>
-          <Image
-            source={{ uri: qrUrl }}
-            style={tw`w-36 h-36 border rounded`}
-            resizeMode="contain"
+          <Text style={tw`mb-0.5 text-sm font-medium`}>Transaction Hash (Tx ID)</Text>
+          <TextInput
+            style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
+            placeholder="Paste transaction hash"
+            value={txHash}
+             onChangeText={(text) => setTxHash(text.replace(/\s+/g, ""))} 
           />
         </View>
-      ) : null}
-
-      {/* Amount Field */}
-      <View>
-        <Text style={tw`mb-0.5 text-sm font-medium`}>Deposit Amount</Text>
-        <TextInput
-  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
-          placeholder="Enter amount (e.g. 0.01 BTC)"
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-        />
       </View>
+    </ScrollableView>
 
-      {/* Tx Hash */}
-      <View>
-        <Text style={tw`mb-0.5 text-sm font-medium`}>Transaction Hash (Tx ID)</Text>
-        <TextInput
-  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
-          placeholder="Paste transaction hash"
-          value={txHash}
-          onChangeText={setTxHash}
-        />
-      </View>
-
-      {/* Submit Button */}
+    {/* FIXED BOTTOM BUTTON */}
+    <View
+      style={[
+        tw`absolute left-0 right-0 bg-white p-4`,
+        {
+          bottom: 0,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          elevation: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 6,
+        },
+      ]}
+    >
       <TouchableOpacity
         disabled={loading}
         onPress={handleConfirmDeposit}
-        style={tw`bg-blue-600 py-2 rounded`}
+        style={[
+          tw`py-3 rounded-xl`,
+          { backgroundColor: loading ? "#3b82f6AA" : "#2563eb" },
+        ]}
       >
-        <Text style={tw`text-white text-center font-semibold text-sm`}>
+        <Text style={tw`text-white text-center font-semibold text-base`}>
           {loading ? "Submitting..." : "I've Sent the Funds"}
         </Text>
       </TouchableOpacity>
@@ -272,6 +316,6 @@ return (
       message="Your deposit request has been submitted successfully. It will be credited shortly."
       onClose={() => setSuccessModalVisible(false)}
     />
-  </ScrollView>
-  );
+  </View>
+);
 }

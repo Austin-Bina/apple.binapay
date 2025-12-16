@@ -8,7 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import DropDownPicker from "react-native-dropdown-picker";
 import tw from "@lib/tailwind";
 import API from "@lib/api";
 import { useForm, Controller } from "react-hook-form";
@@ -22,6 +22,7 @@ type FormValues = { account_name: string; account_number: string; bank_code: str
 export default function BankAccountsScreen({ navigation }: any) {
   const user = useSelector(selectUser);
   const [banks, setBanks] = useState<Bank[]>([]);
+  const [bankOpen, setBankOpen] = useState(false);
   const [resolvedAccountName, setResolvedAccountName] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [loadingBanks, setLoadingBanks] = useState(false);
@@ -66,8 +67,8 @@ useEffect(() => {
     const fetchBanks = async () => {
       try {
         setLoadingBanks(true);
-        const res = await API.get(routes.api.v1.bank.list);
-        setBanks(res.data.banks || []);
+        const res = await API.get(routes.api.v1.bank.userBankAccounts.banklist);
+        setBanks(res.data.data || []);
       } catch (error) {
         console.error(error);
         Alert.alert("Error", "Failed to load bank list. Please try again.");
@@ -89,7 +90,7 @@ useEffect(() => {
     setIsVerified(false);
 
     try {
-      const res = await API.post(routes.api.v1.bank.resolveAccount, {
+      const res = await API.post(routes.api.v1.bank.userBankAccounts.accountname, {
         account_number: values.account_number,
         bank_code: values.bank_code,
       });
@@ -182,11 +183,8 @@ useEffect(() => {
 };
 
   return (
-    <ScrollView style={tw`flex-1 bg-white`} contentContainerStyle={tw`p-5`}>
-      {/* Back button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`mb-4`}>
-        <Text style={tw`text-blue-600 font-medium`}>← Back</Text>
-      </TouchableOpacity>
+    <ScrollView style={tw`flex-1 bg-white`} contentContainerStyle={tw`p-5 pt-12`}>
+     
 
       {/* Form Card */}
       <View style={tw`bg-blue-50 rounded-2xl p-5 mb-6 shadow-sm`}>
@@ -212,43 +210,39 @@ useEffect(() => {
         />
 
         {/* Bank Picker */}
-<Controller
-  control={control}
-  name="bank_code"
-  rules={{ required: "Bank is required" }}
-  render={({ field: { onChange, value } }) => (
-    <View style={tw`mb-4`}>
-      <Text style={tw`mb-1 font-semibold text-gray-700`}>Select Bank</Text>
-      {loadingBanks ? (
-        <ActivityIndicator size="small" color="#3B82F6" />
-      ) : (
-        <View style={tw`bg-white border border-gray-200 rounded-xl`}>
-          <Picker
-            selectedValue={value}
-            onValueChange={(val: string) => {
-              onChange(val); // update react-hook-form bank_code
-              const bank = banks.find((b) => b.code === val) ?? null;
-              setSelectedBank(bank);
-              // clear previous resolution if bank changed
-              setResolvedAccountName(null);
-              setIsVerified(false);
-              // optionally set hidden bank_name if you want
-              // setValue("bank_name", bank?.name ?? "");
-            }}
-          >
-            <Picker.Item label="Select bank" value="" />
-            {banks
-              .filter((b) => !!b.code)
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((b) => (
-                <Picker.Item key={b.code} label={b.name} value={b.code} />
-              ))}
-          </Picker>
-        </View>
-      )}
-    </View>
-  )}
-/>
+        <View style={tw`mb-4`}>
+  <Controller
+    control={control}
+    name="bank_code"
+    rules={{ required: "Bank is required" }}
+    render={({ field: { onChange, value } }) => (
+      <DropDownPicker
+        open={bankOpen}
+        value={selectedBank?.code ?? null}
+        items={banks
+          .filter((b) => !!b.code)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((b) => ({ label: b.name, value: b.code }))}
+        setOpen={setBankOpen}
+        setValue={(callback) => {
+          const newCode = callback(selectedBank?.code ?? null);
+          const bank = banks.find((b) => b.code === newCode) ?? null;
+          setSelectedBank(bank);
+          onChange(newCode);
+          setResolvedAccountName(null);
+          setIsVerified(false);
+        }}
+        placeholder="Select Bank"
+      style={tw`bg-white border border-gray-200 rounded-xl`}
+      dropDownContainerStyle={tw`bg-white border border-gray-200 rounded-xl`}
+      listMode="MODAL"         // ✅ Use MODAL for overlay + search
+      searchable={true}        // ✅ Enable search
+      searchPlaceholder="Search bank..."
+      modalTitle="Select Bank"  // Optional: title at top of modal
+      />
+    )}
+  />
+</View>
 
         {/*}
         <Controller

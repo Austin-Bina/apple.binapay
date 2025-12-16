@@ -18,6 +18,12 @@ export default function ScrollableView({
       showsHorizontalScrollIndicator={noHScroll === false}
       showsVerticalScrollIndicator={noVScroll === false}
       contentContainerStyle={[contentContainerStyle, tw`flex-grow`]}
+
+       // 👇 **Critical iOS fixes**
+      keyboardShouldPersistTaps="always"
+      keyboardDismissMode="interactive"
+      nestedScrollEnabled={true}
+      scrollEventThrottle={16}
       {...props}
     />
   );

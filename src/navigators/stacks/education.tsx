@@ -21,7 +21,7 @@ function EducationStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-8`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
              <TouchableRipple
                           onPress={() => {
                             if (navigation.canGoBack()) {

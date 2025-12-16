@@ -11,6 +11,7 @@ export interface Network {
   min_withdrawal: number;
   deposit_address: string;
   qr_code: string | null;
+  network_slug: string;
 }
 
 
@@ -90,6 +91,9 @@ export interface ReferralReward {
   reward_amount: number;
   total_reward_earned: number;
   reward_per_withdrawal: number;
+  reward_percentage: number;
+  total_trading_volume: number;
+  total_volume: number;
   max_reward_cap: number;
   referee: {
     id: string;
@@ -97,3 +101,14 @@ export interface ReferralReward {
     avatar: string;
   };
 }
+
+export interface ReferralLeaderboardItem {
+  referrer_id: string;
+  total_earned: number;
+  total_volume: number;
+  referrer: {
+    name: string;
+    avatar: string;
+  };
+}
+

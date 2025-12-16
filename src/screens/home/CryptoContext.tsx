@@ -19,14 +19,13 @@ type CryptoAsset = {
 
 type CryptoContextType = {
   assets: CryptoAsset[];
-  loading: boolean;
   totalUsd: number;  
   refresh: () => void;
 };
 
 const CryptoContext = createContext<CryptoContextType>({
   assets: [],
-  loading: true,
+
   totalUsd: 0,
   refresh: () => {},
 });
@@ -118,7 +117,7 @@ const fetchTotalUsd = async () => {
   };
 
   const refresh = () => {
-    setLoading(true);
+   
     fetchPrices();
   };
 
@@ -132,205 +131,10 @@ const fetchTotalUsd = async () => {
 
 
   return (
-    <CryptoContext.Provider value={{ assets, loading, totalUsd, refresh }}>
+    <CryptoContext.Provider value={{ assets,  totalUsd, refresh }}>
       {children}
     </CryptoContext.Provider>
   );
 };
 
 
-
-
-/**
- * for dashboard
- */
-/*
-
- <ScrollableView
-        style={tw`px-3 flex flex-1 py-6`}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} />}>
-        {/* Balance *//*
-        <Card mode="contained" style={tw`bg-primary-50 py-2`}>
-          <Card.Content style={tw`items-center`}>
-            <View style={tw`flex-row justify-center items-center`}>
-              <View>
-
-                {balanceVisible ? (
-  <View style={tw`flex-row items-baseline justify-center`}>
-    {/* Naira Balance */ /*
-    <View style={tw`items-center mr-4`}>
-      <Text style={tw`text-gray-900 font-bold text-xl`}>
-        {formatToNaira(nairaWalletBalance)}
-      </Text>
-    </View>
-
-    {/* USD Crypto Balance */ /*
-    <View style={tw`items-center`}>
-      <Text style={tw`text-gray-900 font-bold text-xl`}>
-        ${totalCryptoUsd.toFixed(2)}
-      </Text>
-    </View>
-  </View>
-) : (
-  <HorizontalDots />
-)}
-              </View>
-              <IconButton
-                icon={
-                  balanceVisible
-                    ? (props) => <LargeEyeOpen {...props} width={scale(30)} height={scale(30)} />
-                    : (props) => <LargeEyeClose {...props} width={scale(30)} height={scale(30)} />
-                }
-                onPress={toggleBalance}
-              />
-            </View>
-         {/*}   <Button icon="wallet" mode="outlined" style={tw`border-primary mt-2`} onPress={openFundModal}>
-              Fund Wallet
-            </Button> */ /*
-            <View style={tw`flex-row justify-center items-center gap-4 mt-2`}>
-  <Button
-    icon="wallet"
-    mode="outlined"
-    style={tw`border-primary flex-1`}
-    onPress={() => setFundModalVisible(true)}
-  >
-    Fund Wallet
-  </Button>
-
-  <Button
-    icon="cash-minus"
-    mode="outlined"
-    style={tw`border-danger flex-1`}
-    onPress={() => setWithdrawModalVisible(true)}
-  >
-    Withdraw
-  </Button>
-</View>
-          </Card.Content>
-        </Card>
-
-        {hasProfileError && (
-          <Pressable onPress={onRefresh} style={tw`mt-6`}>
-            <Banner
-              title="Network Error"
-              content="We couldn't load some of your account details. Click to try again."
-            />
-          </Pressable>
-        )}
-
-        {!isVerified && (
-          <Pressable onPress={handleVerifyAccount} style={tw`mt-6`}>
-            <Banner
-              title="Account Verification"
-              content="You are yet to verify your account, click to complete verification now."
-            />
-          </Pressable>
-        )}
-
-        <View style={tw`my-4`}>
-          <Text style={tw`text-base font-medium text-gray-600 mb-3.5`}>Services</Text>
-          <View style={tw`flex-row justify-around`}>
-
-
-            
-            <IconButtonWithLabel
-              RenderIcon={ZapIcon}
-              size={24}
-              label="Buy / Sell+Crypto"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "Convert Crypto", //i made changes here 
-                  },
-                });
-              }}
-            />          
-            <IconButtonWithLabel
-              RenderIcon={PhoneIcon}
-              size={24}
-              label="Airtime+Purchase"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "Airtime Purchase",
-                  },
-                });
-              }}
-            />
-            <IconButtonWithLabel
-              RenderIcon={WifiIcon}
-              size={24}
-              label="Data+Bundle"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "Data Purchase",
-                  },
-                });
-              }}
-            />         
-            <IconButtonWithLabel
-              RenderIcon={MoreIcon}
-              size={24}
-              label="Explore+More"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "List",
-                  },
-                });
-              }}
-            />
-          </View>
-        </View>
-
-
-     {/* Tabs: Crypto Wallets / Transactions   /*
-<View style={tw`my-4`}>
-  <View style={tw`flex-row border-b border-gray-200`}>
-    <TouchableOpacity
-      style={tw`flex-1 py-2`}
-      onPress={() => setActiveTab("wallets")}
-    >
-      <Text
-        style={tw.style(
-          `text-center font-semibold py-1`,
-          activeTab === "wallets" ? "text-primary border-b-2 border-primary" : "text-gray-500"
-        )}
-      >
-        Crypto Wallets
-      </Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      style={tw`flex-1 py-2`}
-      onPress={() => setActiveTab("transactions")}
-    >
-      <Text
-        style={tw.style(
-          `text-center font-semibold py-1`,
-          activeTab === "transactions" ? "text-primary border-b-2 border-primary" : "text-gray-500"
-        )}
-      >
-        Transactions
-      </Text>
-    </TouchableOpacity>
-  </View>
-
-  {/* Render whichever tab is active */ /*
-  <View style={tw`mt-3`}>
-    {activeTab === "wallets" && <CryptoProvider><CryptoOverview /></CryptoProvider>}
-    {activeTab === "transactions" && <RecentTransactions navigation={navigation} />}
-  </View>
-</View>
-
-      </ScrollableView>
-*/

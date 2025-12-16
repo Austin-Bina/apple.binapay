@@ -119,19 +119,38 @@ const [successMessage, setSuccessMessage] = useState("");
     // If the request was successful (status 200/201)
    if (res.data.success) {
   const receivedAmount = parseFloat(amount).toLocaleString(); // formatted
-  setSuccessMessage(`You received ₦${receivedAmount}.`);
+  setSuccessMessage(`You have successfully withdrawn ₦${receivedAmount}.`);
   setShowSuccess(true);
 }
 
 
-  } catch (e: any) {
-    setAlert({
-      type: "error",
-      message: e?.response?.data?.message || "Invalid OTP",
-    });
+  }  catch (e: any) {
+    const status = e?.response?.status;
+    const msg =
+      e?.response?.data?.error ||
+      e?.response?.data?.message ||
+      "Something went wrong. Please try again.";
+
+    // 🔥 HANDLE BLOCKED USER
+    if (status === 403) {
+      setAlert({
+        type: "error",
+        message: "Your account is temporarily blocked. Please contact support.",
+      });
+    }
+    // 🔥 HANDLE INVALID OTP
+    else if (status === 422) {
+      setAlert({ type: "error", message: "Invalid OTP" });
+    }
+    // 🔥 OTHER ERRORS
+    else {
+      setAlert({ type: "error", message: msg });
+    }
+
     setOtp("");
+    
   } finally {
-    setSending(false); // ✅ re-enable button after API call finishes
+    setSending(false);
   }
 
   

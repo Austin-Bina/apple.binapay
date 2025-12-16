@@ -33,6 +33,7 @@ export const routes = {
         recentTransactions: "/api/v1/account/recent-transactions",
         transactions: "/api/v1/account/transactions",
         referralActivities: "/api/v1/account/referral-activities",
+        referralLeaderBoard: "/api/v1/account/referrals/leaderboard",
         settings: "/api/v1/account/settings",
       },
       notification: {
@@ -56,7 +57,9 @@ export const routes = {
      userBankAccounts: {
     list: "/api/v1/bank-accounts",           // GET
     create: "/api/v1/bank-accounts",         // POST
-    delete: "/api/v1/bank-accounts/:id",     // DELETE
+    delete: "/api/v1/bank-accounts/:id", 
+    banklist: "/api/v1/user/banks",
+    accountname: "api/v1/user/banks/resolve"  // DELETE
   },
 
       },

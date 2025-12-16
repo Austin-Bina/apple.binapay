@@ -7,9 +7,9 @@ import { AccountStackScreenProps } from "@navigators/types";
 import { useTypedSelector } from "@store/common";
 import { selectUser } from "@store/selectors/auth";
 import { useGetReferralRewardsQuery } from "@store/redux-api/referralQueryApi";
-import React from "react";
-import { View, Image } from "react-native";
-import { Text, Button, ActivityIndicator } from "react-native-paper";
+import React, { useMemo } from "react";
+import { View, FlatList, Image } from "react-native";
+import { Text, Button, ActivityIndicator, Card } from "react-native-paper";
 import { formatToNaira } from "@utils/money";
 
 type Props = AccountStackScreenProps<"BinaPay Rewards">;
@@ -19,81 +19,106 @@ export default function BinaRewardsScreen({ navigation }: Props) {
   const { data, isFetching } = useGetReferralRewardsQuery({ page: 1, per_page: 1 });
 
   const reward = data?.data?.[0];
-  const totalRewardCap =
-    data?.meta?.max_reward_cap ?? reward?.max_reward_cap ?? 0;
-  const rewardPerTrade =
-    data?.meta?.reward_per_withdrawal ?? reward?.reward_per_withdrawal ?? 0;
+  const rewardPercentage = data?.meta?.reward_percentage ?? reward?.reward_percentage ?? 0;
+
+  const sampleTradesUSD = [100, 2500, 10000];
+  const nairaConversion = 1500;
+
+  const rewardExamples = useMemo(
+    () =>
+      sampleTradesUSD.map((usd) => {
+        const tradeNaira = usd * nairaConversion;
+        const rewardEarned = tradeNaira * rewardPercentage;
+        return {
+          tradeUSD: usd,
+          tradeNaira,
+          reward: rewardEarned,
+        };
+      }),
+    [rewardPercentage]
+  );
 
   return (
     <Screen style={tw`flex-1 bg-white`}>
       <ScrollableView contentContainerStyle={tw`px-4 pt-6 pb-8`}>
-        <View style={tw`items-center mb-5`}>
-        {/*}  <Image
+        {/* Header Section */}
+        <View style={tw`items-center mb-6`}>
+         {/*} <Image
             source={require("@assets/images/money-and-coins.png")}
-            style={[tw`mb-5`, { width: 230, height: 230, resizeMode: "contain" }]}
-          />
-*/}
-          <Text variant="titleLarge" style={tw`text-gray-900 font-bold text-center`}>
+            style={[tw`mb-5`, { width: 180, height: 180, resizeMode: "contain" }]}
+          /> */}
+          <Text variant="titleLarge" style={tw`text-gray-900 font-bold text-center text-2xl`}>
             Earn Rewards on BinaPay
           </Text>
-
           <Text style={tw`text-gray-500 text-center mt-2 leading-6`}>
-            Invite your friends to BinaPay and earn rewards when they trade with us.
-            The more they trade, the more you earn!
+            Invite your friends to BinaPay and earn{" "}
+            <Text style={tw`font-bold text-blue-600`}>{(rewardPercentage * 100).toFixed(2)}%</Text> of every trade they make!
           </Text>
         </View>
 
-        {isFetching ? (
-          <View style={tw`my-6`}>
-            <ActivityIndicator animating color={tw.color("blue-600")} />
+ {/* Reward Card */}
+{isFetching ? (
+  <View style={tw`my-6`}>
+    <ActivityIndicator animating color={tw.color("blue-600")} size="large" />
+  </View>
+) : (
+  <Card style={tw`bg-blue-700 rounded-3xl p-6 mb-6 shadow-lg`}>
+    {/* Header */}
+    <Text style={tw`text-white text-center text-2xl font-extrabold mb-4`}>
+      Earn {formatToNaira(rewardPercentage * nairaConversion)} for every $1 your friend trades!
+    </Text>
+
+    {/* Examples */}
+    <Text style={tw`text-white font-semibold mb-2`}>Examples:</Text>
+    {rewardExamples.slice(0, 2).map((ex, index) => (
+      <Text
+        key={ex.tradeUSD}
+        style={tw`text-white/90 text-xs mb-1`}
+      >
+         💰 Your referral trades ${ex.tradeUSD} (₦{ex.tradeNaira.toLocaleString()}). 
+        You earn {(rewardPercentage * 100).toFixed(2)}% of this amount, which is 
+        <Text style={tw`text-yellow-300 font-bold`}> ₦{ex.reward.toLocaleString()}</Text>.
+      </Text>
+    ))}
+  </Card>
+)}
+
+
+
+        {/* How It Works Section */}
+        <Card style={tw`rounded-2xl bg-gray-50 p-4 mb-5 shadow-md`}>
+          <Text style={tw`text-gray-700 font-semibold text-base mb-2`}>How It Works</Text>
+          <View style={tw`space-y-1`}>
+            <Text style={tw`text-gray-500 text-sm leading-relaxed`}>
+              • Share your referral link with friends.
+            </Text>
+            <Text style={tw`text-gray-500 text-sm leading-relaxed`}>
+              • When they sign up and trade, you earn {(rewardPercentage * 100).toFixed(2)}% of their trade(sell) volume instantly.
+            </Text>
+            <Text style={tw`text-gray-500 text-sm leading-relaxed`}>
+              • Track your progress anytime on the “View Earnings” page.
+            </Text>
           </View>
-        ) : (
-          <View style={tw`bg-blue-600 rounded-2xl p-3 mb-3 shadow-md`}>
-  <Text style={tw`text-2xl text-white font-extrabold text-center`}>
-    Earn {formatToNaira(totalRewardCap)} Per Referral 🎉
-  </Text>
-  <Text style={tw`text-white/80 text-sm text-center mt-2`}>
-    Get {formatToNaira(rewardPerTrade)} each time your referral completes a trade —
-    until you reach {formatToNaira(totalRewardCap)} in total rewards per referral.
-  </Text>
-</View>
+        </Card>
 
-        )}
-
-        <View style={tw`border border-gray-200 rounded-xl bg-gray-50 p-4 mb-5`}>
-          <Text style={tw`text-sm font-semibold text-gray-700 mb-1`}>
-            How It Works
-          </Text>
-          <Text style={tw`text-xs text-gray-500 leading-relaxed`}>
-            • Share your referral link with friends.{"\n"}
-            • When they sign up and complete a trade, you earn {formatToNaira(rewardPerTrade)} instantly.{"\n"}
-            • Keep earning until you reach {formatToNaira(totalRewardCap)} on each referral.{"\n"}
-            • Track your rewards anytime in the “View Earnings” page.
-          </Text>
-        </View>
-
+        {/* Referral Links */}
         {user?.affiliate_id && (
-          <View style={tw`items-center gap-3`}>
-            {/* Referral Link */}
+          <View style={tw`items-center gap-3 mb-5`}>
             <CopyReferralCode
               referralCode={`${route("auth.register", { type: "web" })}?ref=${user.affiliate_id}`}
-              labelText="Copy Referral Link"
+              labelText={`Copy Link: ${user.affiliate_id}`}
             />
-
-            {/* Referral Code */}
-            <CopyReferralCode
-              referralCode={user.affiliate_id}
-              labelText="Copy Code Only"
-            />
+            <CopyReferralCode referralCode={user.affiliate_id} labelText="Copy Code Only" />
           </View>
         )}
 
+        {/* View Earnings Button */}
         <Button
           mode="contained"
           onPress={() => navigation.navigate("Earning Summary")}
-          contentStyle={tw`py-2`}
+          contentStyle={tw`py-3`}
           labelStyle={tw`text-white text-base font-bold`}
-          style={tw`w-full rounded-full mt-6 bg-blue-600`}
+          style={tw`w-full rounded-full bg-blue-600`}
         >
           View Earnings
         </Button>

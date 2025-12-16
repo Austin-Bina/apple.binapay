@@ -8,6 +8,7 @@ import { SCREENS } from "@constants/screens";
 import WithdrawCryptoScreen from "@screens/withdraw/WithdrawCrypto";
 import WithdrawNairaScreen from "@screens/withdraw/WithdrawNaira";
 import BankAccountsScreen from "@screens/account/BankAccounts";
+import { CryptoProvider } from "../../screens/home/CryptoContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -21,7 +22,7 @@ const WithdrawMoneyStack = () => {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-8`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) navigation.goBack();
@@ -37,10 +38,15 @@ const WithdrawMoneyStack = () => {
         ),
       })}
     >
-      <Stack.Screen
-        name={SCREENS.WITHDRAW_CRYPTO}
-        component={WithdrawCryptoScreen}
-      />
+    <Stack.Screen
+  name="WithdrawCrypto"
+  children={() => (
+    <CryptoProvider>
+      <WithdrawCryptoScreen />
+    </CryptoProvider>
+  )}
+/>
+
       <Stack.Screen
         name={SCREENS.WITHDRAW_NAIRA}
         component={WithdrawNairaScreen}

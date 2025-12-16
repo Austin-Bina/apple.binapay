@@ -59,6 +59,7 @@ export type AccountParamList = {
   [SCREENS.BANK_ACCOUNTS]: undefined;
   [SCREENS.VERIFY_ACCOUNT]: NavigatorScreenParams<KYCParamList>;
   [SCREENS.SUPPORT_STACK]: NavigatorScreenParams<SupportParamList>;
+   Leaderboard: { filter?: "weekly" | "monthly" | "alltime" };
 };
 export type AccountStackScreenProps<T extends keyof AccountParamList> = NativeStackScreenProps<AccountParamList, T>;
 

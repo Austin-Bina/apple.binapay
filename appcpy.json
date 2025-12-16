@@ -2,16 +2,16 @@
   "expo": {
     "name": "BinaPay",
     "slug": "BinaPay",
-    "version": "1.0.1",
+    "version": "1.0.9",
     "orientation": "portrait",
-    "runtimeVersion": "1.0.1",
+    "runtimeVersion": "1.0.0",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./src/assets/icon.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundImage": "./src/assets/splash.png",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "ffffff",
+      "image": "./src/assets/icon.png"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -19,19 +19,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.binapay",
-       "buildNumber": "2",
       "config": {
         "usesNonExemptEncryption": false
-      },
-      "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "BinaPay needs access to your photo library so you can upload images such as receipts or identity documents.",
-        "NSCameraUsageDescription": "BinaPay needs access to your camera so you can take photos for verification or support.",
-        "NSMicrophoneUsageDescription": "BinaPay may use your microphone when sending audio messages to support.",
-        "NSContactsUsageDescription": "BinaPay needs access to your contacts so you can easily send airtime or services to saved contacts."
       }
     },
     "android": {
-      "versionCode": 25,
+      "versionCode": 23,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -58,26 +51,16 @@
         {
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts. We use this permission to fetch your contacts and select a contact to buy or gift services to."
         }
-      ],
-      "expo-router"
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/04587ef0-aa8f-4c87-bcde-e89b00d969a3"
     },
     "extra": {
       "eas": {
-        "projectId": "28111690-1e6a-44eb-88de-9e8025f5e7ee"
+        "projectId": "e2ea8335-7a12-4151-9730-be4bfb2e6745"
       }
     },
-    "owner": "austin_bina"
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "ilerieoboaustine333@icloud.com",
-        "ascAppId": "6756178394",
-        "appleTeamId": "AJDXQP2RT8"
-      }
-    }
+    "owner": "austin_bina1"
   }
 }

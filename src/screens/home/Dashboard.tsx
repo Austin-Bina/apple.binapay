@@ -48,6 +48,7 @@ import { CryptoProvider } from "./CryptoContext";
 import { formatTransactionAmount } from "../../utils/transactionutils";
 import { formattedBalance } from "../../utils/transactionutils";
 import { useCrypto } from "./CryptoContext";
+import AnimatedBalanceLoader from "@components/ui/modals/PleaseWaitModal";
 
 type Props = HomeStackScreenProps<typeof SCREENS.DASHBOARD>;
 export default function HomeScreen({ navigation }: Props) {
@@ -56,6 +57,7 @@ export default function HomeScreen({ navigation }: Props) {
 const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
   const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
   const hasProfileError = useTypedSelector(selectHasFetchError);
+
   /*
 const nairaBalance = useTypedSelector(selectNairaBalance); //naira balance selector
 const usdBalance = useTypedSelector(selectUsdBalance); //usd balance selector
@@ -128,69 +130,6 @@ const initCable = useCallback(() => {
     });
   }).catch(console.log);
 }, [user?.id]);
-
-  /*
-  const initProfile = useCallback(async () => {
-    await dispatch(authSliceActions.fetchUserProfile());
-
-    prefetchNotifications({ page: 1 });
-    prefetchSettings();
-  }, [dispatch]);
-
-  const initCable = useCallback(() => {
-    if (!user?.id) return;
-
-
-    const client = new Ably.Realtime({
-      authCallback: async (tokenParams, callback) => {
-        let tokenRequest: Ably.TokenRequest;
-
-        try {
-          const response = await API.get(route("auth.getAblyToken"), {
-            params: tokenParams,
-          });
-          const { token } = response.data;
-
-          tokenRequest = token;
-        } catch (err: any) {
-          callback(err, null);
-
-          if (err.response?.status === 401) {
-            dispatch(authSliceActions.logout());
-          }
-          return;
-        }
-
-        callback(null, tokenRequest);
-      },
-      authParams: { client: "mobile" },
-    });
-
-    const channel = client.channels.get(`private:user-updates.${user.id}`);
-
-    channel
-      .attach()
-      .then(() => {
-        channel.subscribe((message: Ably.Message) => {
-          const { name, data } = message;
-
-          if (name === "account.updated") {
-            const { payload } = data as AccountUpdateEventPayload;
-            const { refreshFlags, account } = payload;
-
-            if (account?.user) {
-              dispatch(authSliceActions.updateUser({ ...account.user }));
-            }
-
-            if (refreshFlags?.transactions) {
-              dispatch(accountTransactionsApi.util.invalidateTags(["Transactions Summary"]));
-            }
-          }
-        });
-      })
-      .catch((error) => console.log("Ably Caught error: ", error));
-  }, [user?.id]);
-*/
 
 
 useEffect(() => {
@@ -326,6 +265,8 @@ const handleWithdrawNaira = () => {
         <Card.Content style={tw`items-center`}>
           <View style={tw`flex-row justify-center items-center`}>
             <View>
+              
+            
               {balanceVisible ? (
                 <View style={tw`flex-row items-baseline justify-center`}>
                   <View style={tw`items-center mr-4`}>
@@ -342,6 +283,8 @@ const handleWithdrawNaira = () => {
               ) : (
                 <HorizontalDots />
               )}
+
+
             </View>
             <IconButton
               icon={
@@ -360,12 +303,12 @@ const handleWithdrawNaira = () => {
               style={tw`border-primary flex-1`}
               onPress={() => setFundModalVisible(true)}
             >
-              Fund Wallet
+              Deposit
             </Button>
             <Button
-              icon="cash-minus"
+              icon="wallet"
               mode="outlined"
-              style={tw`border-danger flex-1`}
+              style={tw`border-primary flex-1`}
               onPress={() => setWithdrawModalVisible(true)}
             >
               Withdraw

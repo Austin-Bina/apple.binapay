@@ -7,22 +7,24 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  ScrollView,
 } from "react-native";
 import { Provider } from "react-native-paper";
 import { useSelector } from "react-redux";
 import { selectUser } from "@store/selectors/auth";
 import { calculateConversion, ConversionResult} from "../../helpers/crypto-conversion";
+import { styles } from "../../helpers/convertCrypto.styles";
 import { getPairRateDisplay } from "../../helpers/rate-display";
 import { useNavigation } from "@react-navigation/native";
 import API from "@lib/api";
 import { routes } from "@constants/routes";
-import { Picker } from "@react-native-picker/picker";
+import DropDownPicker from "react-native-dropdown-picker";
 import { useDispatch } from "react-redux";
 import { authSliceActions } from "@store/slice/auth";
 import { navigateToTransaction } from "@helpers/transaction";
 import TransactionSuccessModal from "@components/ui/modals/TransactionSuccessModal";
 import { formattedBalance } from "@utils/transactionutils";
+import ScrollableView from "@components/ui/shared/ScrollableView";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type CryptoAsset = {
   id: number;
@@ -32,6 +34,8 @@ type CryptoAsset = {
   conversion_enabled: boolean;
   min_conversion: number;
 };
+
+type PickerItem = { label: string; value: string };
 
 type Props = {
   cryptoAssets: CryptoAsset[];
@@ -63,6 +67,23 @@ export default function ConvertCrypto({ cryptoAssets, adminNgnUsdtRate, spreadCo
     
   });
   
+
+  const [fromOpen, setFromOpen] = useState(false);
+const [toOpen, setToOpen] = useState(false);
+
+const [fromItems, setFromItems] = useState<PickerItem[]>([
+  { label: "Naira (₦)", value: "ngn" },
+  ...cryptoAssets.map(a => ({
+    label: a.symbol.toUpperCase(),
+    value: a.symbol.toLowerCase(),
+  })),
+]);
+
+
+const [toItems, setToItems] = useState<PickerItem[]>([]);
+
+
+
   const [conversionResult, setConversionResult] = useState<ConversionResult>({ finalAmount: null, spreadApplied: null });
   const [livePrices, setLivePrices] = useState<Record<string, number>>({});
   const [countdown, setCountdown] = useState<number>(0);
@@ -105,18 +126,32 @@ const [successMessage, setSuccessMessage] = useState("");
 }, []);
 
 
-
-  const getToOptions = () => {
+useEffect(() => {
   const from = data.fromSymbol.toLowerCase();
 
-  // ✅ If converting from NGN → show only cryptos
+  let options = [];
+
   if (from === "ngn") {
-    return cryptoAssets.map((a) => a.symbol.toLowerCase());
+    options = cryptoAssets.map(a => ({
+      label: a.symbol.toUpperCase(),
+      value: a.symbol.toLowerCase()
+    }));
+  } else {
+    options = [{ label: "NGN", value: "ngn" }];
   }
 
-  // ✅ If converting from crypto → only NGN allowed
-  return ["ngn"];
-};
+  setToItems(options);
+
+  // Auto-fix invalid selections
+  if (from === "ngn" && data.toSymbol === "ngn") {
+    setData(p => ({ ...p, toSymbol: "" }));
+  }
+
+  if (from !== "ngn" && data.toSymbol !== "ngn") {
+    setData(p => ({ ...p, toSymbol: "ngn" }));
+  }
+}, [data.fromSymbol]);
+
 
 useEffect(() => {
   const from = data.fromSymbol.toLowerCase();
@@ -302,7 +337,6 @@ setSuccessMessage(`You received ${formattedBalance(receivedAmount ?? 0, data.toS
           Alert.alert("Conversion Failed", res.data?.error || "Conversion failed");
         }
       }catch (err: any) {
-  console.error("Conversion error:", err); // keep full error in console for debugging
 
   let userFriendlyMsg = "Something went wrong. Please try again.";
 
@@ -310,6 +344,14 @@ setSuccessMessage(`You received ${formattedBalance(receivedAmount ?? 0, data.toS
   if (err.response?.data?.message) {
     userFriendlyMsg = err.response.data.message; 
   }
+
+   if (err.response?.status === 403 && err.response.data?.error) {
+        // Blocked user case
+        userFriendlyMsg = err.response.data.error; 
+      } else if (err.response?.data?.message) {
+        // Other backend messages
+        userFriendlyMsg = err.response.data.message;
+      }
 
   Alert.alert("Conversion Failed", userFriendlyMsg);
 }
@@ -319,57 +361,68 @@ setSuccessMessage(`You received ${formattedBalance(receivedAmount ?? 0, data.toS
     }
     }
 
-
-    
   };
-
-  
 const goBack = () => {
   setStep(1);
   setCountdown(0); // reset countdown if user goes back
 };
 
   return (
-    <Provider>
-      <ScrollView style={styles.container}>
-        <Text style={styles.title}>Buy / Sell Crypto</Text>
+  <Provider>
+    {/* Sticky Top Section */}
+    <View style={styles.stickyTop}>
 
-        {loading && <ActivityIndicator size="large" color="#007bff" style={{ marginVertical: 20 }} />}
+      {step === 1 && !loading && data.fromSymbol && data.toSymbol && adminNgnUsdtRate && (
+        <View style={styles.rateBanner}>
+          <Text style={styles.rateText}>
+            {getPairRateDisplay({
+              fromSymbol: data.fromSymbol,
+              toSymbol: data.toSymbol,
+              livePrices,
+              liveNgnUsdt: adminNgnUsdtRate,
+              spreadConfig,
+            })}
+          </Text>
+        </View>
+      )}
+    </View>
 
-       {step === 1 && !loading && data.fromSymbol && data.toSymbol && adminNgnUsdtRate ? (
-  <View style={styles.rateBanner}>
-    <Text style={styles.rateText}>
-
-   {getPairRateDisplay({
-  fromSymbol: data.fromSymbol,
-  toSymbol: data.toSymbol,
-  livePrices,
-  liveNgnUsdt: adminNgnUsdtRate,
-  spreadConfig,
-})}
-
-    </Text>
-  </View>
-) : null}
-
-
+    {/* Scrollable Section */}
+    <ScrollableView
+      contentContainerStyle={{ paddingBottom: 50, paddingTop: 60, flexGrow: 1 }}
+      showsVerticalScrollIndicator={false}
+    >
         {step === 1 && (
           <View style={styles.card}>
             {/* From */}
            
            <Text style={styles.label}>From</Text>
-<Picker
-  selectedValue={data.fromSymbol}
-  onValueChange={(itemValue) => setData({ ...data, fromSymbol: itemValue })}
-  style={styles.picker}
->
-  <Picker.Item label="Naira (₦)" value="ngn" />
-  {cryptoAssets
-    .filter((a) => a.symbol.toLowerCase() !== "ngn")
-    .map((a) => (
-      <Picker.Item key={a.id} label={a.symbol.toUpperCase()} value={a.symbol.toLowerCase()} />
-    ))}
-</Picker>
+           <View style={{ zIndex: 3000 }}> 
+<DropDownPicker
+  open={fromOpen}
+  value={data.fromSymbol}
+  items={fromItems}
+  setOpen={setFromOpen}
+  setValue={(cb) => setData(p => ({ ...p, fromSymbol: cb(p.fromSymbol) }))}
+  setItems={setFromItems}
+  listMode="SCROLLVIEW" 
+  placeholder="Select asset"
+ style={{
+    backgroundColor: "#f3f4f6", // light gray like withdrawal
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    marginBottom: fromOpen ? 120 : 15,
+    height: 50,
+  }}
+  dropDownContainerStyle={{
+    backgroundColor: "#fff", // white dropdown list
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+  }}
+  zIndex={3000}
+  zIndexInverse={1000}
+/>
+</View>
 
            {/* Swap Icon */}
 <TouchableOpacity
@@ -394,30 +447,57 @@ const goBack = () => {
 
             {/* To */}
 <Text style={styles.label}>To</Text>
-<Picker
-  selectedValue={data.toSymbol}
-  onValueChange={(itemValue) => setData({ ...data, toSymbol: itemValue })}
-  style={styles.picker}
->
-  <Picker.Item label="Select" value="" />
-  {getToOptions()
-    .filter((sym) => sym !== data.fromSymbol) // avoid same asset
-    .map((sym) => (
-      <Picker.Item key={sym} label={sym.toUpperCase()} value={sym} />
-    ))}
-</Picker>
+<View style={{ zIndex: 2000 }}>
+<DropDownPicker
+  open={toOpen}
+  value={data.toSymbol}
+  items={toItems}
+  setOpen={setToOpen}
+  setValue={(cb) => setData(p => ({ ...p, toSymbol: cb(p.toSymbol) }))}
+  setItems={setToItems}
+  listMode="SCROLLVIEW" 
+  placeholder="Select"
+   style={{
+    backgroundColor: "#f3f4f6", // light gray like withdrawal
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    marginBottom: fromOpen ? 120 : 15,
+    height: 50,
+  }}
+  dropDownContainerStyle={{
+    backgroundColor: "#fff", // white dropdown list
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+  }}
+  zIndex={2000}
+  zIndexInverse={2000}
+/>
+</View>
 
 
 
             {/* Amount */}
-            <Text style={styles.label}>Amount</Text>
-            <TextInput
-              style={styles.input}
-              value={data.amount}
-              onChangeText={(val) => setData({ ...data, amount: val })}
-              placeholder="0.00"
-              keyboardType="numeric"
-            />
+          <Text style={styles.label}>Amount</Text>
+
+<View style={styles.amountRow}>
+  <TextInput
+    style={styles.amountInput}
+    value={data.amount}
+    onChangeText={(val) => setData({ ...data, amount: val })}
+    placeholder="0.00"
+   // keyboardType="numeric"
+  />
+
+  <TouchableOpacity
+    style={styles.maxButton}
+    onPress={() => {
+      const bal = wallets[data.fromSymbol] ?? 0;
+      setData({ ...data, amount: String(bal) });
+    }}
+  >
+    <Text style={styles.maxText}>MAX</Text>
+  </TouchableOpacity>
+</View>
 
            {conversionResult.finalAmount !== null && (
  <Text style={styles.estimate}>
@@ -430,12 +510,7 @@ const goBack = () => {
 {/* User wallet balance display */}
 <Text style={{ marginTop: 8, color: "gray" }}>
   Your balance: {formattedBalance(wallets[data.fromSymbol] ?? 0, data.fromSymbol)}
-</Text>
-
-
-            <TouchableOpacity style={styles.primaryBtn} onPress={nextStep}>
-              <Text style={styles.btnText}>Preview Swap</Text>
-            </TouchableOpacity>
+</Text>    
           </View>
         )}
 
@@ -505,7 +580,18 @@ const goBack = () => {
       editable={countdown > 0}
     />
 
-    {/* Buttons */}
+   
+  </View>
+)}
+
+      </ScrollableView>
+
+      <View style={styles.stickyButtonContainer}>
+  {step === 1 ? (
+    <TouchableOpacity style={styles.primaryBtn} onPress={nextStep}>
+      <Text style={styles.btnText}>Preview Swap</Text>
+    </TouchableOpacity>
+  ) : (
     <View style={styles.buttonRow}>
       <TouchableOpacity style={styles.backButton} onPress={goBack}>
         <Text style={styles.backButtonText}>Back</Text>
@@ -528,9 +614,10 @@ const goBack = () => {
         )}
       </TouchableOpacity>
     </View>
-  </View>
-)}
-      </ScrollView>
+    
+  )}
+</View>
+
        {/* ✅ Place success modal here (inside Provider) */}
     <TransactionSuccessModal
       visible={showSuccess}
@@ -546,201 +633,3 @@ const goBack = () => {
 );
 
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb", padding: 16 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-
-   rateBanner: {
-    backgroundColor: "#E0F7FA",
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-  rateText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#00796B",
-  },
-
-  title: { fontSize: 22, fontWeight: "bold", textAlign: "center", marginVertical: 16 },
-  subtitle: { fontSize: 18, fontWeight: "600", marginBottom: 12 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: "#007bff", fontSize: 16 },
-  label: { fontSize: 14, fontWeight: "500", marginTop: 12 },
-  selector: { width: "100%", justifyContent: "center" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 8,
-    backgroundColor: "#f8f9fa",
-  },
-  swapIcon: { alignItems: "center", marginVertical: 12 },
-  estimate: { marginTop: 8, fontSize: 14, color: "gray" },
-  primaryBtn: {
-    backgroundColor: "#007bff",
-    padding: 16,
-    borderRadius: 10,
-    marginTop: 20,
-    alignItems: "center",
-  },
-  btnText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  outlineBtn: {
-    borderWidth: 1,
-    borderColor: "#007bff",
-    padding: 14,
-    borderRadius: 10,
-    flex: 1,
-    alignItems: "center",
-    marginRight: 8,
-  },
-  outlineText: { color: "#007bff", fontWeight: "600" },
-  row: { flexDirection: "row", marginTop: 16 },
-  countdown: { textAlign: "center", marginTop: 10, color: "gray" },
-
-  picker: {
-  height: 50,
-  width: "100%",
-  backgroundColor: "#f8f9fa",
-  borderRadius: 10,
-  marginTop: 8,
-},
-
-
-stepTwoContainer: {
-  backgroundColor: "#f9fafb",
-  borderRadius: 12,
-  padding: 16,
-  borderWidth: 1,
-  borderColor: "#e5e7eb",
-  marginTop: 10,
-  shadowColor: "#000",
-  shadowOpacity: 0.05,
-  shadowRadius: 6,
-  elevation: 2,
-},
-
-summaryCard: {
-  backgroundColor: "#fff",
-  borderRadius: 10,
-  padding: 16,
-  marginBottom: 16,
-  borderWidth: 1,
-  borderColor: "#e5e7eb",
-  shadowColor: "#000",
-  shadowOpacity: 0.08,
-  shadowRadius: 4,
-  elevation: 1,
-},
-
-summaryTitle: {
-  fontSize: 18,
-  fontWeight: "600",
-  color: "#374151",
-  marginBottom: 8,
-},
-
-summaryText: {
-  fontSize: 14,
-  color: "#111827",
-  marginBottom: 4,
-},
-
-summaryLabel: {
-  fontWeight: "600",
-  color: "#374151",
-},
-
-countdownRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 8,
-},
-
-pinLabel: {
-  fontSize: 15,
-  fontWeight: "600",
-  color: "#374151",
-},
-
-countdownText: {
-  fontSize: 13,
-  fontWeight: "500",
-},
-
-pinInput: {
-  borderWidth: 1,
-  borderRadius: 10,
-  paddingVertical: 10,
-  paddingHorizontal: 12,
-  textAlign: "center",
-  fontSize: 18,
-  fontFamily: "monospace",
-  marginBottom: 16,
-},
-
-pinInputActive: {
-  borderColor: "#2563eb",
-  backgroundColor: "#fff",
-},
-
-pinInputDisabled: {
-  borderColor: "#d1d5db",
-  backgroundColor: "#f3f4f6",
-},
-
-buttonRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  marginTop: 4,
-},
-
-backButton: {
-  flex: 1,
-  borderWidth: 1,
-  borderColor: "#2563eb",
-  borderRadius: 10,
-  paddingVertical: 12,
-  alignItems: "center",
-  marginRight: 8,
-},
-
-backButtonText: {
-  color: "#2563eb",
-  fontWeight: "600",
-  fontSize: 15,
-},
-
-confirmButton: {
-  flex: 1,
-  backgroundColor: "#2563eb",
-  borderRadius: 10,
-  paddingVertical: 12,
-  alignItems: "center",
-},
-
-confirmButtonText: {
-  color: "#fff",
-  fontWeight: "600",
-  fontSize: 15,
-},
-
-disabledButton: {
-  backgroundColor: "#9ca3af",
-},
-
-
-});

@@ -5,11 +5,19 @@ import CryptoWithdrawalOtpModal from "@components/ui/modals/CryptoWithdrawalOtpM
 import { Button } from "react-native-paper";
 import { useSelector } from "react-redux";
 import { selectUser } from "@store/selectors/auth";
-import { Picker } from '@react-native-picker/picker';
+import DropDownPicker from "react-native-dropdown-picker";
 import EnterOtpBottomSheet from "@components/ui/modals/CryptoWithdrawalOtpModal";
 import { formattedBalance } from "@utils/transactionutils";
+import ScrollableView from "@components/ui/shared/ScrollableView";
+import { useCrypto } from "../home/CryptoContext";
 
-type Network = { id: number; name: string; fee: number; min_withdrawal: number };
+type Network = {
+  id: number;
+  name: string;
+  fee: number;
+  min_withdrawal: number;
+  network_slug: string; // <- add this
+};
 
 const WithdrawCryptoScreen = ({ navigation }: any) => {
   const user = useSelector(selectUser);
@@ -17,20 +25,31 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
   const wallets = user?.wallet_balances ?? {};
   const cryptoAssets = user?.crypto_assets ?? [];
 
+  const [coinOpen, setCoinOpen] = useState(false);
+const [networkOpen, setNetworkOpen] = useState(false);
+
   const [networks, setNetworks] = useState<Network[]>([]);
   const [selectedFee, setSelectedFee] = useState<number | null>(null);
   const [amountToReceive, setAmountToReceive] = useState<number | null>(null);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [localErrors, setLocalErrors] = useState<{ [key: string]: string }>({});
   const [alertMessage, setAlertMessage] = useState<{ type: "success" | "destructive" | "warning"; title: string; description: string } | null>(null);
+  const { assets } = useCrypto();
+  useEffect(() => {
+  console.log("📊 Crypto assets from context:", assets);
+}, [assets]);
 
-  const [data, setData] = useState({
+    const [data, setData] = useState({
     crypto_type: "",
     crypto_asset_id: "",
     crypto_network_id: "",
     wallet_address: "",
+    network_slug: "",
     amount: "",
   });
+const selectedAsset = assets?.find(a => a.symbol === data.crypto_type);
+const priceUsd = selectedAsset?.price_usd ?? 0;
+const feeInUsd = selectedFee && priceUsd ? (selectedFee * priceUsd) : 0;
 
   // Auto-clear alert
   useEffect(() => {
@@ -45,6 +64,8 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
     const selectedCrypto = cryptoAssets.find((c) => c.symbol === data.crypto_type);
     if (selectedCrypto) {
       setNetworks(selectedCrypto.networks);
+       // 🔹 Log networks to debug
+    console.log("Selected Crypto Networks:", selectedCrypto.networks);
       setData((prev) => ({ ...prev, crypto_asset_id: selectedCrypto.id.toString() }));
     } else {
       setNetworks([]);
@@ -142,7 +163,18 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
 
 
   return (
-    <ScrollView contentContainerStyle={tw`p-4 bg-white flex-1`}>
+  <View style={tw`flex-1 bg-white`}>
+
+    {/* STATIC TITLE */}
+    <View style={tw`p-4 bg-white shadow`}>
+      <Text style={tw`text-xl font-semibold`}>Withdraw Crypto</Text>
+    </View>
+
+    {/* SCROLLABLE CONTENT */}
+    <ScrollableView
+      contentContainerStyle={tw`p-4 pb-32 z-10`} // add bottom space so content doesn't hide behind button
+      showsVerticalScrollIndicator={false}
+    >
       {alertMessage && (
         <View
           style={[
@@ -158,53 +190,84 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
           <Text>{alertMessage.description}</Text>
         </View>
       )}
+       {/* COIN DROPDOWN */}
+<Text style={tw`mb-2 font-medium`}>Select Coin</Text>
 
-      <View style={tw`bg-white p-4 rounded-lg shadow-md`}>
-        <Text style={tw`text-xl font-semibold mb-4`}>Withdraw Crypto</Text>
+<DropDownPicker
+  open={coinOpen}
+  value={data.crypto_type}
+  items={cryptoAssets.map((asset) => ({
+  label: `${asset.symbol.toUpperCase()} ${!asset.withdrawal_enabled ? "(Disabled)" : ""}`,
+  value: asset.symbol, // always a string
+  disabled: !asset.withdrawal_enabled, // disables selection
+}))}
 
-        {/* Coin Picker */}
-        <Text style={tw`mb-2 font-medium`}>Select Coin</Text>
-        <Picker
-          selectedValue={data.crypto_type}
-          onValueChange={(itemValue) => setData((prev) => ({ ...prev, crypto_type: itemValue, crypto_network_id: "" }))}
-          style={tw`border rounded mb-4 bg-gray-100`}
-        >
-          <Picker.Item label="Select Coin" value="" />
-          {cryptoAssets.map((asset) => (
-            <Picker.Item
-              key={asset.id}
-              label={`${asset.symbol.toUpperCase()} ${!asset.withdrawal_enabled ? "(Disabled)" : ""}`}
-              value={asset.withdrawal_enabled ? asset.symbol : ""}
-            />
-          ))}
-        </Picker>
 
-        {/* Network Picker */}
-        {networks.length > 0 && (
-          <>
-            <Text style={tw`mb-1`}>Network</Text>
-            <Picker
-              selectedValue={data.crypto_network_id}
-              onValueChange={(itemValue) => setData((prev) => ({ ...prev, crypto_network_id: itemValue }))}
-              style={tw`border rounded mb-4 bg-gray-100`}
-            >
-              <Picker.Item label="Select Network" value="" />
-              {networks.map((network) => (
-                <Picker.Item
-                  key={network.id}
-                  label={network.name}
-                  value={network.id.toString()}
-                />
-              ))}
-            </Picker>
-            {localErrors.crypto_network_id && <Text style={tw`text-red-500 mb-2`}>{localErrors.crypto_network_id}</Text>}
-          </>
-        )}
+  setOpen={setCoinOpen}
+  setValue={(callback) =>
+    setData((prev) => ({
+      ...prev,
+      crypto_type: callback(prev.crypto_type),
+      crypto_network_id: "",
+    }))
+  }
+
+  placeholder="Select Coin"
+  style={tw`bg-gray-100 border-gray-300 rounded-lg mb-4`}
+  dropDownContainerStyle={tw`bg-white border-gray-300 rounded-lg`}
+  listMode="SCROLLVIEW"
+  zIndex={3000}
+/>
+
+{localErrors.crypto_type && (
+  <Text style={tw`text-red-500 mb-2`}>{localErrors.crypto_type}</Text>
+)}
+
+       
+        {/* NETWORK DROPDOWN */}
+{networks.length > 0 && (
+  <>
+    <Text style={tw`mb-2 font-medium`}>Network</Text>
+
+    <DropDownPicker
+      open={networkOpen}
+      value={data.crypto_network_id}
+      items={networks.map((network) => ({
+        label: `${network.name} (${network.network_slug})`,
+        value: network.id.toString(),
+      }))}
+
+      setOpen={setNetworkOpen}
+      setValue={(callback) =>
+        setData((prev) => ({
+          ...prev,
+          crypto_network_id: callback(prev.crypto_network_id),
+        }))
+      }
+
+      placeholder="Select Network"
+      style={tw`bg-gray-100 border-gray-300 rounded-lg mb-4`}
+      dropDownContainerStyle={tw`bg-white border-gray-300 rounded-lg`}
+      listMode="SCROLLVIEW"
+      zIndex={2000}
+    />
+
+    {localErrors.crypto_network_id && (
+      <Text style={tw`text-red-500 mb-2`}>{localErrors.crypto_network_id}</Text>
+    )}
+  </>
+)}
+
 
 {/* fee */}
+
   {selectedFee !== null && (
-          <Text style={tw`mb-2 text-gray-600`}>Network Fee: {formattedBalance(selectedFee, data.crypto_type)}</Text>
-        )}
+  <Text style={tw`mb-2 text-gray-600`}>
+    Network Fee: {formattedBalance(selectedFee, data.crypto_type)}
+    {feeInUsd > 0 && ` ($${formattedBalance(feeInUsd, "", 2)})`}
+  </Text>
+)}
+
         {/* Wallet Address */}
         <Text style={tw`mb-1`}>Wallet Address</Text>
         <TextInput
@@ -218,17 +281,43 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
         {localErrors.wallet_address && <Text style={tw`text-red-500 mb-4`}>{localErrors.wallet_address}</Text>}
 
         {/* Amount */}
-        <Text style={tw`mb-1`}>Amount</Text>
-        <TextInput
-  style={tw`px-4 py-3 mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
-  placeholder="Enter amount"
-  placeholderTextColor="#9CA3AF"
-  keyboardType="numeric"
-  value={data.amount}
-  onChangeText={(text) => setData((prev) => ({ ...prev, amount: text }))}
-/>
+       {/* Amount */}
+<Text style={tw`mb-1`}>Amount</Text>
 
-        {localErrors.amount && <Text style={tw`text-red-500 mb-2`}>{localErrors.amount}</Text>}
+<View
+  style={tw`flex-row items-center mb-4 bg-gray-100 shadow-sm border border-gray-200 rounded-lg`}
+>
+  <TextInput
+    style={tw`flex-1 px-4 py-3`}
+    placeholder="Enter amount"
+    placeholderTextColor="#9CA3AF"
+    keyboardType="numeric"
+    value={data.amount}
+    onChangeText={(text) =>
+      setData((prev) => ({ ...prev, amount: text }))
+    }
+  />
+
+  {/* MAX BUTTON */}
+  <TouchableOpacity
+    style={tw`px-3 py-2 mr-3 bg-blue-600 rounded-md`}
+    onPress={() => {
+      const balance =
+        wallets[data.crypto_type.toLowerCase()]?.balance ?? 0;
+
+      setData((prev) => ({
+        ...prev,
+        amount: String(balance),
+      }));
+    }}
+  >
+    <Text style={tw`text-white font-semibold`}>MAX</Text>
+  </TouchableOpacity>
+</View>
+
+{localErrors.amount && (
+  <Text style={tw`text-red-500 mb-2`}>{localErrors.amount}</Text>
+)}
 
         {/* Balance display */}
         {balanceDisplay()}
@@ -240,22 +329,48 @@ const WithdrawCryptoScreen = ({ navigation }: any) => {
             You will receive: {formattedBalance(amountToReceive, data.crypto_type)}
           </Text>
         )}
-        {/* Next Button */}
-        <Button mode="contained" onPress={handleNext}>Next</Button>
-      </View>
+         {/* --- YOUR FORM CONTENT ENDS HERE --- */}
+    </ScrollableView>
+   {/* FIXED BOTTOM BUTTON */}
+<View
+  style={[
+    tw`absolute left-0 right-0 p-4 bg-white`,
+    {
+      bottom: 0,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      elevation: 12, // Android soft shadow
+      shadowColor: "#000", // iOS shadow
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      paddingTop: 32,
+    paddingBottom: 32,
+    },
+  ]}
+>
+  <Button
+    mode="contained"
+    contentStyle={tw`py-2.5`}
+    style={tw`rounded-xl`}
+    onPress={handleNext}
+  >
+    Next
+  </Button>
+</View>
 
-      {showOtpModal && (
-  <EnterOtpBottomSheet
-    withdrawalData={data}
-    visible={showOtpModal}
-    onClose={() => setShowOtpModal(false)}
-    onSuccessRedirect={() => navigation.navigate("Dashboard")}
-  />
-)}
 
-
-    </ScrollView>
-  );
-};
-
+    {showOtpModal && (
+      <EnterOtpBottomSheet
+        withdrawalData={data}
+        visible={showOtpModal}
+        onClose={() => setShowOtpModal(false)}
+        onSuccessRedirect={() => navigation.navigate("Dashboard")}
+      />
+    )}
+  </View>
+);
+}
 export default WithdrawCryptoScreen;
+
+
