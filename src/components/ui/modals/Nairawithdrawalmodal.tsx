@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+
+
+import React, { useEffect, useState, useRef } from "react";
 import {
   Modal,
   View,
@@ -10,26 +12,30 @@ import {
 } from "react-native";
 import { routes } from "@constants/routes";
 import API from "@lib/api";
-import { useNavigation } from "@react-navigation/native";
 import TransactionSuccessModal from "@components/ui/modals/TransactionSuccessModal";
+import { useNavigation } from "@react-navigation/native";
+import * as Crypto from "expo-crypto";
+import { authenticateWithBiometrics } from "@helpers/biometricshelper";
 
+type BankAccount = {
+  id: number;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+};
 
 type Props = {
-  withdrawalData: {
-    crypto_type: string;
-    crypto_asset_id: string;
-    crypto_network_id: string;
-    wallet_address: string;
-    amount: string;
-  };
   visible: boolean;
+  amount: string;
+  bankAccount: BankAccount;
   onClose: () => void;
   onSuccessRedirect: () => void; // replace router.get('/dashboard')
 };
 
-export default function EnterOtpModal({
-  withdrawalData,
+export default function NairaWithdrawalOTPSheet({
   visible,
+  amount,
+  bankAccount,
   onClose,
   onSuccessRedirect,
 }: Props) {
@@ -37,15 +43,28 @@ export default function EnterOtpModal({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [redirectCountdown, setRedirectCountdown] = useState(5);
-  const navigation = useNavigation();
   const [showSuccess, setShowSuccess] = useState(false);
 const [successMessage, setSuccessMessage] = useState("");
-  
+  const navigation = useNavigation();
+
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [alert, setAlert] = useState<{
     type: "success" | "error" | "warning";
     message: string;
   } | null>(null);
+
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+if (!idempotencyKeyRef.current) {
+  idempotencyKeyRef.current = Crypto.randomUUID();
+}
+//generate a new UUID for biometric auth
+const biometricToken = Crypto.randomUUID();
+
+const resetIdempotency = () => {
+  idempotencyKeyRef.current = null;
+};
+
 
   // auto-clear alert
   useEffect(() => {
@@ -58,96 +77,148 @@ const [successMessage, setSuccessMessage] = useState("");
   // cooldown timer
   useEffect(() => {
     if (cooldown > 0) {
-      const timer = setInterval(() => {
-        setCooldown((c) => Math.max(0, c - 1));
-      }, 1000);
+      const timer = setInterval(
+        () => setCooldown((c) => Math.max(0, c - 1)),
+        1000
+      );
       return () => clearInterval(timer);
     }
   }, [cooldown]);
-  
-/*
-  // redirect countdown
+
+  // success redirect
   useEffect(() => {
     if (showSuccess && redirectCountdown > 0) {
-      const timer = setInterval(() => {
-        setRedirectCountdown((c) => c - 1);
-      }, 1000);
+      const timer = setInterval(
+        () => setRedirectCountdown((c) => c - 1),
+        1000
+      );
       return () => clearInterval(timer);
     } else if (redirectCountdown === 0) {
       onSuccessRedirect();
     }
   }, [showSuccess, redirectCountdown]);
-*/
-  const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;
 
-  const sendOtp = async () => {
-    if (cooldown > 0) return;
-    setSending(true);
-    try {
-      API.defaults.baseURL = BASE_URL;
+    const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;
 
-      const res = await API.post(routes.api.v1.auth.cryptowithdrawalotp, {
-        asset_id: withdrawalData.crypto_asset_id,
-        network_id: withdrawalData.crypto_network_id,
-        amount: withdrawalData.amount,
-      });
-
-      setSent(true);
-      setCooldown(30);
-      setAlert({ type: "success", message: "OTP sent to your email/phone." });
-    } catch (e: any) {
-      setAlert({
-        type: "error",
-        message: e.response?.data?.message || "Failed to send OTP. Try again.",
-      });
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const submit = async () => {
-  if (!otp) return;  // prevent empty submission
-  setSending(true);  // disable button immediately
+ const sendOtp = async () => {
+  if (cooldown > 0) return;
+  setSending(true);
   try {
     API.defaults.baseURL = BASE_URL;
 
-    const res = await API.post(routes.api.v1.services.wallets.withdrawcrypto, {
-      ...withdrawalData,
-      otp,
-    });
+    const res = await API.post(routes.api.v1.auth.nairawithdrawalotp);
 
-    if (res.data.success) {
-      const receivedAmount = parseFloat(withdrawalData.amount).toLocaleString();
-      setSuccessMessage(`You received ${receivedAmount}.`);
-      setShowSuccess(true);
+    if (res.status === 200) {
+      setSent(true);
+      setCooldown(30);
+      setAlert({ type: "success", message: "OTP sent to your email/phone." });
     }
-    
   } catch (e: any) {
-    const status = e.response?.status;
-    const message = e.response?.data?.message;
-
-    // 🔥 1. CHECK FOR BLOCKED USER (403)
-    if (status === 403) {
-      setAlert({
-        type: "error",
-        message: "Your account is temporarily blocked. Please contact support.",
-      });
-      setOtp("");
-      return;  // ⛔ STOP further processing
-    }
-
-    // 🔥 2. HANDLE ALL OTHER ERRORS (normal errors)
-    setAlert({
-      type: "error",
-      message: message || "Invalid OTP",
-    });
-    setOtp("");
-
+    setAlert({ type: "error", message: e?.response?.data?.message || "Failed to send OTP. Try again." });
   } finally {
     setSending(false);
   }
 };
 
+ const submit = async () => {
+  if (!otp) return;  // prevent empty submission
+  setSending(true);  // disable button immediately
+  try {
+    API.defaults.baseURL = BASE_URL;
+
+    const res = await API.post(routes.api.v1.services.wallets.withdrawnaira, {
+      amount,
+      bank_account_id: bankAccount.id,
+      otp,
+    },
+
+     {
+    headers: {
+      "Idempotency-Key": idempotencyKeyRef.current,
+    },
+  }
+  
+  );
+
+    // If the request was successful (status 200/201)
+   if (res.data.success) {
+  const receivedAmount = parseFloat(amount).toLocaleString(); // formatted
+  setSuccessMessage(`You received ₦${receivedAmount}.`);
+  setShowSuccess(true);
+}
+
+
+  }  catch (e: any) {
+    const status = e?.response?.status;
+    const msg =
+      e?.response?.data?.error ||
+      e?.response?.data?.message ||
+      "Something went wrong. Please try again.";
+
+    // 🔥 HANDLE BLOCKED USER
+    if (status === 403) {
+      setAlert({
+        type: "error",
+        message: "Your account is temporarily blocked. Please contact support.",
+      });
+    }
+    // 🔥 HANDLE INVALID OTP
+    else if (status === 422) {
+      setAlert({ type: "error", message: "Invalid OTP" });
+    }
+    // 🔥 OTHER ERRORS
+    else {
+      setAlert({ type: "error", message: msg });
+    }
+
+    setOtp("");
+    
+  } finally {
+    setSending(false);
+  }
+ };
+  // HANDLE BIOMETRIC CONFIRMATION
+const handleBiometricConfirm = async () => {
+  try {
+    setSending(true);
+
+    // 1️⃣ Trigger biometric authentication
+    await authenticateWithBiometrics();
+
+    API.defaults.baseURL = BASE_URL;
+
+    // 2️⃣ Submit withdrawal using biometric flag
+    const res = await API.post(
+      routes.api.v1.services.wallets.withdrawnaira,
+      {
+        amount,
+        bank_account_id: bankAccount.id,
+        biometric: true,
+         biometric_token: biometricToken,
+      },
+      {
+        headers: {
+          "Idempotency-Key": idempotencyKeyRef.current,
+        },
+      }
+    );
+
+    if (res.data.success) {
+      const receivedAmount = parseFloat(amount).toLocaleString();
+      setSuccessMessage(`You received ₦${receivedAmount}.`);
+      setShowSuccess(true);
+    }
+  } catch (err: any) {
+    setAlert({
+      type: "error",
+      message: err.message || "Biometric authentication failed",
+    });
+  } finally {
+    setSending(false);
+  }
+};
+
+  
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -175,7 +246,16 @@ const [successMessage, setSuccessMessage] = useState("");
                 </Text>
               )}
 
-              {/* OTP Input + Send */}
+                <TouchableOpacity
+  style={styles.biometricButton}
+  onPress={handleBiometricConfirm}
+  disabled={sending}
+>
+  <Text style={styles.biometricText}>
+    Confirm with Fingerprint
+  </Text>
+</TouchableOpacity>
+
               <View style={styles.row}>
                 <TextInput
                   style={styles.input}
@@ -206,29 +286,26 @@ const [successMessage, setSuccessMessage] = useState("");
                 </TouchableOpacity>
               </View>
 
-              {/* Submit */}
               <TouchableOpacity
-      onPress={submit}
-      disabled={!otp || sending}   // ✅ disable if OTP empty or request in progress
-      style={[
-    styles.submitButton,
-      (!otp || sending) && styles.disabled,  // add disabled style
-     ]}
-    >
-  {sending ? (
-    <ActivityIndicator color="#fff" />
-  ) : (
-    <Text style={styles.submitText}>Submit Withdrawal</Text>
-  )}
-</TouchableOpacity>
+                  onPress={submit}
+                  disabled={!otp || sending}
+                style={[
+                  styles.submitButton,
+                  (!otp || sending) && styles.disabled,
+                ]}
+              >{sending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitText}>Submit Withdrawal</Text>
+                )}
+              </TouchableOpacity>
 
-
-              {/* Cancel */}
               <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
             </>
-          ) : ( <TransactionSuccessModal
+          ) : (
+            <TransactionSuccessModal
       visible={showSuccess}
       onClose={() => setShowSuccess(false)}
       onViewHistory={() => {
@@ -324,4 +401,23 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
+
+  biometricButton: {
+    backgroundColor: "#2563eb",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  biometricText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+
 });
+
+
+
+
+
+

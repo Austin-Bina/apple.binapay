@@ -26,6 +26,7 @@ export default function ServicesStack() {
         headerShadowVisible: false,
         headerTitle: "",
         headerShown: true,
+        headerTopInsetEnabled: false,
         headerLeft: () => (
           <TouchableRipple
             onPress={() => {
@@ -38,10 +39,12 @@ export default function ServicesStack() {
   ],
 });
             }}
-            style={tw`mr-0.1 overflow-hidden p-1 mt-0.1`}>
+            style={tw`mr-2.5 overflow-hidden p-0.5`}>
             <LeftArrowIcon width={38} height={38} />
           </TouchableRipple>
         ),
+
+        
       })}>
       <Stack.Screen name="List" component={ListServicesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Airtime Purchase" component={AirtimePurchaseScreen} options={{ headerShown: false }} />
@@ -51,7 +54,7 @@ export default function ServicesStack() {
       <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen} />
       <Stack.Screen name="Education" options={{ headerShown: false }} component={EducationStack} />
       <Stack.Screen name="TV Subscription" component={TVSubscriptionScreen} />
-      <Stack.Screen name="Convert Crypto" component={ConvertCryptoWrapper} />   
+      <Stack.Screen name="Convert Crypto" component={ConvertCryptoWrapper} options={{ headerShown: false }} />   
  </Stack.Navigator>
   );
 }

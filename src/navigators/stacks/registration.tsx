@@ -22,7 +22,7 @@ function RegistrationStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple
               onPress={() => {
                 navigation.getParent()?.reset({ routes: [{ name: "Onboarding" }] });

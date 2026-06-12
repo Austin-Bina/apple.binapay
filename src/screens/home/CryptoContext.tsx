@@ -13,6 +13,8 @@ type CryptoAsset = {
   symbol: string;
   icon_url?: string;
   price_usd?: number;
+  price_change_24h?: number | null;
+  price_history_24h?: number[];
   balance?: number;
   decimal_places?: number;
 };
@@ -98,6 +100,8 @@ const fetchTotalUsd = async () => {
         return {
           ...asset,
           price_usd: priceAsset?.price_usd ?? asset.price_usd,
+          price_change_24h:  priceAsset?.price_change_24h ?? null, 
+          price_history_24h: priceAsset?.price_history_24h ?? [],
           icon_url,
           balance: wallet ? Number(wallet.balance) : asset.balance ?? 0,
           decimal_places: wallet?.decimal_places ?? asset.decimal_places ?? 8,

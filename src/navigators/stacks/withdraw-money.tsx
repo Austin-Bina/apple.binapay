@@ -22,7 +22,7 @@ const WithdrawMoneyStack = () => {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) navigation.goBack();
@@ -44,12 +44,12 @@ const WithdrawMoneyStack = () => {
     <CryptoProvider>
       <WithdrawCryptoScreen />
     </CryptoProvider>
-  )}
+  )} options={{ headerShown: false }}
 />
 
       <Stack.Screen
         name={SCREENS.WITHDRAW_NAIRA}
-        component={WithdrawNairaScreen}
+        component={WithdrawNairaScreen} options={{ headerShown: false }}
       />
 
       <Stack.Screen

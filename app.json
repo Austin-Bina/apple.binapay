@@ -20,6 +20,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.binapay",
        "buildNumber": "2",
+        "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -29,7 +30,10 @@
         "NSMicrophoneUsageDescription": "BinaPay may use your microphone when sending audio messages to support.",
         "NSContactsUsageDescription": "BinaPay needs access to your contacts so you can easily send airtime or services to saved contacts."
       }
-    },
+
+       
+     },
+
     "android": {
       "versionCode": 25,
       "adaptiveIcon": {
@@ -46,6 +50,7 @@
       "favicon": "./src/assets/favicon.png"
     },
     "plugins": [
+      "expo-notifications",
       "expo-font",
       [
         "expo-secure-store",

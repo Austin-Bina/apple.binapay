@@ -11,6 +11,8 @@ export const routes = {
         verifyOtp: "/api/v1/auth/verify-otp",
         resetPassword: "/api/v1/auth/reset-password",
         changePassword: "/api/v1/auth/change-password",
+          changetransactionpinotp: "/api/v1/auth/transaction-pin/send-otp",
+        changetransactionpinreset:"/api/v1/auth/transaction-pin/reset",
         logout: "/api/v1/auth/logout",
         getAblyToken: "/api/v1/auth/get-ably-token",
         nairawithdrawalotp: "/api/v1/withdraw/naira/send-otp",
@@ -35,6 +37,8 @@ export const routes = {
         referralActivities: "/api/v1/account/referral-activities",
         referralLeaderBoard: "/api/v1/account/referrals/leaderboard",
         settings: "/api/v1/account/settings",
+        autoCryptoSettlement: "/api/v1/account/auto-crypto-settlement",
+
       },
       notification: {
         index: "/api/v1/notifications",

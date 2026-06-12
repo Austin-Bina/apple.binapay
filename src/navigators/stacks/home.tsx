@@ -27,7 +27,7 @@ function HomeStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) {
@@ -50,11 +50,11 @@ function HomeStack() {
       })}>
       <Stack.Screen name="Dashboard" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen options={{ headerShown: false }} name="Notification" component={NotificationStack} />
-      <Stack.Screen name="Transaction History" component={TransactionHistoryScreen} />
+      <Stack.Screen name="Transaction History" component={TransactionHistoryScreen} options={{ headerShown: false }} />
       <Stack.Screen name={SCREENS.VIEW_TRANSACTION} component={ViewTransaction} options={{ headerShown: false }} />
       <Stack.Screen name={SCREENS.ADD_MONEY} options={{ headerShown: false }} component={AddMoneyStack} />
       <Stack.Screen name={SCREENS.WITHDRAW_MONEY} options={{ headerShown: false }} component={WithdrawMoneyStack} />
-      <Stack.Screen name="Crypto Assets" component={CryptoAssets} />
+      <Stack.Screen name="Crypto Assets" options={{ headerShown: false }} component={CryptoAssets} />
      <Stack.Screen name={SCREENS.SUPPORT_STACK} options={{ headerShown: false }} component={SupportStack} />
       
       

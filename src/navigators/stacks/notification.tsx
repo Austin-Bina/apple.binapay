@@ -20,7 +20,7 @@ function NotificationStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) {
@@ -42,7 +42,7 @@ function NotificationStack() {
         ),
       })}>
       <Stack.Screen name="List Notifications" component={NotificationScreen} />
-      <Stack.Screen name="View Notification" component={ViewNotificationScreen} />
+      <Stack.Screen name="View Notification" component={ViewNotificationScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

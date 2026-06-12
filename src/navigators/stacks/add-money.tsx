@@ -25,7 +25,7 @@ function AddMoneyStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) {
@@ -53,7 +53,7 @@ function AddMoneyStack() {
       <Stack.Screen name={SCREENS.FUND_WITH_PAYSTACK} component={FundWithPaystackScreen} />
       <Stack.Screen name={SCREENS.PAYMENT_SUCCESS} options={{ headerShown: false }} component={PaymentSuccessScreen} />
       <Stack.Screen name={SCREENS.MANUAL_FUND_STACK} options={{ headerShown: false }} component={ManualFundStack} />
-      <Stack.Screen name={SCREENS.DEPOSIT_CRYPTO} component={DepositCryptoScreen} />
+      <Stack.Screen name={SCREENS.DEPOSIT_CRYPTO} component={DepositCryptoScreen} options={{ headerShown: false }} />
 
     </Stack.Navigator>
   );

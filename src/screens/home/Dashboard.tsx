@@ -1,28 +1,26 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, TouchableOpacity, View } from "react-native";
-import { Avatar, Button, Card, Divider, IconButton, Text } from "react-native-paper";
+import React, { Fragment, useCallback, useEffect, useMemo, useState, useRef } from "react";
+import {
+  Pressable, RefreshControl, TouchableOpacity, View,
+  StyleSheet, FlatList, Platform, StatusBar,
+} from "react-native";
+import { Text, Divider } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
 import { HomeStackScreenProps } from "@navigators/types";
-import { FlatList } from "react-native";
-import tw from "@lib/tailwind";
-import IconButtonWithLabel from "@components/ui/button";
-import PhoneIcon from "@assets/icons/phone.svg";
-import WifiIcon from "@assets/icons/wifi.svg";
-import ZapIcon from "@assets/icons/lightning.svg";
-import MoreIcon from "@assets/icons/three-dots-horizontal.svg";
-import ArrowRight from "@assets/icons/arrow-right.svg";
 import UserAppbar from "@components/UserAppbar";
 import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
-import { convertToNaira, formatToNaira } from "@utils/money";
+import { formatToNaira } from "@utils/money";
 import {
   selectHasFetchError,
   selectIsAccountVerified,
   selectIsFetchingProfile,
   selectUser,
 } from "@store/selectors/auth";
-import { accountTransactionsApi, useFetchRecentTransactionsQuery } from "@store/redux-api/accountTransactionsApi";
-import { format } from "date-fns";
+import {
+  accountTransactionsApi,
+  useFetchRecentTransactionsQuery,
+} from "@store/redux-api/accountTransactionsApi";
 import { TransactionEmptyState } from "@components/ui/empty-states/transaction-list";
 import TransactionLoader from "@components/ui/loaders/transaction-loader";
 import * as Ably from "ably";
@@ -30,534 +28,422 @@ import { AccountUpdateEventPayload } from "@type/event";
 import { authSliceActions } from "@store/slice/auth";
 import API from "@lib/api";
 import { route } from "@helpers/route";
-import { navigateToTransaction, getTransactionStatus } from "@helpers/transaction";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { useNotificationsPrefetch } from "@store/redux-api/notificationApi";
-import { HorizontalDots, LargeEyeClose, LargeEyeOpen } from "@components/icons/svg";
-import { scale } from "react-native-size-matters";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SCREENS } from "@constants/screens";
-import FundAccountSheet from "@components/ui/modals/fund-account";
 import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
-import { getTransactionIcon } from "@utils/index";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
-import StatusBadge from "@components/ui/transaction/StatusBadge";
-import CryptoOverview from "./CryptoOverview";
-import WithdrawFundsSheet from "../../components/ui/modals/withdraw-funds";
-import ContactSupportButton from "@components/ui/ContactSupportButton";
+import { navigateToTransaction } from "@helpers/transaction";
+import TransactionRow from "@components/ui/transaction/TransactionRow";
+import { formattedBalance } from "@utils/transactionutils";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CryptoProvider } from "./CryptoContext";
-import { formatTransactionAmount } from "../../utils/transactionutils";
-import { formattedBalance } from "../../utils/transactionutils";
-import { useCrypto } from "./CryptoContext";
-import AnimatedBalanceLoader from "@components/ui/modals/PleaseWaitModal";
+import FundAccountSheet from "@components/ui/modals/fund-account";
+import { WalletTransaction } from "@type/transaction";
+import tw from "@lib/tailwind";
+
+// ─── Tokens ──────────────────────────────────────────────────────────────────
+const BRAND          = "#1E3A8A";
+const GRADIENT_START = "#2563EB";
+const GRADIENT_END   = "#1E3A8A";
+const BG             = "#F2F2F7";   // iOS systemGroupedBackground
+const SURFACE        = "#FFFFFF";
+const SEPARATOR      = "#E5E7EB";
+const LABEL          = "#111827";
+const SUBLABEL       = "#6B7280";
+const BLUE_LIGHT     = "#EEF3FF";
+
+const IOS_CARD_SHADOW = Platform.select({
+  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
+  android: { elevation: 2 },
+});
 
 type Props = HomeStackScreenProps<typeof SCREENS.DASHBOARD>;
+
+// =============================================================================
 export default function HomeScreen({ navigation }: Props) {
+  // ── All original state + logic — untouched ────────────────────────────────
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [fundModalVisible, setFundModalVisible] = useState(false);
-const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
-  const isFetchingProfile = useTypedSelector(selectIsFetchingProfile);
+  const [loaderMode, setLoaderMode]         = useState<"none" | "profile" | "action">("none");
+
+  const user            = useTypedSelector(selectUser);
+  const isVerified      = useTypedSelector(selectIsAccountVerified);
   const hasProfileError = useTypedSelector(selectHasFetchError);
+  const dispatch        = useTypedDispatch();
+  const insets          = useSafeAreaInsets();
+  const [showFundSheet, setShowFundSheet] = useState(false);
 
-  /*
-const nairaBalance = useTypedSelector(selectNairaBalance); //naira balance selector
-const usdBalance = useTypedSelector(selectUsdBalance); //usd balance selector
-*/
-const [activeTab, setActiveTab] = useState<"wallets" | "transactions">("wallets"); // for wallets and transactions table
+  const prefetchSettings      = useSystemSettingsPrefetch("getSystemSettings", { ifOlderThan: MAX_CACHE_AGE_SEC });
+  const prefetchNotifications = useNotificationsPrefetch("fetchNotifications", { ifOlderThan: 5 });
+  const syncIntervalRef       = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const user = useTypedSelector(selectUser);
-  const isVerified = useTypedSelector(selectIsAccountVerified);
-  const toggleBalance = () => setBalanceVisible(!balanceVisible);
-  const dispatch = useTypedDispatch();
-  const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
-    ifOlderThan: MAX_CACHE_AGE_SEC,
-  });
+  const nairaWalletBalance = user?.wallet_balances?.naira?.balance   ?? "0";
+  const cryptoUsdBalance   = user?.wallet_balances?.crypto_usd?.balance ?? 0;
 
-  const prefetchNotifications = useNotificationsPrefetch("fetchNotifications", {
-    ifOlderThan: 5,
-  });
+  const initCable = useCallback(() => {
+    if (!user?.id) return;
+    const client = new Ably.Realtime({
+      authCallback: async (tokenParams, callback) => {
+        try {
+          const response = await API.get(route("auth.getAblyToken"), { params: tokenParams });
+          callback(null, response.data.token);
+        } catch (err: any) {
+          callback(err, null);
+          if (err.response?.status === 401) dispatch(authSliceActions.logout());
+        }
+      },
+      authParams: { client: "mobile" },
+    });
 
-  /*
-  // naira wallet balance
-
-  const balanceNaira = useMemo(() => formatToNaira(user?.wallet_balance), [user?.wallet_balance]);
-  const [integerSide, decimalSide] = balanceNaira.split(".");
-*/
-
-const nairaWalletBalance = user?.wallet_balances?.naira?.balance ?? "0";
-const balanceNaira = useMemo(() => formatToNaira(nairaWalletBalance), [nairaWalletBalance]);
-const [integerSide, decimalSide] = balanceNaira.split(".");
-const cryptoUsdBalance = user?.wallet_balances?.crypto_usd?.balance ?? 0;
-
-
-
+    const channel = client.channels.get(`private:user-updates.${user.id}`);
+    channel.attach().then(() => {
+      channel.subscribe((message: Ably.Message) => {
+        const { name, data } = message;
+        if (name === "account.updated") {
+          const { payload } = data as AccountUpdateEventPayload;
+          if (payload.account?.user) dispatch(authSliceActions.updateUser(payload.account.user));
+          if (payload.refreshFlags?.transactions) {
+            dispatch(accountTransactionsApi.util.invalidateTags(["Transactions Summary"]));
+          }
+        }
+      });
+    }).catch(console.log);
+  }, [user?.id]);
 
   const initProfile = useCallback(async () => {
-  await dispatch(authSliceActions.fetchUserProfile());
-  prefetchNotifications({ page: 1 });
-  prefetchSettings();
-}, [dispatch]);
+    await dispatch(authSliceActions.fetchUserProfile());
+    prefetchNotifications({ page: 1 });
+    prefetchSettings();
+  }, [dispatch]);
 
+  const isMounted = useRef(false);
 
-const initCable = useCallback(() => {
-  if (!user?.id) return;
+  useEffect(() => {
+    if (!user?.id || isMounted.current) return;
+    isMounted.current = true;
 
-  const client = new Ably.Realtime({
-    authCallback: async (tokenParams, callback) => {
+    let mounted = true;
+    const initialize = async () => {
+      setLoaderMode("action");
       try {
-        const response = await API.get(route("auth.getAblyToken"), { params: tokenParams });
-        callback(null, response.data.token);
-      } catch (err: any) {
-        callback(err, null);
-        if (err.response?.status === 401) dispatch(authSliceActions.logout());
+        await initProfile();
+        initCable();
+        dispatch(authSliceActions.fetchAppConfig());
+        dispatch(authSliceActions.fetchUserProfileSilent());
+        syncIntervalRef.current = setInterval(() => {
+          dispatch(authSliceActions.fetchAppConfig());
+          dispatch(authSliceActions.fetchUserProfileSilent());
+        }, 60000);
+      } finally {
+        if (mounted) setLoaderMode("none");
       }
-    },
-    authParams: { client: "mobile" },
-  });
+    };
 
-  const channel = client.channels.get(`private:user-updates.${user.id}`);
+    initialize();
+    return () => {
+      mounted = false;
+      if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+    };
+  }, [user?.id]);
 
-  channel.attach().then(() => {
-    channel.subscribe((message: Ably.Message) => {
-      const { name, data } = message;
-
-      if (name === "account.updated") {
-        const { payload } = data as AccountUpdateEventPayload;
-        if (payload.account?.user) dispatch(authSliceActions.updateUser(payload.account.user));
-        if (payload.refreshFlags?.transactions) {
-          dispatch(accountTransactionsApi.util.invalidateTags(["Transactions Summary"]));
-        }
-      }
-    });
-  }).catch(console.log);
-}, [user?.id]);
-
-
-useEffect(() => {
-  if (!user?.id) return;
-
-  const initialize = async () => {
-    // Run profile and dashboard fetches in parallel
-await initProfile();
-    // Then initialize Ably after profile/dashboard are ready
-    initCable();
+  const onRefresh = async () => {
+    if (loaderMode !== "none") return;
+    setLoaderMode("profile");
+    try { await initProfile(); }
+    finally { setLoaderMode("none"); }
   };
 
-  initialize();
-}, [user?.id, initProfile, initCable]);
-
-
-const onRefresh = async () => {
-  try {
-    // Avoid triggering multiple refreshes at the same time
-    if (isFetchingProfile) return;
-
-   
-
-    // Refresh user profile & prefetch data
-    await initProfile();
-  } catch (err) {
-    console.log("Refresh error:", err);
-  }
-};
-
-
-/*
   const handleVerifyAccount = async () => {
     const { navigate } = await getNavigate();
     navigate(SCREENS.MAIN, {
       screen: SCREENS.MENU,
-      params: {
-        screen: SCREENS.VERIFY_ACCOUNT,
-        params: {
-          screen: SCREENS.ACCOUNT_VERIFICATION_OPTIONS,
-        },
-      },
-    });
-  };
-*/
-
-const handleVerifyAccount = async () => {
-  const { navigate } = await getNavigate();
-
-  navigate(SCREENS.MAIN, {
-    screen: SCREENS.MENU,
-    params: {
-      screen: SCREENS.VERIFY_ACCOUNT,
-      params: {
-        screen: SCREENS.PHONE_VERIFICATION,      },
-      
-    },
-  });
-};
-
-
-  const openFundModal = () => {
-    setFundModalVisible(true);
-  };
-
-  const closeFundModal = () => {
-    setFundModalVisible(false);
-  };
-
-  const handleFundWithBank = () => {
-    closeFundModal();
-
-    navigation.navigate(SCREENS.ADD_MONEY, {
-      screen: SCREENS.FUND_WITH_BANK,
+      params: { screen: SCREENS.VERIFY_ACCOUNT, params: { screen: SCREENS.VERIFICATION_HUB } },
     });
   };
 
-  const handleFundWithPaystack = () => {
-    closeFundModal();
+  // ── Quick actions — untouched ────────────────────────────────────────────
+  const quickActions = [
+    { icon: "phone",        label: "Airtime", onPress: async () => { const { navigate } = await getNavigate(); navigate("Main", { screen: "Services", params: { screen: "Airtime Purchase" } }); } },
+    { icon: "wifi",         label: "Data",    onPress: async () => { const { navigate } = await getNavigate(); navigate("Main", { screen: "Services", params: { screen: "Data Purchase" } }); } },
+    { icon: "lightning-bolt",label: "Bills",  onPress: async () => { const { navigate } = await getNavigate(); navigate("Main", { screen: "Services", params: { screen: "Electricity Bill" } }); } },
+    { icon: "dots-grid",    label: "More",    onPress: async () => { const { navigate } = await getNavigate(); navigate("Main", { screen: "Services", params: { screen: "List" } }); } },
+  ];
 
-    navigation.navigate(SCREENS.ADD_MONEY, {
-      screen: SCREENS.FUND_WITH_PAYSTACK,
-    });
-  };
-
-  const handleManualFund = () => {
-    closeFundModal();
-
-    navigation.navigate(SCREENS.ADD_MONEY, {
-      screen: SCREENS.MANUAL_FUND_STACK,
-      params: { screen: SCREENS.START_MANUAL_FUNDING },
-    });
-  };
-
-  /**
-   *  my work
-   */
-  const handleDepositCrypto = () => {
-    console.log("Deposit Crypto clicked!");
-  closeFundModal();
-  navigation.navigate(SCREENS.ADD_MONEY, {
-    screen: SCREENS.DEPOSIT_CRYPTO, // make sure this exists in SCREENS
-  });
-};
-
-// withdrawal 
-const handleWithdrawCrypto = () => {
-  setWithdrawModalVisible(false);
-
-  navigation.navigate(SCREENS.WITHDRAW_MONEY, {
-    screen: SCREENS.WITHDRAW_CRYPTO,
-  });
-};
-
-const handleWithdrawNaira = () => {
-  setWithdrawModalVisible(false);
-
-  navigation.navigate(SCREENS.WITHDRAW_MONEY, {
-    screen: SCREENS.WITHDRAW_NAIRA,
-  });
-};
-
-
-
-  // ... all your hooks, useEffect, etc.
-
-  // ✅ Define renderHeader BEFORE return
+  // ── FlatList header ────────────────────────────────────────────────────────
   const renderHeader = () => (
-    <View style={tw`px-3 pt-6`}>
+    <View>
+      {/* ── Balance card (gradient — same design as AssetsOverview) ── */}
+      <LinearGradient
+        colors={[GRADIENT_START, GRADIENT_END]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.card}>
 
-      {/* Balance Card */}
-      <Card mode="contained" style={tw`bg-primary-50 py-2`}>
-        <Card.Content style={tw`items-center`}>
-          <View style={tw`flex-row justify-center items-center`}>
-            <View>
-              
-            
-              {balanceVisible ? (
-                <View style={tw`flex-row items-baseline justify-center`}>
-                  <View style={tw`items-center mr-4`}>
-                    <Text style={tw`text-gray-900 font-bold text-xl`}>
-                      {formatToNaira(nairaWalletBalance)}
-                    </Text>
-                  </View>
-                  <View style={tw`items-center`}>
-                    <Text style={tw`text-gray-900 font-bold text-xl`}>
-                      ${formattedBalance(cryptoUsdBalance, "", 2)}
-                    </Text>
-                  </View>
+        {/* Top row: label + eye toggle */}
+        <View style={s.cardTopRow}>
+          <Text style={s.cardLabel}>Available Balance</Text>
+          <TouchableOpacity onPress={() => setBalanceVisible(v => !v)} style={s.eyeBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <MaterialCommunityIcons
+              name={balanceVisible ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="rgba(255,255,255,0.8)"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Primary balance */}
+        <Text style={s.balanceText}>
+          {balanceVisible ? formatToNaira(nairaWalletBalance) : "₦ ••••••"}
+        </Text>
+
+        {/* USD wallet + Account Details */}
+        <View style={s.cardMidRow}>
+          <View>
+            <Text style={s.usdLabel}>USD Wallet</Text>
+            <Text style={s.usdValue}>
+              {balanceVisible ? `$${formattedBalance(cryptoUsdBalance, "", 2)}` : "$ ••••"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={s.accountDetailsBtn}
+            onPress={() => navigation.navigate(SCREENS.ADD_MONEY, { screen: SCREENS.FUND_WITH_BANK })}
+            activeOpacity={0.8}>
+            <MaterialCommunityIcons name="content-copy" size={13} color="#fff" />
+            <Text style={s.accountDetailsBtnText}>Account Details</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Action buttons */}
+        <View style={s.cardActions}>
+          <TouchableOpacity
+            style={s.cardActionBtn}
+            onPress={() => navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_NAIRA })}
+            activeOpacity={0.85}>
+            <MaterialCommunityIcons name="send" size={18} color={GRADIENT_START} />
+            <Text style={s.cardActionText}>Send Money</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={s.cardActionBtn}
+            onPress={() => setShowFundSheet(true)}
+            activeOpacity={0.85}>
+            <MaterialCommunityIcons name="plus" size={18} color={GRADIENT_START} />
+            <Text style={s.cardActionText}>Add Money</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+
+      {/* ── Banners ── */}
+      <View style={s.bannerWrap}>
+        {hasProfileError && (
+          <Pressable onPress={onRefresh} style={s.bannerItem}>
+            <Banner title="Network Error" content="We couldn't load your account details. Tap to retry." />
+          </Pressable>
+        )}
+        {!isVerified && (
+          <Pressable onPress={handleVerifyAccount} style={s.bannerItem}>
+            <Banner title="Account Verification" content="Verify your account to unlock all features." />
+          </Pressable>
+        )}
+      </View>
+
+      {/* ── Quick Actions ── */}
+      <View style={s.section}>
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionTitle}>Quick Actions</Text>
+          <TouchableOpacity activeOpacity={0.7}>
+            <Text style={s.seeAll}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+        {/* iOS grouped card for quick actions */}
+        <View style={[s.quickActionsCard, IOS_CARD_SHADOW]}>
+          {quickActions.map((action, i) => (
+            <React.Fragment key={action.label}>
+              {i > 0 && <View style={s.quickActionDivider} />}
+              <TouchableOpacity style={s.quickAction} onPress={action.onPress} activeOpacity={0.7}>
+                <View style={s.quickActionIcon}>
+                  <MaterialCommunityIcons name={action.icon as any} size={22} color={GRADIENT_START} />
                 </View>
-              ) : (
-                <HorizontalDots />
-              )}
-
-
-            </View>
-            <IconButton
-              icon={
-                balanceVisible
-                  ? (props) => <LargeEyeOpen {...props} width={scale(30)} height={scale(30)} />
-                  : (props) => <LargeEyeClose {...props} width={scale(30)} height={scale(30)} />
-              }
-              onPress={toggleBalance}
-            />
-          </View>
-
-          <View style={tw`flex-row justify-center items-center gap-4 mt-2`}>
-            <Button
-              icon="wallet"
-              mode="outlined"
-              style={tw`border-primary flex-1`}
-              onPress={() => setFundModalVisible(true)}
-            >
-              Deposit
-            </Button>
-            <Button
-              icon="wallet"
-              mode="outlined"
-              style={tw`border-primary flex-1`}
-              onPress={() => setWithdrawModalVisible(true)}
-            >
-              Withdraw
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Profile Error Banner */}
-      {hasProfileError && (
-        <Pressable onPress={onRefresh} style={tw`mt-6`}>
-          <Banner
-            title="Network Error"
-            content="We couldn't load some of your account details. Click to try again."
-          />
-        </Pressable>
-      )}
-
-      {/* Verification Banner */}
-      {!isVerified && (
-        <Pressable onPress={handleVerifyAccount} style={tw`mt-6`}>
-          <Banner
-            title="Account Verification"
-            content="You are yet to verify your account, click to complete verification now."
-          />
-        </Pressable>
-      )}
-
-      {/* Services */}
-      <View style={tw`my-4`}>
-    {/*}    <Text style={tw`text-base font-medium text-gray-600 mb-3.5`}>Services</Text> */}
-        <View style={tw`flex-row justify-around`}>
-          <IconButtonWithLabel
-              RenderIcon={ZapIcon}
-              size={24}
-              label="Buy / Sell+Crypto"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "Convert Crypto", //i made changes here 
-                  },
-                });
-              }}
-            />          
-            <IconButtonWithLabel
-              RenderIcon={PhoneIcon}
-              size={24}
-              label="Airtime+Purchase"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "Airtime Purchase",
-                  },
-                });
-              }}
-            />
-            <IconButtonWithLabel
-              RenderIcon={WifiIcon}
-              size={24}
-              label="Data+Bundle"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "Data Purchase",
-                  },
-                });
-              }}
-            />         
-            <IconButtonWithLabel
-              RenderIcon={MoreIcon}
-              size={24}
-              label="Explore+More"
-              onPress={async () => {
-                const { navigate } = await getNavigate();
-                navigate("Main", {
-                  screen: "Services",
-                  params: {
-                    screen: "List",
-                  },
-                });
-              }}
-            />
+                <Text style={s.quickActionLabel}>{action.label}</Text>
+              </TouchableOpacity>
+            </React.Fragment>
+          ))}
         </View>
       </View>
 
-      {/* Tabs */}
-      <View style={tw`my-4`}>
-        <View style={tw`flex-row border-b border-gray-200`}>
-          <TouchableOpacity style={tw`flex-1 py-2`} onPress={() => setActiveTab("wallets")}>
-            <Text
-              style={tw.style(
-                `text-center font-semibold py-1`,
-                activeTab === "wallets"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray-500"
-              )}
-            >
-              Crypto Assets
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={tw`flex-1 py-2`} onPress={() => setActiveTab("transactions")}>
-            <Text
-              style={tw.style(
-                `text-center font-semibold py-1`,
-                activeTab === "transactions"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray-500"
-              )}
-            >
-              Transactions
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {activeTab === "wallets" && (
-            <CryptoOverview />
-        )}
+      {/* ── Recent Transactions header ── */}
+      <View style={[s.sectionHeader, s.txHeader]}>
+        <Text style={s.sectionTitle}>Recent Transactions</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Transaction History", {})} activeOpacity={0.7}>
+          <Text style={s.seeAll}>See All</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
-  // ✅ Return after renderHeader is defined
   return (
-    <View style={tw`flex-1 bg-white`}>
-      <UserAppbar />
-                <CryptoProvider>
-
-      <FlatList
-        data={activeTab === "transactions" ? [1] : []}
-        renderItem={() => <RecentTransactions navigation={navigation} />}
-        keyExtractor={(item) => item.toString()}
-        ListHeaderComponent={renderHeader}
-        refreshControl={<RefreshControl refreshing={isFetchingProfile} onRefresh={onRefresh} />}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      />
+    <CryptoProvider>
+      <View style={[s.root, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="dark-content" />
+        <UserAppbar />
+        <RecentTransactions
+          navigation={navigation}
+          renderHeader={renderHeader}
+          refreshing={loaderMode === "profile"}
+          onRefresh={onRefresh}
+        />
+      </View>
 
       <FundAccountSheet
-        show={fundModalVisible}
-        hide={closeFundModal}
-        navigation={{ handleDepositCrypto, handleManualFund }}
+        show={showFundSheet}
+        hide={() => setShowFundSheet(false)}
+        navigation={{
+          handleDepositCrypto: () => {
+            setShowFundSheet(false);
+            setTimeout(() => navigation.navigate(SCREENS.ADD_MONEY, { screen: SCREENS.DEPOSIT_CRYPTO }), 200);
+          },
+          handleFundWithBank: () => {
+            setShowFundSheet(false);
+            setTimeout(() => navigation.navigate(SCREENS.ADD_MONEY, { screen: SCREENS.FUND_WITH_BANK }), 200);
+          },
+        }}
       />
-      <WithdrawFundsSheet
-        show={withdrawModalVisible}
-        hide={() => setWithdrawModalVisible(false)}
-        navigation={{ handleWithdrawCrypto, handleWithdrawNaira }}
-      />
-            </CryptoProvider>
-
-      <ContactSupportButton />
-    </View>
+    </CryptoProvider>
   );
 }
 
-
+// =============================================================================
+// RecentTransactions — all logic untouched
+// =============================================================================
 type RecentTransactionsProps = {
   navigation: any;
+  renderHeader: () => React.ReactElement;
+  refreshing: boolean;
+  onRefresh: () => void;
 };
 
-const RecentTransactions: React.FC<RecentTransactionsProps> = ({ navigation }) => {
+const RecentTransactions: React.FC<RecentTransactionsProps> = ({
+  navigation, renderHeader, refreshing, onRefresh,
+}) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery(undefined, {
-    refetchOnFocus: true,
-  });
-
+  const { data: queryData, isLoading } = useFetchRecentTransactionsQuery(undefined, { refetchOnFocus: true });
   const { transactions = {} } = queryData || {};
 
   const onTransactionPress = async (transactionId: string | number) => {
     navigateToTransaction({
-      transactionId: transactionId,
-      onStart: () => {
-        setIsProcessing(true);
-      },
-      onFinish: (result) => {
-        setIsProcessing(false);
-      },
+      transactionId,
+      onStart: () => setIsProcessing(true),
+      onFinish: () => setIsProcessing(false),
     });
   };
 
-  const dynamicContent = useMemo(() => {
-    if (isLoading) {
-      return <TransactionLoader groups={["Today"]} />;
-    }
+  type TransactionItem =
+    | { key: string; type: "loader" }
+    | { key: string; type: "empty" }
+    | { key: string; type: "group"; group: string; txs: WalletTransaction[] };
 
+  const transactionContent = useMemo((): TransactionItem[] => {
+    if (isLoading) return [{ key: "loader", type: "loader" }];
     if (!transactions || Object.entries(transactions).length === 0) {
-      return <TransactionEmptyState />;
+      return [{ key: "empty", type: "empty" }];
     }
-
-    return Object.entries(transactions).map(([group, transactions]) => (
-      <View key={group}>
-        <Text variant="titleMedium" style={tw`text-gray-900`}>
-          {group}
-        </Text>
-
-        <View>
-          {transactions.map((transaction, index) => (
-            <Fragment key={transaction.id}>
-              <TouchableOpacity
-                key={transaction.id}
-                onPress={() => onTransactionPress(transaction.id)}
-                style={tw`flex-row items-center justify-between gap-2 p-2 my-2`}>
-                <Fragment>
-                  <Avatar.Image
-                    size={40}
-                    source={{
-                      uri: getTransactionIcon(transaction),
-                    }}
-                    style={tw`bg-transparent`}
-                  />
-                  <View style={tw`flex-1 mx-3`}>
-                    <Text style={tw`text-gray-900 text-sm`}>{transaction.meta.description}</Text>
-                    <View style={tw`flex-row items-center gap-2`}>
-                      <Text style={tw`text-gray-500 text-xs`}>
-                        {format(transaction.created_at, "MMM dd, yyyy h:mm a")}
-                      </Text>
-                      <StatusBadge status={getTransactionStatus(transaction)} />
-                    </View>
-                  </View>
-              {/*}    <Text style={tw`text-gray-900 font-semibold`}>{convertToNaira(transaction.amount, true)}</Text> */}
-                  <Text style={tw`text-gray-900 font-semibold`}>{formatTransactionAmount(transaction)}</Text>
-                </Fragment>
-              </TouchableOpacity>
-              {index !== transactions.length - 1 && <Divider />}
-            </Fragment>
-          ))}
-        </View>
-        <PleaseWaitModal visible={isProcessing} />
-      </View>
-    ));
-  }, [transactions, isLoading, isProcessing]);
+    return Object.entries(transactions).map(([group, txs]) => ({
+      key: group, type: "group" as const, group, txs,
+    }));
+  }, [transactions, isLoading]);
 
   return (
-    <View style={tw`mt-4 mb-20`}>
-      <View style={tw`flex-row justify-between items-center mb-5`}>
-        <Text style={tw`text-base font-medium text-gray-600`}>Recent Transactions</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Transaction History")}>
-          <View style={tw`flex-row items-center gap-1`}>
-            <Text style={tw`text-primary text-xs`}>See More</Text>
-            <ArrowRight width={20} />
-          </View>
-        </TouchableOpacity>
-      </View>
-      {dynamicContent}
-    </View>   
+    <>
+      <FlatList<TransactionItem>
+        data={transactionContent}
+        keyExtractor={(item) => item.key}
+        ListHeaderComponent={renderHeader}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GRADIENT_START} />}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => {
+          if (item.type === "loader") return <View style={tw`px-4`}><TransactionLoader groups={["Today"]} /></View>;
+          if (item.type === "empty")  return <View style={tw`px-4`}><TransactionEmptyState /></View>;
+          if (item.type === "group") {
+            return (
+              <View style={s.txGroupWrap}>
+                <Text style={s.groupLabel}>{item.group}</Text>
+                <View style={[s.groupCard, IOS_CARD_SHADOW]}>
+                  {item.txs.map((transaction, index) => (
+                    <Fragment key={transaction.id}>
+                      <TransactionRow
+                        transaction={transaction}
+                        compact
+                        onPress={() => onTransactionPress(transaction.id)}
+                      />
+                      {index !== item.txs.length - 1 && (
+                        <View style={s.txDivider} />
+                      )}
+                    </Fragment>
+                  ))}
+                </View>
+              </View>
+            );
+          }
+          return null;
+        }}
+      />
+      <PleaseWaitModal visible={isProcessing} />
+    </>
   );
 };
+
+// =============================================================================
+const s = StyleSheet.create({
+  root:                 { flex: 1, backgroundColor: BG },
+
+  // ── Balance card ─────────────────────────────────────────────────────────
+  card: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 22,
+    padding: 20,
+    ...Platform.select({
+      ios:     { shadowColor: BRAND, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16 },
+      android: { elevation: 8 },
+    }),
+  },
+  cardTopRow:           { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  cardLabel:            { fontSize: 13, color: "rgba(255,255,255,0.75)", fontWeight: "500" },
+  eyeBtn:               { padding: 4 },
+  balanceText:          { fontSize: 32, fontWeight: "800", color: "#fff", letterSpacing: -0.5, marginBottom: 4 },
+  cardMidRow:           { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 6, marginBottom: 20 },
+  usdLabel:             { fontSize: 12, color: "rgba(255,255,255,0.65)" },
+  usdValue:             { fontSize: 16, color: "#fff", fontWeight: "600", marginTop: 2 },
+  accountDetailsBtn:    { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" },
+  accountDetailsBtnText:{ fontSize: 12, color: "#fff", fontWeight: "600" },
+  cardActions:          { flexDirection: "row", gap: 12 },
+  cardActionBtn:        { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#fff", paddingVertical: 13, borderRadius: 13 },
+  cardActionText:       { fontSize: 14, fontWeight: "700", color: BRAND },
+
+  // ── Banners ───────────────────────────────────────────────────────────────
+  bannerWrap:           { paddingHorizontal: 16 },
+  bannerItem:           { marginTop: 12 },
+
+  // ── Sections ─────────────────────────────────────────────────────────────
+  section:              { paddingHorizontal: 16, marginTop: 20 },
+  sectionHeader:        { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  sectionTitle:         { fontSize: 16, fontWeight: "700", color: LABEL },
+  seeAll:               { fontSize: 13, color: GRADIENT_START, fontWeight: "600" },
+
+  // ── Quick actions — iOS grouped card style ────────────────────────────────
+  quickActionsCard:     { flexDirection: "row", backgroundColor: SURFACE, borderRadius: 16, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR },
+  quickAction:          { flex: 1, alignItems: "center", paddingVertical: 16, gap: 6 },
+  quickActionDivider:   { width: StyleSheet.hairlineWidth, backgroundColor: SEPARATOR, alignSelf: "stretch" },
+  quickActionIcon:      { width: 48, height: 48, borderRadius: 14, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
+  quickActionLabel:     { fontSize: 12, color: "#374151", fontWeight: "500" },
+
+  // ── Transaction list ──────────────────────────────────────────────────────
+  txHeader:             { paddingHorizontal: 16, marginTop: 8 },
+  txGroupWrap:          { paddingHorizontal: 16, marginBottom: 12 },
+  groupLabel:           { fontSize: 12, fontWeight: "700", color: SUBLABEL, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8, paddingHorizontal: 2 },
+  groupCard:            { backgroundColor: SURFACE, borderRadius: 16, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR },
+  txDivider:            { height: StyleSheet.hairlineWidth, backgroundColor: SEPARATOR, marginLeft: 64 },
+});

@@ -1,8 +1,10 @@
 import tw from "@lib/tailwind"
 import Toast, { type ToastOptions } from "react-native-root-toast"
+import { View, Text } from "react-native"
 
 interface ToastArgs extends ToastOptions {
   message: string
+  title?: string
   variant?: "default" | "success" | "error" | "warning" | "info"
 }
 

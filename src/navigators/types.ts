@@ -3,6 +3,7 @@ import { type NativeStackScreenProps, type NativeStackNavigationProp } from "@re
 import { type BottomTabScreenProps, type BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { TransactionForm } from "@enum/transaction";
 import { SCREENS } from "@constants/screens";
+import { P2PAd } from "@store/redux-api/p2p";
 
 /**
  * Stack Param Lists
@@ -60,16 +61,39 @@ export type AccountParamList = {
   [SCREENS.VERIFY_ACCOUNT]: NavigatorScreenParams<KYCParamList>;
   [SCREENS.SUPPORT_STACK]: NavigatorScreenParams<SupportParamList>;
    Leaderboard: { filter?: "weekly" | "monthly" | "alltime" };
+      [SCREENS.AUTO_CRYPTO_SETTLEMENT]: undefined;
+      [SCREENS.P2P_MANAGER_STACK]: NavigatorScreenParams<P2PParamList>;
 };
-export type AccountStackScreenProps<T extends keyof AccountParamList> = NativeStackScreenProps<AccountParamList, T>;
 
+export type AccountStackScreenProps<T extends keyof AccountParamList> = NativeStackScreenProps<AccountParamList, T>;
+// P2P Manager Param Lists
+export type P2PParamList = {
+  [SCREENS.P2P_MANAGER]: undefined;        // "P2P Manager"
+   [SCREENS.P2P_INTRO]: undefined;
+  [SCREENS.P2P_CHOOSE_EXCHANGE]: undefined; // "P2P Choose Exchange"
+  [SCREENS.P2P_WHITELIST_IP]: { exchange: string };
+  [SCREENS.P2P_CONNECT_API]: { exchange: string };
+  [SCREENS.P2P_DASHBOARD]: undefined;
+  [SCREENS.P2P_CONNECT_SUCCESS]: { exchange: string };
+  [SCREENS.P2P_ORDER_DETAIL]: { orderId: string };
+  [SCREENS.P2P_SETTINGS]: undefined;
+  [SCREENS.P2P_INSIGHTS]: undefined;
+  [SCREENS.P2P_MESSAGE_TEMPLATES]: undefined;
+  [SCREENS.P2P_ADS]: undefined;
+[SCREENS.P2P_EDIT_AD]: { ad: P2PAd };
+  
+ 
+};
+export type P2PStackScreenProps<T extends keyof P2PParamList> = NativeStackScreenProps<P2PParamList, T>;
 /**
  * Tab Navigation Param Lists
  * Group for bottom tab navigation, including Home, Services, and Account screens.
  */
 export type TabParamList = {
   Home: NavigatorScreenParams<HomeParamList>;
+  Assets: NavigatorScreenParams<AssetsParamList>;
   Services: NavigatorScreenParams<ServicesParamList>;
+  Activity: undefined;
   Menu: NavigatorScreenParams<AccountParamList>;
 };
 export type TabNavScreenProps<T extends keyof TabParamList> = BottomTabScreenProps<TabParamList, T>;
@@ -82,15 +106,26 @@ export type HomeParamList = {
   [SCREENS.DASHBOARD]: undefined;
   [SCREENS.NOTIFICATION]: NavigatorScreenParams<NotificationParamList>;
   [SCREENS.ADD_MONEY]: NavigatorScreenParams<AddMoneyParamList>;
-  [SCREENS.TRANSACTION_HISTORY]: undefined;
+ // [SCREENS.TRANSACTION_HISTORY]: undefined;
   [SCREENS.TRANSACTION_DETAILS]: undefined;
   [SCREENS.VIEW_TRANSACTION]: { transactionId: TransactionForm};
   [SCREENS.WITHDRAW_MONEY]: NavigatorScreenParams<WithdrawMoneyParamList>;
   [SCREENS.CRYPTO_ASSETS]: undefined;
   [SCREENS.SUPPORT_STACK]: NavigatorScreenParams<SupportParamList>;
+  "Transaction History": {
+    transactionId?: string; // optional
+  };
+
 };
 export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScreenProps<HomeParamList, T>;
 
+
+// Add these new param lists:
+export type AssetsParamList = {
+  [SCREENS.ASSETS_OVERVIEW]: undefined;
+  [SCREENS.CRYPTO_ASSETS]: undefined;
+};
+export type AssetsStackScreenProps<T extends keyof AssetsParamList> = NativeStackScreenProps<AssetsParamList, T>;
 /**
  * Add Money Param Lists
  * Group for screens related to adding money.
@@ -183,11 +218,24 @@ export type EducationStackScreenProps<T extends keyof EducationParamList> = Nati
  * Group for Know Your Customer (KYC) verification-related screens.
  */
 export type KYCParamList = {
+
+  
+  
+  [SCREENS.VERIFICATION_HUB]: undefined;
   [SCREENS.ACCOUNT_VERIFICATION_OPTIONS]: undefined;
   [SCREENS.NIN_VERIFICATION]: undefined;
   [SCREENS.BVN_VERIFICATION]: undefined;
   [SCREENS.PHONE_VERIFICATION]: undefined;
+  [SCREENS.VERIFICATION_OTP]: { phone: string };
+  [SCREENS.BVN_NIN_CHOICE]: undefined;
+  [SCREENS.VERIFICATION_SUCCESS]: { tier: 1 | 2 };
+  [SCREENS.UPGRADE_TIER2]: undefined;
+  [SCREENS.FACE_VERIFICATION]: undefined;
+  [SCREENS.ADDRESS_VERIFICATION]: undefined;
+  [SCREENS.VERIFICATION_LIMITS]: undefined;
 };
+
+
 export type KYCStackScreenProps<T extends keyof KYCParamList> = NativeStackScreenProps<KYCParamList, T>;
 
 /**

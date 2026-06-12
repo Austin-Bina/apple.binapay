@@ -22,10 +22,27 @@ import {
 } from "@expo-google-fonts/inter";
 import { AppVersionProvider } from "@providers/app-version-provider";
 import { Dialog, Button, Portal, Text } from "react-native-paper";
- 
+ import * as Notifications from "expo-notifications";
+import { getNavigate } from "@utils/navigation";
+import PushTokenBootstrap from "@helpers/PushTokenBootstrap";
+import PushNotificationManager from "@helpers/pushnotificationmanager";
+
+
 /*SplashScreen.preventAutoHideAsync();  */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true, // Added to match NotificationBehavior
+    shouldShowList: true,  // Added to match NotificationBehavior
+  }),
+});
+
 
 function BinaPay() {
+
+  
   const [appIsReady, setAppIsReady] = useState(false);
   const [exitDialogVisible, setExitDialogVisible] = useState(false);
 
@@ -36,6 +53,31 @@ function BinaPay() {
     Inter_700Bold,
     Inter_800ExtraBold,
   });
+
+ useEffect(() => {
+  const sub = Notifications.addNotificationResponseReceivedListener(
+    async (response) => {
+      const data = response.notification.request.content.data;
+
+      if (data?.type === "conversion" && data.transaction_id) {
+        const nav = await getNavigate();
+
+        nav.navigate("Main", {
+          screen: "Home",
+          params: {
+            screen: "Transaction History",
+            params: {
+              transactionId: String(data.transaction_id),
+            },
+          },
+        });
+      }
+    }
+  );
+
+  return () => sub.remove();
+}, []);
+
 /**
  * justice version
  */
@@ -140,8 +182,9 @@ useEffect(() => {
           >
             <PaperProvider theme={defaultTheme}>
               <AppVersionProvider>
-                <NoNetworkBar />
-                <Router />
+                 <PushNotificationManager>
+                <NoNetworkBar/>
+                <Router/>
                 <Portal>
                   <Dialog
                     visible={exitDialogVisible}
@@ -178,6 +221,7 @@ useEffect(() => {
                     </Dialog.Actions>
                   </Dialog>
                 </Portal>
+                </PushNotificationManager>
               </AppVersionProvider>
             </PaperProvider>
           </PersistGate>

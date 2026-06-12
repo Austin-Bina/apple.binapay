@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useMemo } from "react";
-import { View, useWindowDimensions, Keyboard, Linking, Alert } from "react-native";
+import { View, useWindowDimensions, Keyboard, Linking } from "react-native";
 import { Text, TouchableRipple } from "react-native-paper";
 import BottomSheetModal from "./BottomSheet/BottomSheet";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -13,6 +13,7 @@ import { Action } from "@components/screens/account";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { StackParamList, TabParamList } from "@navigators/types";
+import { showToast } from "@helpers/toast";
 
 interface Props {
   show: boolean;
@@ -57,29 +58,29 @@ const navigation = useNavigation<
   // ✅ Actions
   const handleWhatsApp = async () => {
     if (!contact?.whatsapp) {
-      return Alert.alert("Unavailable", "WhatsApp contact is not set.");
+      return showToast({message: "WhatsApp contact is not set.", variant: "error"});
     }
     const url = `https://wa.me/${contact.whatsapp}`;
     try {
                   hide();
 
       await Linking.openURL(url);
-    } catch {
-      Alert.alert("Error", "Unable to open WhatsApp.");
+    } catch (error) {
+      showToast({message: "Unable to open WhatsApp.", variant: "error"});
     }
   };
 
   const handlePhoneCall = async () => {
     if (!contact?.phone) {
-      return Alert.alert("Unavailable", "Phone number is not set.");
+      return showToast({message: "Phone number is not set.", variant: "error"});
     }
     const url = `tel:${contact.phone}`;
     try {
                   hide();
 
       await Linking.openURL(url);
-    } catch {
-      Alert.alert("Error", "Unable to initiate phone call.");
+    } catch (error) {
+      showToast({message: "Unable to initiate phone call.", variant: "error"});
     }
   };
 

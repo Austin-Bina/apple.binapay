@@ -13,6 +13,7 @@ import SupportHistory from "@screens/support/SupportHistory";
 import { resetNavigationToDashboard } from "@utils/navigation";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { SupportTabsParamList } from "@navigators/types";
+import { options } from "node_modules/axios/index.cjs";
 
 const Stack = createNativeStackNavigator<SupportParamList>();
 const Tabs = createMaterialTopTabNavigator<SupportTabsParamList>();
@@ -27,7 +28,7 @@ export default function SupportStack() {
         headerTitle: "",
         headerShown: true,
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-0.1`}>
+          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple
               onPress={() => {
                 if (navigation.canGoBack()) {
@@ -41,13 +42,14 @@ export default function SupportStack() {
           </View>
         ),
       })}>
-      <Stack.Screen name={SCREENS.DEPARTMENT_AND_HISTORY_TAB}>
+      <Stack.Screen name={SCREENS.DEPARTMENT_AND_HISTORY_TAB} options={{ headerShown: false }}>
         {() => (
           <Tabs.Navigator initialRouteName={SCREENS.SUPPORT_DEPARTMENT} screenOptions={{}}>
             <Tabs.Screen
               name={SCREENS.SUPPORT_DEPARTMENT}
               options={{
                 title: "Department",
+                
               }}
               component={SupportDepartment}
             />
@@ -55,7 +57,7 @@ export default function SupportStack() {
           </Tabs.Navigator>
         )}
       </Stack.Screen>
-      <Stack.Screen name={SCREENS.SUPPORT_START_CONVERSATION} component={StartConversation} />
+      <Stack.Screen name={SCREENS.SUPPORT_START_CONVERSATION} component={StartConversation} options={{ headerShown: false }} />
       <Stack.Screen name={SCREENS.SUPPORT_CHAT} options={{ headerShown: false }} component={ChatSupport} />
     </Stack.Navigator>
   );

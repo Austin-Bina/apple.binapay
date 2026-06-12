@@ -211,4 +211,10 @@ export interface PrintProps {
   transactionDescription?: string; // Optional description if no transaction details exist
   promotionalText: string; // Promotional text to display in the footer
   supportEmail: string; // Support email address
-}
+   receiptType?:           'transfer' | 'airtime' | 'data' | 'electricity' | 'cable' | 'crypto' | 'generic';
+  paymentStatus?:         string;
+  transferDetails?:       TransferDetails;
+  hasHighlighted?:        { value: string; copyable: boolean };
+    amount?:                string;
+    status?:                TransactionStatus | string;
+};

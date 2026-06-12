@@ -12,6 +12,7 @@ export interface Network {
   deposit_address: string;
   qr_code: string | null;
   network_slug: string;
+  nowpayments_network_slug: string;
 }
 
 
@@ -81,6 +82,16 @@ export interface User {
   };
    spreadConfig?: { spreadType: "percent" | "flat"; spread: number };
    userBankAccounts: userBankAccounts[];
+  auto_process_crypto_deposits: boolean;
+  auto_withdraw_bank_account_id: string | null;
+  kyc_tier?: number;
+daily_transfer_limit?: number;
+ per_txn_limit?: number;
+  wallet_balance_limit?: number;
+    is_email_verified?: boolean;
+  is_phone_verified?: boolean;
+  is_face_verified?: boolean;
+  is_address_verified?: boolean;
 }
 
 export interface ReferralReward {

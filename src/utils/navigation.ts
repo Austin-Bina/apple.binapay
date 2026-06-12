@@ -1,4 +1,4 @@
-import { createNavigationContainerRef } from "@react-navigation/native";
+import { createNavigationContainerRef, CommonActions } from "@react-navigation/native";
 import { setInterval } from "./setTimeout";
 import { StackParamList } from "@navigators/types";
 
@@ -15,6 +15,8 @@ async function getNavigate() {
       return true;
     };
 
+
+    
     let intervalId: number | undefined;
     if (poll()) {
       intervalId = setInterval(poll, 500);
@@ -22,6 +24,23 @@ async function getNavigate() {
   });
 
   return navigationRef;
+}
+
+function navigate(name: string, params?: object) {
+  if (navigationRef.isReady()) {
+    navigationRef.dispatch(
+      CommonActions.navigate({
+        name: "Main",
+        params: {
+          screen: "Menu",
+          params: {
+            screen: name,
+            params,
+          },
+        },
+      })
+    );
+  }
 }
 
 function getCurrentRouteName() {
@@ -41,4 +60,4 @@ function resetNavigationToDashboard() {
   });
 }
 
-export { navigationRef, getNavigate, getCurrentRouteName, resetNavigationToDashboard };
+export { navigationRef, getNavigate, getCurrentRouteName, resetNavigationToDashboard, navigate };

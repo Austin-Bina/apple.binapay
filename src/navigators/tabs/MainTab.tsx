@@ -7,10 +7,12 @@ import { Colors } from "@constants/theme/colors";
 import { BottomNavigation, Icon } from "react-native-paper";
 import AccountStack from "@navigators/stacks/account";
 import HomeStack from "@navigators/stacks/home";
+import AssetsStack from "@navigators/stacks/assets";
 import { CommonActions, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import ServicesStack from "@navigators/stacks/services";
 import { SCREENS } from "@constants/screens";
 import InsufficientBalanceModal from "@components/ui/modals/insufficient-balance";
+import TransactionHistoryScreen from "@screens/home/TransactionHistory";
 
 const HIDE_TAB_LIST = [
   SCREENS.PROFILE,
@@ -37,35 +39,49 @@ const HIDE_TAB_LIST = [
   SCREENS.DEPOSIT_CRYPTO,
   SCREENS.WITHDRAW_MONEY,
   SCREENS.CONVERT_CRYPTO,
-  // All support screens
   SCREENS.SUPPORT_STACK,
   SCREENS.SUPPORT_DEPARTMENT,
   SCREENS.SUPPORT_START_CONVERSATION,
   SCREENS.SUPPORT_CHAT,
   SCREENS.SUPPORT_HISTORY,
+  SCREENS.P2P_MANAGER,
+  SCREENS.P2P_MANAGER_STACK,
+  SCREENS.P2P_CHOOSE_EXCHANGE,
+  SCREENS.P2P_WHITELIST_IP,
+  SCREENS.P2P_CONNECT_API,
+  SCREENS.P2P_DASHBOARD,
+  SCREENS.P2P_ORDER_DETAIL,
+  SCREENS.P2P_SETTINGS,
+  SCREENS.P2P_INSIGHTS,
+  SCREENS.P2P_INTRO,
+  SCREENS.P2P_ADS,
+  SCREENS.P2P_EDIT_AD,
+  SCREENS.P2P_MESSAGE_TEMPLATES,
 ];
 
 const Tab = createBottomTabNavigator<TabParamList>();
+
 export const TabBar = () => {
   return (
     <View style={tw`flex-1`}>
       <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
+        screenOptions={{ headerShown: false }}
         tabBar={({ navigation, state, descriptors, insets }) => {
           const activeRoute = state.routes[state.index];
           const routeName = getFocusedRouteNameFromRoute(activeRoute) ?? "";
-          const hideTabBar = HIDE_TAB_LIST.includes(routeName as any);
+          const hideTabBar = HIDE_TAB_LIST.indexOf(routeName as any) !== -1;
 
           return (
             <BottomNavigation.Bar
               navigationState={state}
               safeAreaInsets={insets}
-              activeColor={Colors.gray[800]}
+              activeColor={Colors.primary.DEFAULT}
               inactiveColor={Colors.gray[400]}
               activeIndicatorStyle={tw`bg-transparent`}
-              style={[tw`bg-white border-t border-gray-100`, { display: hideTabBar ? "none" : "flex" }]}
+              style={[
+                tw`bg-white border-t border-gray-100`,
+                { display: hideTabBar ? "none" : "flex" },
+              ]}
               onTabPress={({ route, preventDefault }) => {
                 const event = navigation.emit({
                   type: "tabPress",
@@ -75,50 +91,36 @@ export const TabBar = () => {
 
                 if (event.defaultPrevented) {
                   preventDefault();
+                  return;
+                }
+
+                if (route.name === "Services") {
+                  navigation.dispatch({
+                    ...CommonActions.reset({
+                      index: 0,
+                      routes: [{
+                        name: "Services",
+                        state: { routes: [{ name: "List" }], index: 0 },
+                      }],
+                    }),
+                    target: state.key,
+                  });
+                } else if (route.name === "Menu") {
+                  navigation.dispatch({
+                    ...CommonActions.reset({
+                      index: 0,
+                      routes: [{
+                        name: "Menu",
+                        state: { routes: [{ name: "Settings" }], index: 0 },
+                      }],
+                    }),
+                    target: state.key,
+                  });
                 } else {
-                  // Reset Services stack to List screen when Services tab is pressed
-                  if (route.name === "Services") {
-                    navigation.dispatch({
-                      ...CommonActions.reset({
-                        index: 0,
-                        routes: [
-                          {
-                            name: "Services",
-                            state: {
-                              routes: [{ name: "List" }],
-                              index: 0,
-                            },
-                          },
-                        ],
-                      }),
-                      target: state.key,
-                    });
-                  } 
-                  
-                   // NEW: Reset Account (Menu) stack to Settings when Menu tab is pressed
-    else if (route.name === "Menu") {
-      navigation.dispatch({
-        ...CommonActions.reset({
-          index: 0,
-          routes: [
-            {
-              name: "Menu",
-              state: {
-                routes: [{ name: "Settings" }], // the initial screen you want
-                index: 0,
-              },
-            },
-          ],
-        }),
-        target: state.key,
-      });
-    } 
-    else {
-                    navigation.dispatch({
-                      ...CommonActions.navigate(route.name, route.params),
-                      target: state.key,
-                    });
-                  }
+                  navigation.dispatch({
+                    ...CommonActions.navigate(route.name, route.params),
+                    target: state.key,
+                  });
                 }
               }}
               renderIcon={({ route, focused, color }) => {
@@ -126,14 +128,11 @@ export const TabBar = () => {
                 if (options.tabBarIcon) {
                   return options.tabBarIcon({ focused, color, size: 24 });
                 }
-
                 return null;
               }}
               getLabelText={({ route }) => {
                 const { options } = descriptors[route.key];
-                const label = options.tabBarLabel as string;
-
-                return label;
+                return options.tabBarLabel as string;
               }}
             />
           );
@@ -147,21 +146,36 @@ export const TabBar = () => {
           }}
         />
         <Tab.Screen
+          name="Assets"
+          component={AssetsStack}
           options={{
-            tabBarLabel: "Services",
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Icon source="send" color={color} size={size} />,
+            tabBarLabel: "Assets",
+            tabBarIcon: ({ color, size }) => <Icon source="chart-line" color={color} size={size} />,
           }}
-          name="Services"
-          component={ServicesStack}
         />
         <Tab.Screen
+          name="Services"
+          component={ServicesStack}
+          options={{
+            tabBarLabel: "Services",
+            tabBarIcon: ({ color, size }) => <Icon source="apps" color={color} size={size} />,
+          }}
+        />
+        <Tab.Screen
+          name="Activity"
+          component={TransactionHistoryScreen}
+          options={{
+            tabBarLabel: "Activity",
+            tabBarIcon: ({ color, size }) => <Icon source="clock-outline" color={color} size={size} />,
+          }}
+        />
+        <Tab.Screen
+          name="Menu"
+          component={AccountStack}
           options={{
             tabBarLabel: "Menu",
             tabBarIcon: ({ color, size }) => <Icon source="menu" color={color} size={size} />,
           }}
-          name="Menu"
-          component={AccountStack}
         />
       </Tab.Navigator>
       <InsufficientBalanceModal />

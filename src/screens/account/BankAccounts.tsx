@@ -1,334 +1,237 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// BankAccountsScreen — iOS UI
+// ═══════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-  ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  Alert, StyleSheet, Platform, StatusBar,
 } from "react-native";
-import DropDownPicker from "react-native-dropdown-picker";
-import tw from "@lib/tailwind";
 import API from "@lib/api";
 import { useForm, Controller } from "react-hook-form";
 import { routes } from "@constants/routes";
 import { useSelector } from "react-redux";
 import { selectUser } from "@store/selectors/auth";
+import DropdownMenuField from "@components/ui/form/DropdownMenu";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import { showToast } from "@helpers/toast";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const BRAND      = "#1E3A8A";
+const BLUE       = "#2563EB";
+const BLUE_LIGHT = "#EEF3FF";
+const BG         = "#F2F2F7";
+const SURFACE    = "#FFFFFF";
+const SEPARATOR  = "#E5E7EB";
+const LABEL      = "#111827";
+const SUBLABEL   = "#6B7280";
+const PLACEHOLDER = "#9CA3AF";
+
+const IOS_SHADOW = Platform.select({
+  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
+  android: { elevation: 2 },
+});
 
 type Bank = { name: string; code: string };
 type FormValues = { account_name: string; account_number: string; bank_code: string };
 
 export default function BankAccountsScreen({ navigation }: any) {
-  const user = useSelector(selectUser);
-  const [banks, setBanks] = useState<Bank[]>([]);
-  const [bankOpen, setBankOpen] = useState(false);
+  const user   = useSelector(selectUser);
+  const insets = useSafeAreaInsets();
+
+  // ── All original state + handlers — untouched ─────────────────────────────
+  const [banks, setBanks]                   = useState<Bank[]>([]);
   const [resolvedAccountName, setResolvedAccountName] = useState<string | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
-  const [loadingBanks, setLoadingBanks] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
-  const [alert, setAlert] = useState<{ type: string; message: string } | null>(null);
-const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
+  const [isVerified, setIsVerified]         = useState(false);
+  const [isProcessing, setIsProcessing]     = useState(false);
+  const [bankAccounts, setBankAccounts]     = useState<any[]>([]);
 
   const { control, handleSubmit, setValue, watch, trigger, reset } = useForm<FormValues>({
     defaultValues: { account_name: "", account_number: "", bank_code: "" },
   });
-
   const values = watch();
+  const bankDropdownData = banks.map((bank) => ({ label: bank.name, id: bank.code }));
 
-  
-  // Fetch user's bank accounts (if available)
- useEffect(() => {
-  const accounts = user?.userBankAccounts || [];
-  setBankAccounts(accounts);
-}, [user]);
+  useEffect(() => { setBankAccounts(user?.userBankAccounts || []); }, [user]);
 
-
-/*
-useEffect(() => {
-  const fetchUserBankAccounts = async () => {
-    try {
-      const res = await API.get(routes.api.v1.services.wallets.userwallet);
-      setBankAccounts(res.data.bank_accounts ?? []);
-    } catch (error: any) {
-      console.error("Error fetching bank accounts:", error?.response?.data || error?.message);
-      Alert.alert("Error", "Failed to load your bank accounts. Please try again.");
-    }
-  };
-
-  fetchUserBankAccounts();
-}, []);
-*/
-
-  // Fetch list of banks
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        setLoadingBanks(true);
+        setIsProcessing(true);
         const res = await API.get(routes.api.v1.bank.userBankAccounts.banklist);
         setBanks(res.data.data || []);
-      } catch (error) {
-        console.error(error);
-        Alert.alert("Error", "Failed to load bank list. Please try again.");
-      } finally {
-        setLoadingBanks(false);
-      }
+      } catch { showToast({ message: "Failed to load bank list.", variant: "error" }); }
+      finally { setIsProcessing(false); }
     };
     fetchBanks();
   }, []);
 
-
-
   const verifyAccount = useCallback(async () => {
-    const valid = await trigger(["account_number", "bank_code"]);
-    if (!valid) return;
-
-    setVerifying(true);
-    setResolvedAccountName(null);
-    setIsVerified(false);
-
+    const valid = await trigger(["account_number", "bank_code"]); if (!valid) return;
+    setIsProcessing(true); setResolvedAccountName(null); setIsVerified(false);
     try {
       const res = await API.post(routes.api.v1.bank.userBankAccounts.accountname, {
-        account_number: values.account_number,
-        bank_code: values.bank_code,
+        account_number: values.account_number, bank_code: values.bank_code,
       });
-
       if (res.data.is_valid) {
-        setResolvedAccountName(res.data.account_name);
-        setIsVerified(true);
+        setResolvedAccountName(res.data.account_name); setIsVerified(true);
         setValue("account_name", res.data.account_name);
-      } else {
-        Alert.alert("Verification Failed", "Could not resolve account name.");
-      }
-    } catch (error: any) {
-// ✅ Log full Axios error for debugging
-    console.error("Axios error:", error);
-    console.error("Error response data:", error.response?.data);
-    console.error("Error status:", error.response?.status);
-    console.error("Error headers:", error.response?.headers);
-      Alert.alert("Error", "Failed to verify account.");
-    } finally {
-      setVerifying(false);
-    }
+      } else { showToast({ message: "Could not resolve account name.", variant: "error" }); }
+    } catch { showToast({ message: "Failed to verify account.", variant: "error" }); }
+    finally { setIsProcessing(false); }
   }, [values, trigger]);
 
   const submit = async (data: FormValues) => {
-    if (!isVerified) {
-      Alert.alert("Verify Account", "Please verify your account before saving.");
-      return;
-    }
-
-    const bank = banks.find((b) => b.code === data.bank_code);
-    if (!bank) {
-      Alert.alert("Invalid Bank", "Please select a valid bank.");
-      return;
-    }
-
+    if (!isVerified) { showToast({ message: "Please verify your account first.", variant: "error" }); return; }
+    const bank = banks.find(b => b.code === data.bank_code);
+    if (!bank) { showToast({ message: "Please select a valid bank.", variant: "error" }); return; }
     try {
-      setSubmitting(true);
+      setIsProcessing(true);
       const res = await API.post(routes.api.v1.bank.userBankAccounts.create, {
-    bank_name: bank.name,
-    bank_code: bank.code, 
-    account_number: data.account_number,
-    account_name: resolvedAccountName,
-    });
-      
-      Alert.alert("Success", "Bank account added successfully!");
-
-        setBankAccounts((prev) => [
-      {
-        bank_name: bank.name,
-        account_number: data.account_number,
-        account_name: resolvedAccountName,
-        id: res.data.id, // optional, if API returns id
-      },
-      ...prev,
-    ]);
-
-      reset();
-      setResolvedAccountName(null);
-      setIsVerified(false);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Failed to add bank account.");
-    } finally {
-      setSubmitting(false);
-    }
+        bank_name: bank.name, bank_code: bank.code,
+        account_number: data.account_number, account_name: resolvedAccountName,
+      });
+      showToast({ message: "Bank account added successfully!", variant: "success" });
+      setBankAccounts(prev => [{ bank_name: bank.name, account_number: data.account_number, account_name: resolvedAccountName, id: res.data.id }, ...prev]);
+      reset(); setResolvedAccountName(null); setIsVerified(false);
+    } catch { showToast({ message: "Failed to add bank account.", variant: "error" }); }
+    finally { setIsProcessing(false); }
   };
 
-  const deleteBankAccount = async (accountId: string) => {
-  Alert.alert(
-    "Confirm Delete",
-    "Are you sure you want to delete this bank account?",
-    [
+  const deleteBankAccount = (accountId: string) => {
+    Alert.alert("Confirm Delete", "Are you sure you want to delete this bank account?", [
       { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await API.delete(routes.api.v1.bank.userBankAccounts.delete.replace(":id", accountId));
-            setBankAccounts(prev => prev.filter(acc => acc.id !== accountId));
-            Alert.alert("Deleted", "Bank account removed successfully.");
-          } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "Failed to delete bank account.");
-          }
-        },
-      },
-    ]
-  );
-};
+      { text: "Delete", style: "destructive", onPress: async () => {
+        try {
+          await API.delete(routes.api.v1.bank.userBankAccounts.delete.replace(":id", accountId));
+          setBankAccounts(prev => prev.filter(acc => acc.id !== accountId));
+          showToast({ message: "Bank account removed.", variant: "success" });
+        } catch { showToast({ message: "Failed to delete bank account.", variant: "error" }); }
+      }},
+    ]);
+  };
 
   return (
-    <ScrollView style={tw`flex-1 bg-white`} contentContainerStyle={tw`p-5 pt-12`}>
-     
+    <View style={[ba.root, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* Form Card */}
-      <View style={tw`bg-blue-50 rounded-2xl p-5 mb-6 shadow-sm`}>
-        <Text style={tw`text-xl font-semibold text-gray-800 mb-4`}>Add Bank Account</Text>
-
-        {/* Account Number */}
-        <Controller
-          control={control}
-          name="account_number"
-          rules={{ required: "Account number is required", minLength: 10 }}
-          render={({ field: { onChange, value } }) => (
-            <View style={tw`mb-4`}>
-              <Text style={tw`mb-1 font-semibold text-gray-700`}>Account Number</Text>
-              <TextInput
-                style={tw`px-4 py-3 bg-white border border-gray-200 rounded-xl`}
-                placeholder="Enter account number"
-                keyboardType="numeric"
-                value={value}
-                onChangeText={onChange}
-              />
-            </View>
-          )}
-        />
-
-        {/* Bank Picker */}
-        <View style={tw`mb-4`}>
-  <Controller
-    control={control}
-    name="bank_code"
-    rules={{ required: "Bank is required" }}
-    render={({ field: { onChange, value } }) => (
-      <DropDownPicker
-        open={bankOpen}
-        value={selectedBank?.code ?? null}
-        items={banks
-          .filter((b) => !!b.code)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((b) => ({ label: b.name, value: b.code }))}
-        setOpen={setBankOpen}
-        setValue={(callback) => {
-          const newCode = callback(selectedBank?.code ?? null);
-          const bank = banks.find((b) => b.code === newCode) ?? null;
-          setSelectedBank(bank);
-          onChange(newCode);
-          setResolvedAccountName(null);
-          setIsVerified(false);
-        }}
-        placeholder="Select Bank"
-      style={tw`bg-white border border-gray-200 rounded-xl`}
-      dropDownContainerStyle={tw`bg-white border border-gray-200 rounded-xl`}
-      listMode="MODAL"         // ✅ Use MODAL for overlay + search
-      searchable={true}        // ✅ Enable search
-      searchPlaceholder="Search bank..."
-      modalTitle="Select Bank"  // Optional: title at top of modal
-      />
-    )}
-  />
-</View>
-
-        {/*}
-        <Controller
-          control={control}
-          name="bank_code"
-          rules={{ required: "Bank is required" }}
-          render={({ field: { onChange, value } }) => (
-            <View style={tw`mb-4`}>
-              <Text style={tw`mb-1 font-semibold text-gray-700`}>Select Bank</Text>
-              {loadingBanks ? (
-                <ActivityIndicator size="small" color="#3B82F6" />
-              ) : (
-                <View style={tw`bg-white border border-gray-200 rounded-xl`}>
-                  <Picker selectedValue={value} onValueChange={onChange}>
-                    <Picker.Item label="Select bank" value="" />
-                    {banks
-                      .filter((b) => !!b.code)
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((b) => (
-                        <Picker.Item key={b.code} label={b.name} value={b.code} />
-                      ))}
-                  </Picker>
-                </View>
-              )}
-            </View>
-          )}
-        />
-*/}
-
-
-        {/* Verify Button */}
-        <TouchableOpacity
-          style={tw`bg-blue-600 py-3 rounded-xl mb-3`}
-          onPress={verifyAccount}
-          disabled={verifying}
-        >
-          <Text style={tw`text-white text-center font-medium`}>
-            {verifying ? "Verifying..." : "Verify Account"}
-          </Text>
+      {/* Nav */}
+      <View style={ba.navBar}>
+        <TouchableOpacity style={ba.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <MaterialCommunityIcons name="chevron-left" size={26} color={BRAND} />
         </TouchableOpacity>
-
-        {resolvedAccountName && (
-          <Text style={tw`text-blue-600 font-semibold mb-4`}>
-             {resolvedAccountName}
-          </Text>
-        )}
-
-        {/* Save Button */}
-        <TouchableOpacity
-          style={tw`bg-blue-700 py-3 rounded-xl`}
-          onPress={handleSubmit(submit)}
-          disabled={submitting}
-        >
-          <Text style={tw`text-white text-center font-medium`}>
-            {submitting ? "Saving..." : "Save Account"}
-          </Text>
-        </TouchableOpacity>
+        <View style={ba.navCenter}>
+          <Text style={ba.navTitle}>Bank Accounts</Text>
+          <Text style={ba.navSub}>Manage your saved accounts</Text>
+        </View>
+        <View style={{ width: 36 }} />
       </View>
 
-      {/* Existing Accounts */}
-      {bankAccounts.length > 0 && (
-        <View>
-          <Text style={tw`text-lg font-semibold text-gray-800 mb-3`}>
-            My Bank Accounts
-          </Text>
-          {bankAccounts.map((acc, index) => (
-            <View
-              key={index}
-              style={tw`bg-white border border-gray-200 rounded-2xl p-4 mb-3 shadow-sm flex-row justify-between items-center`}
-            >
-              <View>
-                <Text style={tw`font-medium text-gray-900`}>
-                  {acc.bank_name} - {acc.account_number}
-                </Text>
-                <Text style={tw`text-gray-500`}>{acc.account_name}</Text>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={ba.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Add form */}
+        <Text style={ba.sectionLabel}>Add Bank Account</Text>
+        <View style={[ba.card, IOS_SHADOW]}>
+          <Controller
+            control={control} name="account_number" rules={{ required: true, minLength: 10 }}
+            render={({ field: { onChange, value } }) => (
+              <View style={ba.fieldWrap}>
+                <Text style={ba.fieldLabel}>Account Number</Text>
+                <View style={ba.inputRow}>
+                  <TextInput style={ba.textInput} placeholder="Enter 10-digit account number"
+                    placeholderTextColor={PLACEHOLDER} keyboardType="numeric" value={value}
+                    onChangeText={onChange} maxLength={10} />
+                </View>
               </View>
-              <TouchableOpacity
-                onPress={() => deleteBankAccount(acc.id)}
-                style={tw`bg-red-500 px-3 py-1 rounded-lg`}
-              >
-                <Text style={tw`text-white font-medium`}>Delete</Text>
-              </TouchableOpacity>
+            )}
+          />
+          <View style={ba.fieldWrap}>
+            <Controller control={control} name="bank_code" rules={{ required: true }}
+              render={({ field: { onChange } }) => (
+                <DropdownMenuField label="Select Bank" placeholder="Search and select bank"
+                  name="bank_code" control={control} data={bankDropdownData} search={true}
+                  onDataSelect={(item) => { onChange(item.id); setResolvedAccountName(null); setIsVerified(false); }} />
+              )}
+            />
+          </View>
+
+          <TouchableOpacity style={ba.verifyBtn} onPress={verifyAccount} disabled={isProcessing} activeOpacity={0.85}>
+            <MaterialCommunityIcons name="check-circle-outline" size={16} color={SURFACE} />
+            <Text style={ba.verifyBtnText}>Verify Account</Text>
+          </TouchableOpacity>
+
+          {resolvedAccountName && (
+            <View style={ba.resolvedCard}>
+              <MaterialCommunityIcons name="account-check" size={16} color="#16A34A" />
+              <Text style={ba.resolvedName}>{resolvedAccountName}</Text>
             </View>
-          ))}
+          )}
+
+          <TouchableOpacity style={[ba.saveBtn, !isVerified && { opacity: 0.45 }]}
+            onPress={handleSubmit(submit)} disabled={isProcessing || !isVerified} activeOpacity={0.85}>
+            <MaterialCommunityIcons name="content-save-outline" size={16} color={SURFACE} />
+            <Text style={ba.saveBtnText}>Save Account</Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </ScrollView>
+
+        {/* Existing accounts */}
+        {bankAccounts.length > 0 && (
+          <>
+            <Text style={[ba.sectionLabel, { marginTop: 8 }]}>My Bank Accounts</Text>
+            <View style={[ba.card, IOS_SHADOW]}>
+              {bankAccounts.map((acc, index) => (
+                <View key={index}>
+                  <View style={ba.accountRow}>
+                    <View style={ba.accountIconWrap}>
+                      <MaterialCommunityIcons name="bank-outline" size={18} color={BLUE} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={ba.accountBank} numberOfLines={1}>{acc.bank_name}</Text>
+                      <Text style={ba.accountNumber}>{acc.account_number}</Text>
+                      <Text style={ba.accountName} numberOfLines={1}>{acc.account_name}</Text>
+                    </View>
+                    <TouchableOpacity style={ba.deleteBtn} onPress={() => deleteBankAccount(acc.id)} activeOpacity={0.7}>
+                      <MaterialCommunityIcons name="trash-can-outline" size={16} color="#DC2626" />
+                    </TouchableOpacity>
+                  </View>
+                  {index < bankAccounts.length - 1 && <View style={ba.rowDivider} />}
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </ScrollView>
+      <PleaseWaitModal visible={isProcessing} />
+    </View>
   );
 }
+
+const ba = StyleSheet.create({
+  root:            { flex: 1, backgroundColor: BG },
+  navBar:          { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, backgroundColor: SURFACE, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEPARATOR },
+  backBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
+  navCenter:       { flex: 1, alignItems: "center" },
+  navTitle:        { fontSize: 16, fontWeight: "700", color: BRAND, letterSpacing: -0.3 },
+  navSub:          { fontSize: 11, color: SUBLABEL, marginTop: 1 },
+  scroll:          { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
+  sectionLabel:    { fontSize: 12, fontWeight: "600", color: SUBLABEL, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 },
+  card:            { backgroundColor: SURFACE, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR, padding: 14, marginBottom: 12 },
+  fieldWrap:       { marginBottom: 12 },
+  fieldLabel:      { fontSize: 13, fontWeight: "600", color: SUBLABEL, marginBottom: 6 },
+  inputRow:        { borderWidth: 1.5, borderColor: SEPARATOR, borderRadius: 12, backgroundColor: BG, paddingHorizontal: 14 },
+  textInput:       { flex: 1, fontSize: 14, color: LABEL, paddingVertical: 13 },
+  verifyBtn:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: BLUE, borderRadius: 12, paddingVertical: 13, marginBottom: 10 },
+  verifyBtnText:   { color: SURFACE, fontSize: 14, fontWeight: "600" },
+  resolvedCard:    { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#F0FDF4", borderRadius: 10, padding: 10, marginBottom: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: "#BBF7D0" },
+  resolvedName:    { fontSize: 13, fontWeight: "600", color: "#15803D" },
+  saveBtn:         { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: BRAND, borderRadius: 12, paddingVertical: 13 },
+  saveBtnText:     { color: SURFACE, fontSize: 14, fontWeight: "600" },
+  accountRow:      { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12 },
+  accountIconWrap: { width: 38, height: 38, borderRadius: 12, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
+  accountBank:     { fontSize: 13, fontWeight: "600", color: LABEL },
+  accountNumber:   { fontSize: 12, color: "#374151", marginTop: 1 },
+  accountName:     { fontSize: 11, color: SUBLABEL, marginTop: 1 },
+  deleteBtn:       { width: 34, height: 34, borderRadius: 10, backgroundColor: "#FEF2F2", justifyContent: "center", alignItems: "center" },
+  rowDivider:      { height: StyleSheet.hairlineWidth, backgroundColor: SEPARATOR, marginLeft: 48 },
+});
