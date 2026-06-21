@@ -13,29 +13,31 @@ module.exports = function withFmtFix(config) {
       let podfile = fs.readFileSync(podfilePath, "utf8");
 
       if (podfile.includes("withFmtFix")) {
-        console.log("[withFmtFix] Already patched, skipping.");
+        console.log("[withFmtFix] Already patched.");
         return config;
       }
 
-      const fmtPatch = `
-  # withFmtFix: Patch fmt source for Xcode 26 compatibility
-  fmt_core = File.join(__dir__, 'Pods/fmt/include/fmt/core.h')
-  if File.exist?(fmt_core)
-    content = File.read(fmt_core)
-    unless content.include?('FMT_USE_CONSTEVAL 0 // patched')
-      patched = content.sub(
-        /#ifndef FMT_USE_CONSTEVAL/,
-        "#define FMT_USE_CONSTEVAL 0 // patched\\n#ifndef FMT_USE_CONSTEVAL"
-      )
-      File.write(fmt_core, patched)
-      puts '[withFmtFix] Patched Pods/fmt/include/fmt/core.h'
-    end
+      const patch = `
+  # withFmtFix: patch fmt for Xcode 26 c++20 consteval bug
+  fmt_files = [
+    File.expand_path('../Pods/fmt/include/fmt/core.h', __FILE__),
+    File.expand_path('../Pods/fmt/include/fmt/format.h', __FILE__),
+    File.expand_path('../Pods/fmt/include/fmt/format-inl.h', __FILE__),
+    File.expand_path('../Pods/fmt/src/format.cc', __FILE__),
+  ]
+  fmt_files.each do |fmt_file|
+    next unless File.exist?(fmt_file)
+    content = File.read(fmt_file)
+    next if content.include?('xcode26fix')
+    new_content = "#ifndef FMT_USE_CONSTEVAL\\n#define FMT_USE_CONSTEVAL 0 // xcode26fix\\n#endif\\n" + content
+    File.write(fmt_file, new_content)
+    puts "[withFmtFix] Prepended FMT_USE_CONSTEVAL=0 to \#{File.basename(fmt_file)}"
   end
 `;
 
       const patched = podfile.replace(
         /(post_install do \|installer\|)/,
-        `$1\n${fmtPatch}`
+        `$1\n${patch}`
       );
 
       if (patched === podfile) {
@@ -44,7 +46,7 @@ module.exports = function withFmtFix(config) {
       }
 
       fs.writeFileSync(podfilePath, patched);
-      console.log("[withFmtFix] Successfully injected fmt source patch into post_install.");
+      console.log("[withFmtFix] Patched Podfile.");
       return config;
     },
   ]);
