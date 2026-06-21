@@ -63,6 +63,16 @@ const OtpInput = ({
     onChange(newValue);
   };
 
+  const inputRef = useRef<TextInput>(null);
+  useEffect(() => {
+  if (value === "" && focused === false) {
+    // Small delay to let the keyboard fully dismiss before re-focusing
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 300);
+  }
+}, [value]);
+
   const handleFocus = () => setFocused(true);
   const handleBlur = () => setFocused(false);
 
@@ -99,6 +109,7 @@ const OtpInput = ({
         })}
       </View>
       <TextInput
+      ref={inputRef}
         value={value}
         onChangeText={handleTextChange}
         maxLength={maximumLength}

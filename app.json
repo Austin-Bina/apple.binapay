@@ -17,10 +17,13 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.binapay",
-       "buildNumber": "2",
-        "googleServicesFile": "./GoogleService-Info.plist",
+      "buildNumber": "4",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "entitlements": {
+        "aps-environment": "production"
+      },
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -30,10 +33,7 @@
         "NSMicrophoneUsageDescription": "BinaPay may use your microphone when sending audio messages to support.",
         "NSContactsUsageDescription": "BinaPay needs access to your contacts so you can easily send airtime or services to saved contacts."
       }
-
-       
-     },
-
+    },
     "android": {
       "versionCode": 25,
       "adaptiveIcon": {
@@ -43,14 +43,26 @@
       "package": "com.binapay",
       "permissions": [
         "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS"
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.VIDEO_CAPTURE",
+        "android.permission.INTERNET"
       ]
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
     },
     "plugins": [
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./src/assets/icon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "mode": "production"
+        }
+      ],
       "expo-font",
       [
         "expo-secure-store",
@@ -64,7 +76,9 @@
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts. We use this permission to fetch your contacts and select a contact to buy or gift services to."
         }
       ],
-      "expo-router"
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-web-browser"
     ],
     "updates": {
       "url": "https://u.expo.dev/04587ef0-aa8f-4c87-bcde-e89b00d969a3"

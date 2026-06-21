@@ -57,6 +57,7 @@ const HIDE_TAB_LIST = [
   SCREENS.P2P_ADS,
   SCREENS.P2P_EDIT_AD,
   SCREENS.P2P_MESSAGE_TEMPLATES,
+  SCREENS.STATEMENT,
 ];
 
 const Tab = createBottomTabNavigator<TabParamList>();

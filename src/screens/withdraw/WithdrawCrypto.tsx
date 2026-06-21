@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Image, Platform, KeyboardAvoidingView, StatusBar,
+  ScrollView, Image, Platform, KeyboardAvoidingView,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,7 @@ import { formattedBalance } from "@utils/transactionutils";
 import { showToast } from "@helpers/toast";
 import { authenticateWithBiometrics } from "@helpers/biometricshelper";
 import { CryptoProvider, useCrypto } from "@screens/home/CryptoContext";
+import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import * as Crypto from "expo-crypto";
 import {
   useSendCryptoWithdrawalOtpMutation,
@@ -19,19 +20,10 @@ import {
 } from "@store/redux-api/fundsApi";
 import { useTypedDispatch } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
-// ─── Brand tokens (matches WithdrawNairaScreen) ───────────────────────────────
-const BRAND       = "#1E3A8A";
-const BLUE        = "#2563EB";
-const BLUE_LIGHT  = "#EEF3FF";
-const BLUE_MID    = "#DBEAFE";
-const SURFACE     = "#FFFFFF";
-const BG          = "#F2F2F7";   // iOS systemGroupedBackground
-const LABEL       = "#111827";
-const SUBLABEL    = "#6B7280";
-const PLACEHOLDER = "#9CA3AF";
-const SEPARATOR   = "#E5E7EB";
-const SUCCESS     = "#16A34A";
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
 type Network = {
   id: number;
@@ -41,28 +33,6 @@ type Network = {
   network_slug: string;
 };
 
-// ─── iOS shadow helpers ───────────────────────────────────────────────────────
-const IOS_SHADOW = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-  },
-  android: { elevation: 2 },
-});
-
-const IOS_SHEET_SHADOW = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.10,
-    shadowRadius: 20,
-  },
-  android: { elevation: 16 },
-});
-
-// =============================================================================
 function WithdrawCryptoContent() {
   const insets     = useSafeAreaInsets();
   const navigation = useNavigation<any>();
@@ -75,7 +45,7 @@ function WithdrawCryptoContent() {
 
   const idempotencyKey = useRef(Crypto.randomUUID());
 
-  // ── All original state — untouched ────────────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────────────
   const [selectedSymbol, setSelectedSymbol]       = useState("USDT");
   const [selectedNetworkId, setSelectedNetworkId] = useState<number | null>(null);
   const [walletAddress, setWalletAddress]         = useState("");
@@ -83,18 +53,20 @@ function WithdrawCryptoContent() {
   const [showAssetPicker, setShowAssetPicker]     = useState(false);
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
   const [networks, setNetworks]                   = useState<Network[]>([]);
-  const [showOtpStep, setShowOtpStep]             = useState(false);
-  const [otp, setOtp]                             = useState("");
-  const [otpSent, setOtpSent]                     = useState(false);
-  const [otpCooldown, setOtpCooldown]             = useState(0);
-  const [showSuccess, setShowSuccess]             = useState(false);
-  const [successMessage, setSuccessMessage]       = useState("");
 
-  // ── All original RTK — untouched ─────────────────────────────────────────
+  // OTP step
+  const [showOtpStep, setShowOtpStep]         = useState(false);
+  const [otp, setOtp]                         = useState("");
+  const [otpSent, setOtpSent]                 = useState(false);
+  const [otpCooldown, setOtpCooldown]         = useState(0);
+  const [showSuccess, setShowSuccess]         = useState(false);
+  const [successMessage, setSuccessMessage]   = useState("");
+
+  // ── RTK ────────────────────────────────────────────────────────────────────
   const [sendOtp, { isLoading: sendingOtp }]          = useSendCryptoWithdrawalOtpMutation();
   const [submitWithdrawal, { isLoading: submitting }] = useSubmitCryptoWithdrawalMutation();
 
-  // ── All original derived values — untouched ───────────────────────────────
+  // ── Derived ────────────────────────────────────────────────────────────────
   const selectedAsset   = cryptoAssets.find((a) => a.symbol === selectedSymbol);
   const contextAsset    = assets.find((a) => a.symbol === selectedSymbol);
   const balance         = parseFloat(wallets[selectedSymbol?.toLowerCase()]?.balance ?? "0");
@@ -103,7 +75,7 @@ function WithdrawCryptoContent() {
   const parsedAmount    = parseFloat(amount) || 0;
   const amountToReceive = parsedAmount > fee ? parsedAmount - fee : 0;
 
-  // ── All original effects — untouched ──────────────────────────────────────
+  // ── Load networks when asset changes ──────────────────────────────────────
   useEffect(() => {
     if (selectedAsset) {
       setNetworks(selectedAsset.networks ?? []);
@@ -115,13 +87,14 @@ function WithdrawCryptoContent() {
     setShowNetworkPicker(false);
   }, [selectedSymbol]);
 
+  // ── OTP cooldown ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (otpCooldown <= 0) return;
     const timer = setInterval(() => setOtpCooldown((c) => Math.max(0, c - 1)), 1000);
     return () => clearInterval(timer);
   }, [otpCooldown]);
 
-  // ── All original handlers — untouched ────────────────────────────────────
+  // ── Validation ────────────────────────────────────────────────────────────
   const formError = (): string | null => {
     if (!selectedSymbol)                    return "Select a crypto asset";
     if (!selectedNetworkId)                 return "Select a withdrawal network";
@@ -139,6 +112,7 @@ function WithdrawCryptoContent() {
     setShowOtpStep(true);
   };
 
+  // ── OTP ───────────────────────────────────────────────────────────────────
   const handleSendOtp = async () => {
     try {
       await sendOtp({
@@ -154,6 +128,7 @@ function WithdrawCryptoContent() {
     }
   };
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (authMethod: "otp" | "biometric") => {
     const payload: any = {
       crypto_type:       selectedSymbol,
@@ -164,6 +139,7 @@ function WithdrawCryptoContent() {
       amount,
       idempotency_key:   idempotencyKey.current,
     };
+
     if (authMethod === "otp") {
       if (!otp) { showToast({ variant: "warning", message: "Enter your OTP." }); return; }
       payload.otp = otp;
@@ -177,6 +153,7 @@ function WithdrawCryptoContent() {
         return;
       }
     }
+
     try {
       const result = await submitWithdrawal(payload).unwrap();
       if (result.success) {
@@ -199,69 +176,17 @@ function WithdrawCryptoContent() {
     }
   };
 
-  // ── Shared nav bar ────────────────────────────────────────────────────────
-  const NavBar = ({
-    title, sub, onBack,
-  }: { title: string; sub: string; onBack: () => void }) => (
-    <View style={s.navBar}>
-      <TouchableOpacity
-        style={s.backBtn}
-        onPress={onBack}
-        activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <MaterialCommunityIcons name="chevron-left" size={24} color={BRAND} />
-      </TouchableOpacity>
-      <View style={s.navCenter}>
-        <Text style={s.navTitle}>{title}</Text>
-        <Text style={s.navSub}>{sub}</Text>
-      </View>
-      <View style={{ width: 36 }} />
-    </View>
-  );
-
-  // =========================================================================
-  // SUCCESS SCREEN
-  // =========================================================================
+  // ── Success screen ────────────────────────────────────────────────────────
   if (showSuccess) {
     return (
       <View style={[s.root, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
         <View style={s.successWrap}>
-          {/* Double-ring checkmark */}
-          <View style={s.successRing}>
-            <View style={s.successIcon}>
-              <MaterialCommunityIcons name="check" size={34} color="#fff" />
-            </View>
+          <View style={s.successIcon}>
+            <MaterialCommunityIcons name="check" size={44} color="#fff" />
           </View>
           <Text style={s.successTitle}>Withdrawal Submitted</Text>
           <Text style={s.successSub}>{successMessage}</Text>
-
-          {/* Mini receipt */}
-          <View style={s.receiptCard}>
-            <View style={s.receiptRow}>
-              <Text style={s.receiptLabel}>Asset</Text>
-              <Text style={s.receiptValue}>{selectedSymbol.toUpperCase()}</Text>
-            </View>
-            <View style={s.receiptDivider} />
-            <View style={s.receiptRow}>
-              <Text style={s.receiptLabel}>Network</Text>
-              <Text style={s.receiptValue}>{selectedNetwork?.name}</Text>
-            </View>
-            <View style={s.receiptDivider} />
-            <View style={s.receiptRow}>
-              <Text style={s.receiptLabel}>Address</Text>
-              <Text style={s.receiptValue} numberOfLines={1}>
-                {walletAddress.slice(0, 10)}…{walletAddress.slice(-6)}
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={s.doneBtn}
-            onPress={() => navigation.navigate("Dashboard")}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={s.doneBtn} onPress={() => navigation.navigate("Dashboard")}>
             <Text style={s.doneBtnText}>Done</Text>
           </TouchableOpacity>
         </View>
@@ -269,62 +194,48 @@ function WithdrawCryptoContent() {
     );
   }
 
-  // =========================================================================
-  // OTP / CONFIRM SCREEN
-  // =========================================================================
+  // ── OTP step ──────────────────────────────────────────────────────────────
   if (showOtpStep) {
     return (
-      <View style={[s.root, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
-        <NavBar
-          title="Confirm Withdrawal"
-          sub="Authorize with OTP or biometric"
-          onBack={() => setShowOtpStep(false)}
+      <View style={[s.root]}>
+        <ScreenHeader
+       title="Confirm Withdrawal"
+       subtitle="Authorize with OTP or biometric"
+       onBack={() => setShowOtpStep(false)}
+       rightIcon="shield-check-outline"
         />
 
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 100 }}>
           {/* Summary card */}
-          <Text style={s.sectionHeader}>Summary</Text>
-          <View style={s.iosCard}>
+          <View style={s.summaryCard}>
             <SummaryRow label="Asset"       value={selectedSymbol.toUpperCase()} />
-            <View style={s.cardSeparator} />
             <SummaryRow label="Network"     value={selectedNetwork?.name ?? ""} />
-            <View style={s.cardSeparator} />
             <SummaryRow label="Amount"      value={formattedBalance(parsedAmount, selectedSymbol)} />
-            <View style={s.cardSeparator} />
             <SummaryRow label="Network Fee" value={formattedBalance(fee, selectedSymbol)} />
-            <View style={s.cardSeparatorFull} />
+            <View style={s.summaryDivider} />
             <SummaryRow label="You Receive" value={formattedBalance(amountToReceive, selectedSymbol)} bold />
-            <View style={s.cardSeparator} />
             <SummaryRow
               label="To Address"
-              value={`${walletAddress.slice(0, 8)}…${walletAddress.slice(-6)}`}
+              value={`${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}`}
             />
           </View>
 
-          {/* OTP */}
-          <Text style={s.sectionHeader}>One-Time Password</Text>
-          <Text style={s.otpHint}>We'll send a 6-digit code to your registered email.</Text>
-
+          {/* OTP input */}
+          <Text style={s.sectionLabel}>Enter OTP</Text>
+          <Text style={s.otpSub}>We'll send an OTP to your registered email.</Text>
           <View style={s.otpRow}>
             <TextInput
               style={s.otpInput}
-              placeholder="· · · · · ·"
-              placeholderTextColor={PLACEHOLDER}
+              placeholder="Enter OTP"
               value={otp}
               onChangeText={setOtp}
               keyboardType="number-pad"
               maxLength={6}
-              autoFocus
             />
             <TouchableOpacity
-              style={[s.sendOtpBtn, (sendingOtp || otpCooldown > 0) && s.disabledOpacity]}
+              style={[s.sendOtpBtn, (sendingOtp || otpCooldown > 0) && s.disabledBtn]}
               onPress={handleSendOtp}
               disabled={sendingOtp || otpCooldown > 0}
-              activeOpacity={0.75}
             >
               <Text style={s.sendOtpText}>
                 {otpCooldown > 0 ? `${otpCooldown}s` : otpSent ? "Resend" : "Send OTP"}
@@ -332,34 +243,20 @@ function WithdrawCryptoContent() {
             </TouchableOpacity>
           </View>
 
-          {/* Biometric */}
-          <TouchableOpacity
-            style={s.biometricRow}
-            onPress={() => handleSubmit("biometric")}
-            activeOpacity={0.7}
-          >
-            <View style={s.biometricIconWrap}>
-              <MaterialCommunityIcons name="fingerprint" size={28} color={BLUE} />
-            </View>
-            <Text style={s.biometricLabel}>Use Face ID / Touch ID</Text>
+          <TouchableOpacity style={s.biometricRow} onPress={() => handleSubmit("biometric")}>
+            <MaterialCommunityIcons name="fingerprint" size={40} color={BLUE} />
+            <Text style={s.biometricLabel}>Use Biometric Instead</Text>
           </TouchableOpacity>
-
-          {/* Security note */}
-          <View style={s.secureNote}>
-            <MaterialCommunityIcons name="lock-outline" size={14} color={BLUE} />
-            <Text style={s.secureText}>Protected by bank-grade 256-bit encryption</Text>
-          </View>
         </ScrollView>
 
-        <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={[s.footer, { paddingBottom: insets.bottom + 10 }]}>
           <TouchableOpacity
-            style={[s.primaryBtn, (!otp || submitting) && s.disabledOpacity]}
+            style={[s.confirmBtn, (!otp || submitting) && s.disabledBtn]}
             onPress={() => handleSubmit("otp")}
             disabled={!otp || submitting}
-            activeOpacity={0.85}
           >
-            <Text style={s.primaryBtnText}>
-              {submitting ? "Processing…" : "Confirm Withdrawal"}
+            <Text style={s.confirmBtnText}>
+              {submitting ? "Processing..." : "Confirm Withdrawal"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -367,41 +264,30 @@ function WithdrawCryptoContent() {
     );
   }
 
-  // =========================================================================
-  // MAIN FORM
-  // =========================================================================
+  // ── Main form ─────────────────────────────────────────────────────────────
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <NavBar
-        title="Withdraw Crypto"
-        sub="Select asset and network"
-        onBack={() => navigation.goBack()}
+    <View style={[s.root]}>
+     <ScreenHeader
+      title="Withdraw Crypto"
+      subtitle="Select asset to withdraw"
+      onBack={() => navigation.goBack()}
+      rightIcon="shield-check-outline"
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
-        style={{ flex: 1 }}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 120 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: 100 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Asset selector ── */}
-          <Text style={s.sectionHeader}>Asset</Text>
+          {/* Asset selector */}
           <TouchableOpacity
-            style={[s.iosCard, s.assetSelectorCard]}
+            style={s.assetSelector}
             onPress={() => setShowAssetPicker((v) => !v)}
             activeOpacity={0.8}
           >
-            {/* Icon */}
             {(selectedAsset?.icon_url ?? contextAsset?.icon_url) ? (
-              <Image
-                source={{ uri: selectedAsset?.icon_url ?? contextAsset?.icon_url }}
-                style={s.assetIcon}
-              />
+              <Image source={{ uri: selectedAsset?.icon_url ?? contextAsset?.icon_url }} style={s.assetIcon} />
             ) : (
               <View style={[s.assetIcon, s.assetIconFallback]}>
                 <Text style={s.assetIconText}>
@@ -421,38 +307,33 @@ function WithdrawCryptoContent() {
                 </Text>
               ) : null}
             </View>
-            <MaterialCommunityIcons
-              name={showAssetPicker ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={PLACEHOLDER}
-            />
+            <MaterialCommunityIcons name={showAssetPicker ? "chevron-up" : "chevron-down"} size={18} color="#9ca3af" />
           </TouchableOpacity>
 
           {/* Asset picker dropdown */}
           {showAssetPicker && (
-            <View style={s.dropdownCard}>
+            <View style={s.assetDropdown}>
               {cryptoAssets
                 .filter((a) => a.withdrawal_enabled)
-                .map((asset, i, arr) => (
+                .map((asset) => (
                   <TouchableOpacity
                     key={asset.id}
-                    style={[s.dropdownItem, i < arr.length - 1 && s.dropdownItemBorder]}
+                    style={s.assetDropdownItem}
                     onPress={() => { setSelectedSymbol(asset.symbol); setShowAssetPicker(false); }}
-                    activeOpacity={0.7}
                   >
                     {(asset.icon_url ?? assets.find((x) => x.symbol === asset.symbol)?.icon_url) ? (
                       <Image
                         source={{ uri: asset.icon_url ?? assets.find((x) => x.symbol === asset.symbol)?.icon_url }}
-                        style={s.dropdownIcon}
+                        style={s.assetDropdownIcon}
                       />
                     ) : (
-                      <View style={[s.dropdownIcon, s.assetIconFallback]}>
+                      <View style={[s.assetDropdownIcon, s.assetIconFallback]}>
                         <Text style={s.assetIconText}>{asset.symbol.slice(0, 2)}</Text>
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
-                      <Text style={s.dropdownName}>{asset.name}</Text>
-                      <Text style={s.dropdownSub}>
+                      <Text style={s.assetDropdownName}>{asset.name}</Text>
+                      <Text style={s.assetDropdownSub}>
                         {formattedBalance(
                           parseFloat(wallets[asset.symbol.toLowerCase()]?.balance ?? "0"),
                           asset.symbol.toUpperCase()
@@ -460,27 +341,28 @@ function WithdrawCryptoContent() {
                       </Text>
                     </View>
                     {selectedSymbol === asset.symbol && (
-                      <MaterialCommunityIcons name="checkmark-circle" size={18} color={BLUE} />
+                      <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
                     )}
                   </TouchableOpacity>
                 ))}
             </View>
           )}
 
-          {/* ── Network selector ── */}
+          {/* Network selector */}
           {networks.length > 0 && (
             <>
-              <Text style={s.sectionHeader}>Network</Text>
+              <Text style={s.sectionLabel}>Withdrawal Network</Text>
+
               <TouchableOpacity
-                style={[s.iosCard, s.networkSelectorCard, selectedNetworkId !== null && s.networkSelectorActive]}
+                style={[s.networkCard, selectedNetworkId !== null && s.networkCardActive]}
                 onPress={() => setShowNetworkPicker((v) => !v)}
                 activeOpacity={0.8}
               >
-                <View style={[s.networkIconWrap, { backgroundColor: selectedNetworkId !== null ? BLUE_LIGHT : BG }]}>
+                <View style={[s.networkIconWrap, { backgroundColor: selectedNetworkId !== null ? "#EEF3FF" : "#f3f4f6" }]}>
                   <MaterialCommunityIcons
                     name="swap-horizontal"
                     size={18}
-                    color={selectedNetworkId !== null ? BLUE : PLACEHOLDER}
+                    color={selectedNetworkId !== null ? BLUE : "#9ca3af"}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -492,36 +374,35 @@ function WithdrawCryptoContent() {
                       </Text>
                     </>
                   ) : (
-                    <Text style={s.networkNamePlaceholder}>Select network</Text>
+                    <Text style={s.networkName}>Select network</Text>
                   )}
                 </View>
                 <MaterialCommunityIcons
                   name={showNetworkPicker ? "chevron-up" : "chevron-down"}
                   size={18}
-                  color={PLACEHOLDER}
+                  color="#9ca3af"
                 />
               </TouchableOpacity>
 
               {showNetworkPicker && (
-                <View style={s.dropdownCard}>
-                  {networks.map((network, i, arr) => (
+                <View style={s.assetDropdown}>
+                  {networks.map((network) => (
                     <TouchableOpacity
                       key={network.id}
-                      style={[s.dropdownItem, i < arr.length - 1 && s.dropdownItemBorder]}
+                      style={s.assetDropdownItem}
                       onPress={() => { setSelectedNetworkId(network.id); setShowNetworkPicker(false); }}
-                      activeOpacity={0.7}
                     >
-                      <View style={[s.networkIconWrap, { backgroundColor: BG }]}>
-                        <MaterialCommunityIcons name="swap-horizontal" size={16} color={SUBLABEL} />
+                      <View style={[s.networkIconWrap, { backgroundColor: "#f3f4f6" }]}>
+                        <MaterialCommunityIcons name="swap-horizontal" size={16} color="#9ca3af" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={s.dropdownName}>{network.name}</Text>
-                        <Text style={s.dropdownSub}>
+                        <Text style={s.assetDropdownName}>{network.name}</Text>
+                        <Text style={s.assetDropdownSub}>
                           Fee: {formattedBalance(network.fee, selectedSymbol.toUpperCase())} · Min: {network.min_withdrawal}
                         </Text>
                       </View>
                       {selectedNetworkId === network.id && (
-                        <MaterialCommunityIcons name="checkmark-circle" size={18} color={BLUE} />
+                        <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
                       )}
                     </TouchableOpacity>
                   ))}
@@ -530,87 +411,68 @@ function WithdrawCryptoContent() {
             </>
           )}
 
-          {/* ── Wallet address ── */}
-          <Text style={s.sectionHeader}>Wallet Address</Text>
-          <View style={s.iosCard}>
-            <View style={s.addressRow}>
-              <TextInput
-                style={s.addressInput}
-                placeholder="Enter destination address"
-                placeholderTextColor={PLACEHOLDER}
-                value={walletAddress}
-                onChangeText={setWalletAddress}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity
-                style={s.qrBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                activeOpacity={0.7}
-              >
-                <MaterialCommunityIcons name="qrcode-scan" size={20} color={SUBLABEL} />
-              </TouchableOpacity>
-            </View>
+          {/* Wallet Address */}
+          <Text style={s.sectionLabel}>Wallet Address</Text>
+          <View style={s.inputCard}>
+            <TextInput
+              style={s.addressInput}
+              placeholder="Enter wallet address"
+              placeholderTextColor="#9ca3af"
+              value={walletAddress}
+              onChangeText={setWalletAddress}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity style={s.qrBtn}>
+              <MaterialCommunityIcons name="qrcode-scan" size={18} color="#9ca3af" />
+            </TouchableOpacity>
           </View>
 
-          {/* ── Amount ── */}
-          <View style={s.amountHeaderRow}>
-            <Text style={s.sectionHeader}>Amount</Text>
-            {/* Balance pill */}
-            <View style={s.balancePill}>
-              <MaterialCommunityIcons name="wallet-outline" size={12} color={BLUE} />
-              <Text style={s.balancePillText}>
-                {formattedBalance(balance, selectedSymbol.toUpperCase())}
-              </Text>
-            </View>
+          {/* Amount */}
+          <Text style={s.sectionLabel}>Amount</Text>
+          <View style={s.inputCard}>
+            <TextInput
+              style={s.amountInput}
+              placeholder="Enter amount"
+              placeholderTextColor="#9ca3af"
+              value={amount}
+              onChangeText={(v) => setAmount(v.replace(/[^0-9.]/g, ""))}
+              keyboardType="numeric"
+            />
+            <Text style={s.amountSymbol}>{selectedSymbol.toUpperCase() || "—"}</Text>
+          </View>
+          <View style={s.balanceRow}>
+            <Text style={s.balanceText}>
+              Available: {formattedBalance(balance, selectedSymbol.toUpperCase() || "")}
+            </Text>
+            <TouchableOpacity onPress={() => setAmount(String(balance))}>
+              <Text style={s.maxBtn}>Max</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={s.iosCard}>
-            <View style={s.amountRow}>
-              <TextInput
-                style={s.amountInput}
-                placeholder="0.00"
-                placeholderTextColor={PLACEHOLDER}
-                value={amount}
-                onChangeText={(v) => setAmount(v.replace(/[^0-9.]/g, ""))}
-                keyboardType="numeric"
-              />
-              <Text style={s.amountSymbol}>{selectedSymbol.toUpperCase() || "—"}</Text>
-              <TouchableOpacity
-                style={s.maxChip}
-                onPress={() => setAmount(String(balance))}
-                activeOpacity={0.75}
-              >
-                <Text style={s.maxChipText}>Max</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ── You will receive ── */}
-          <View style={[s.receiveCard, parsedAmount > 0 && s.receiveCardActive]}>
+          {/* You will receive */}
+          <View style={s.receiveRow}>
             <Text style={s.receiveLabel}>You will receive</Text>
-            <Text style={[s.receiveValue, parsedAmount > 0 && { color: BRAND }]}>
+            <Text style={s.receiveValue}>
               {formattedBalance(amountToReceive > 0 ? amountToReceive : 0, selectedSymbol.toUpperCase() || "")}
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[s.footer, { paddingBottom: insets.bottom + 10 }]}>
         <TouchableOpacity
-          style={[s.primaryBtn, !!formError() && s.disabledOpacity]}
+          style={[s.confirmBtn, !!formError() && s.disabledBtn]}
           onPress={handleContinue}
           disabled={!!formError()}
-          activeOpacity={0.85}
         >
-          <Text style={s.primaryBtnText}>Continue</Text>
+          <Text style={s.confirmBtnText}>Continue</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// =============================================================================
 export default function WithdrawCryptoScreen() {
   return (
     <CryptoProvider>
@@ -619,7 +481,6 @@ export default function WithdrawCryptoScreen() {
   );
 }
 
-// ─── Sub-component — untouched logic ─────────────────────────────────────────
 function SummaryRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
     <View style={s.summaryRow}>
@@ -629,259 +490,77 @@ function SummaryRow({ label, value, bold }: { label: string; value: string; bold
   );
 }
 
-// =============================================================================
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root:              { flex: 1, backgroundColor: "#f8f9fb" },
 
-  // ── Nav bar ──────────────────────────────────────────────────────────────
-  navBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: SURFACE,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: SEPARATOR,
-  },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: BLUE_LIGHT,
-    justifyContent: "center", alignItems: "center",
-  },
-  navCenter: { flex: 1, alignItems: "center" },
-  navTitle:  { fontSize: 16, fontWeight: "700", color: BRAND, letterSpacing: -0.3 },
-  navSub:    { fontSize: 11, color: SUBLABEL, marginTop: 1 },
+  // Header — matches deposit
+  header:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  backBtn:           { width: 32, height: 32, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center", marginRight: 10 },
+  headerTitle:       { fontSize: 15, fontWeight: "700", color: BRAND },
+  headerSub:         { fontSize: 10, color: "#6b7280", marginTop: 1 },
 
-  // ── Section header ────────────────────────────────────────────────────────
-  sectionHeader: {
-    fontSize: 12, fontWeight: "600", color: SUBLABEL,
-    textTransform: "uppercase", letterSpacing: 0.6,
-    marginBottom: 8, marginTop: 14, marginLeft: 4,
-  },
+  // Asset selector — matches deposit selectorCard
+  assetSelector:     { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#fff", borderRadius: 12, padding: 10, borderWidth: 1, borderColor: "#f0f0f0", marginBottom: 6 },
+  assetIcon:         { width: 34, height: 34, borderRadius: 17 },
+  assetIconFallback: { backgroundColor: "#e5e7eb", justifyContent: "center", alignItems: "center" },
+  assetIconText:     { fontSize: 11, fontWeight: "700", color: "#6b7280" },
+  assetSelectorName: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  assetSelectorBalance: { fontSize: 11, color: "#6b7280", marginTop: 1 },
 
-  // ── iOS grouped card ─────────────────────────────────────────────────────
-  iosCard: {
-    backgroundColor: SURFACE,
-    borderRadius: 14,
-    marginBottom: 6,
-    overflow: "hidden",
-    ...IOS_SHADOW,
-  },
-  cardSeparator:     { height: StyleSheet.hairlineWidth, backgroundColor: SEPARATOR, marginLeft: 16 },
-  cardSeparatorFull: { height: StyleSheet.hairlineWidth, backgroundColor: SEPARATOR },
+  assetDropdown:     { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#e5e7eb", marginBottom: 6, overflow: "hidden" },
+  assetDropdownItem: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  assetDropdownIcon: { width: 34, height: 34, borderRadius: 17 },
+  assetDropdownName: { fontSize: 13, fontWeight: "600", color: "#111827" },
+  assetDropdownSub:  { fontSize: 11, color: "#6b7280", marginTop: 1 },
 
-  // ── Asset selector card ──────────────────────────────────────────────────
-  assetSelectorCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-  },
-  assetIcon:         { width: 40, height: 40, borderRadius: 20 },
-  assetIconFallback: { backgroundColor: SEPARATOR, justifyContent: "center", alignItems: "center" },
-  assetIconText:     { fontSize: 12, fontWeight: "700", color: SUBLABEL },
-  assetSelectorName: { fontSize: 15, fontWeight: "600", color: LABEL },
-  assetSelectorBalance: { fontSize: 12, color: SUBLABEL, marginTop: 2 },
+  sectionLabel:      { fontSize: 11, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginTop: 10 },
 
-  // ── Dropdown card ────────────────────────────────────────────────────────
-  dropdownCard: {
-    backgroundColor: SURFACE,
-    borderRadius: 14,
-    marginBottom: 6,
-    overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEPARATOR,
-    ...IOS_SHADOW,
-  },
-  dropdownItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    minHeight: 58,
-  },
-  dropdownItemBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEPARATOR },
-  dropdownIcon:  { width: 38, height: 38, borderRadius: 19 },
-  dropdownName:  { fontSize: 14, fontWeight: "600", color: LABEL },
-  dropdownSub:   { fontSize: 12, color: SUBLABEL, marginTop: 2 },
+  // Network card — matches deposit
+  networkCard:       { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#fff", borderRadius: 12, padding: 10, borderWidth: 1.5, borderColor: "#f0f0f0", marginBottom: 6 },
+  networkCardActive: { borderColor: BLUE, backgroundColor: "#f0f7ff" },
+  networkIconWrap:   { width: 34, height: 34, borderRadius: 17, justifyContent: "center", alignItems: "center" },
+  networkName:       { fontSize: 13, fontWeight: "600", color: "#111827" },
+  networkFee:        { fontSize: 11, color: "#6b7280", marginTop: 1 },
 
-  // ── Network selector card ────────────────────────────────────────────────
-  networkSelectorCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderWidth: 1.5,
-    borderColor: "transparent",
-  },
-  networkSelectorActive: { borderColor: BLUE, backgroundColor: "#F0F7FF" },
-  networkIconWrap: {
-    width: 38, height: 38, borderRadius: 19,
-    justifyContent: "center", alignItems: "center",
-  },
-  networkName:            { fontSize: 14, fontWeight: "600", color: LABEL },
-  networkNamePlaceholder: { fontSize: 14, fontWeight: "400", color: PLACEHOLDER },
-  networkFee:             { fontSize: 12, color: SUBLABEL, marginTop: 2 },
+  // Inputs — matches deposit inputCard
+  inputCard:         { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#f0f0f0", flexDirection: "row", alignItems: "center", paddingHorizontal: 12, marginBottom: 6 },
+  addressInput:      { flex: 1, fontSize: 13, color: "#111827", paddingVertical: 12 },
+  qrBtn:             { padding: 4 },
+  amountInput:       { flex: 1, fontSize: 15, fontWeight: "600", color: "#111827", paddingVertical: 12 },
+  amountSymbol:      { fontSize: 13, fontWeight: "600", color: "#6b7280" },
 
-  // ── Wallet address ────────────────────────────────────────────────────────
-  addressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  addressInput: { flex: 1, fontSize: 14, color: LABEL },
-  qrBtn:        { padding: 4, marginLeft: 8 },
+  balanceRow:        { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  balanceText:       { fontSize: 11, color: "#6b7280" },
+  maxBtn:            { fontSize: 12, fontWeight: "700", color: BLUE },
 
-  // ── Amount ───────────────────────────────────────────────────────────────
-  amountHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 14,
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-  balancePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: BLUE_LIGHT,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  balancePillText: { fontSize: 12, color: BLUE, fontWeight: "600" },
-  amountRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 10,
-  },
-  amountInput:  { flex: 1, fontSize: 28, fontWeight: "700", color: LABEL, letterSpacing: -0.5 },
-  amountSymbol: { fontSize: 14, fontWeight: "600", color: SUBLABEL },
-  maxChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: BLUE_LIGHT,
-  },
-  maxChipText: { fontSize: 12, fontWeight: "700", color: BLUE },
+  receiveRow:        { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#fff", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#f0f0f0", marginTop: 6 },
+  receiveLabel:      { fontSize: 13, color: "#6b7280" },
+  receiveValue:      { fontSize: 14, fontWeight: "700", color: "#111827" },
 
-  // ── Receive row ───────────────────────────────────────────────────────────
-  receiveCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: SURFACE,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginTop: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEPARATOR,
-    ...IOS_SHADOW,
-  },
-  receiveCardActive: { backgroundColor: BLUE_LIGHT, borderColor: BLUE_MID },
-  receiveLabel: { fontSize: 14, color: SUBLABEL },
-  receiveValue: { fontSize: 16, fontWeight: "700", color: PLACEHOLDER },
+  footer:            { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#fff", paddingHorizontal: 14, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+  confirmBtn:        { backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+  confirmBtnText:    { fontSize: 15, fontWeight: "700", color: "#fff" },
+  disabledBtn:       { opacity: 0.5 },
 
-  // ── Footer ───────────────────────────────────────────────────────────────
-  footer: {
-    position: "absolute",
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: SURFACE,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: SEPARATOR,
-    ...IOS_SHEET_SHADOW,
-  },
-  primaryBtn:     { backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
-  primaryBtnText: { fontSize: 16, fontWeight: "700", color: "#fff", letterSpacing: -0.2 },
-  disabledOpacity:{ opacity: 0.45 },
+  // OTP step
+  summaryCard:       { backgroundColor: "#fff", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#f0f0f0", marginBottom: 14 },
+  summaryRow:        { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
+  summaryDivider:    { height: 1, backgroundColor: "#f3f4f6", marginVertical: 4 },
+  summaryLabel:      { fontSize: 12, color: "#6b7280" },
+  summaryValue:      { fontSize: 12, fontWeight: "600", color: "#111827" },
+  otpSub:            { fontSize: 11, color: "#6b7280", marginBottom: 10, marginTop: -4 },
+  otpRow:            { flexDirection: "row", gap: 10, marginBottom: 16 },
+  otpInput:          { flex: 1, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, textAlign: "center", letterSpacing: 4, backgroundColor: "#fff" },
+  sendOtpBtn:        { backgroundColor: BLUE, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, justifyContent: "center" },
+  sendOtpText:       { color: "#fff", fontWeight: "600", fontSize: 12 },
+  biometricRow:      { alignItems: "center", gap: 6, paddingVertical: 14 },
+  biometricLabel:    { fontSize: 12, color: "#6b7280" },
 
-  // ── Summary card (OTP step) ───────────────────────────────────────────────
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  summaryLabel: { fontSize: 14, color: SUBLABEL },
-  summaryValue: { fontSize: 14, fontWeight: "500", color: LABEL },
-
-  // ── OTP step ─────────────────────────────────────────────────────────────
-  otpHint:   { fontSize: 13, color: SUBLABEL, marginBottom: 14, marginTop: -6, marginLeft: 4 },
-  otpRow:    { flexDirection: "row", gap: 10, marginBottom: 16 },
-  otpInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: SEPARATOR,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 22,
-    textAlign: "center",
-    letterSpacing: 8,
-    color: LABEL,
-    backgroundColor: BG,
-  },
-  sendOtpBtn: {
-    backgroundColor: BLUE,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    borderRadius: 12,
-    justifyContent: "center",
-  },
-  sendOtpText: { color: "#fff", fontWeight: "600", fontSize: 13 },
-
-  biometricRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 16,
-  },
-  biometricIconWrap: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: BLUE_LIGHT,
-    justifyContent: "center", alignItems: "center",
-  },
-  biometricLabel: { fontSize: 14, color: BLUE, fontWeight: "600" },
-
-  secureNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 8,
-  },
-  secureText: { fontSize: 12, color: SUBLABEL },
-
-  // ── Success ───────────────────────────────────────────────────────────────
-  successWrap:  { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
-  successRing:  { width: 88, height: 88, borderRadius: 44, backgroundColor: "#DCFCE7", justifyContent: "center", alignItems: "center", marginBottom: 20 },
-  successIcon:  { width: 64, height: 64, borderRadius: 32, backgroundColor: SUCCESS, justifyContent: "center", alignItems: "center" },
-  successTitle: { fontSize: 22, fontWeight: "800", color: BRAND, letterSpacing: -0.4, marginBottom: 8 },
-  successSub:   { fontSize: 14, color: SUBLABEL, textAlign: "center", marginBottom: 28, lineHeight: 20 },
-  receiptCard: {
-    width: "100%",
-    backgroundColor: SURFACE,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEPARATOR,
-    marginBottom: 28,
-    ...IOS_SHADOW,
-  },
-  receiptRow:    { paddingHorizontal: 16, paddingVertical: 14, flexDirection: "row", justifyContent: "space-between" },
-  receiptDivider:{ height: StyleSheet.hairlineWidth, backgroundColor: SEPARATOR },
-  receiptLabel:  { fontSize: 13, color: SUBLABEL },
-  receiptValue:  { fontSize: 13, fontWeight: "600", color: LABEL },
-  doneBtn:       { width: "100%", backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
-  doneBtnText:   { fontSize: 16, fontWeight: "700", color: "#fff" },
+  // Success
+  successWrap:       { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  successIcon:       { width: 72, height: 72, borderRadius: 36, backgroundColor: "#16a34a", justifyContent: "center", alignItems: "center", marginBottom: 16 },
+  successTitle:      { fontSize: 20, fontWeight: "800", color: BRAND, marginBottom: 6 },
+  successSub:        { fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 28 },
+  doneBtn:           { width: "100%", backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+  doneBtnText:       { fontSize: 15, fontWeight: "700", color: "#fff" },
 });

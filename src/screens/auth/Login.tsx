@@ -17,6 +17,8 @@ import { selectIsLoggingIn } from "@store/selectors/auth";
 import { EyeOpen, PasswordLock } from "@components/icons/svg";
 import Banner from "@components/ui/banner";
 import CustomButton from "@components/ui/form/button";
+import { registerForPushNotifications } from "@helpers/registerForPushNotifications";
+import { syncPushToken } from "@helpers/syncPushToken";
 
 const schema = z.object({
   email: z
@@ -52,7 +54,18 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
     try {
       setHasError(false);
 
-      await dispatch(authSliceActions.doLogin(values)).unwrap();
+      //await dispatch(authSliceActions.doLogin(values)).unwrap();
+     await dispatch(authSliceActions.doLogin(values)).unwrap();
+
+// Ask permission + get token
+const token = await registerForPushNotifications();
+
+// Save token
+if (token) {
+  await syncPushToken(token);
+}
+
+
     } catch (error) {
       const { errors } = error as any;
 

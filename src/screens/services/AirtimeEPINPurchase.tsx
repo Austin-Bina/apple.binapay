@@ -112,7 +112,7 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
   }, [queryData, provider]);
 
   const walletValidation = useWalletBalanceValidation({
-    amount: parseFloat(values.amount) || 0,
+    amount: parseFloat(values.final_amount) || 0,
   });
 
   const epinPlans = useMemo(() => {
@@ -131,18 +131,35 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
     });
 
     return chargedPlans;
-  }, [queryData]);
+  }, [queryData, provider]);
 
-  const dataProviders = useMemo(
+
+ /* const dataProviders = useMemo(
     () => Object.values(serviceProvidersMap.internet).filter((p) => transaction.epin.networks.includes(p.serviceId)),
     [transaction.epin],
+  );*/
+  const dataProviders = useMemo(() => {
+  const availableNetworks = Object.keys(queryData?.epins_plans || {}).filter(
+    (key) => {
+      const plans = (queryData?.epins_plans as Record<string, any[]>)?.[key] ?? [];
+      return plans.length > 0;
+    }
   );
+
+ 
+
+
+  return Object.values(serviceProvidersMap.internet).filter((p) =>
+    availableNetworks.includes(p.serviceId)
+  );
+}, [queryData]);
 
   const quantityOptions = queryData?.quantity_options || [];
 
   const extraPlanDetails = useMemo(() => {
-    return calculateTransactionDetails(parseFloat(values.amount) || 0, "epin", customers);
-  }, [values.amount, customers]);
+  const totalAmount = parseFloat(values.final_amount) || 0; // ✅ qty already multiplied here
+  return calculateTransactionDetails(totalAmount, "epin", customers);
+}, [values.final_amount, customers]); // ✅ reacts to quantity changes too
 
   const snapSize = "58%";
 
@@ -191,6 +208,17 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
     { label: "Business Name", value: values.business_name },
     ...Object.keys(extraPlanDetails).map((key) => ({ label: key, value: extraPlanDetails[key] })),
   ];
+
+
+    useEffect(() => {
+  if (!dataProviders.find(p => p.serviceId === provider)) {
+    const first = dataProviders[0];
+    if (first) {
+      setValue("provider", first.serviceId);
+    }
+  }
+}, [dataProviders]);
+
 
   return (
     <Screen>
@@ -247,6 +275,8 @@ export default function AirtimeEPINPurchaseScreen({ navigation }: Props) {
               reset({
                 ...values,
                 amount: String(plan.plan_amount),
+                 final_amount: plan.final_amount,  
+                  quantity: "1",  
               });
             }}
           />

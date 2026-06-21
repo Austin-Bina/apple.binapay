@@ -86,7 +86,7 @@ android/gradle.properties
 android/app/gradle.properties
 # Firebase 
 android/app/google-services.json
-#ios/GoogleService-Info.plist
+ios/GoogleService-Info.plist
 
 
 

@@ -50,8 +50,8 @@ export default function ServicesStack() {
       <Stack.Screen name="Airtime Purchase" component={AirtimePurchaseScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Airtime EPIN Purchase" component={AirtimeEPINPurchaseScreen} />
       <Stack.Screen name="Data Purchase" component={DataPurchaseScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Confirm Transaction" component={TransactionConfirmationScreen} />
-      <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen} />
+      <Stack.Screen name="Confirm Transaction" component={TransactionConfirmationScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen}options={{ headerShown: false }} />
       <Stack.Screen name="Education" options={{ headerShown: false }} component={EducationStack} />
       <Stack.Screen name="TV Subscription" component={TVSubscriptionScreen} />
       <Stack.Screen name="Convert Crypto" component={ConvertCryptoWrapper} options={{ headerShown: false }} />   

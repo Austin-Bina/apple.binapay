@@ -32,7 +32,7 @@ export default memo(function UserAppbar() {
         </View>
         <View style={s.greetingWrap}>
           <Text numberOfLines={1} style={s.greetingName}>
-            Hi, {user?.name} 👋
+           Hi, {user?.name?.split(" ")[0]} 👋
           </Text>
           <Text style={s.greetingSub}>Pay seamlessly with BinaPay!</Text>
         </View>

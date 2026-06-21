@@ -11,10 +11,11 @@ export const routes = {
         verifyOtp: "/api/v1/auth/verify-otp",
         resetPassword: "/api/v1/auth/reset-password",
         changePassword: "/api/v1/auth/change-password",
-          changetransactionpinotp: "/api/v1/auth/transaction-pin/send-otp",
+        changetransactionpinotp: "/api/v1/auth/transaction-pin/send-otp",
         changetransactionpinreset:"/api/v1/auth/transaction-pin/reset",
         logout: "/api/v1/auth/logout",
         getAblyToken: "/api/v1/auth/get-ably-token",
+        savePushToken: "/api/v1/push-token",
         nairawithdrawalotp: "/api/v1/withdraw/naira/send-otp",
         cryptowithdrawalotp: "/api/v1/withdraw/crypto/send-otp",
         covertcrypto: "/api/v1/convert",
@@ -33,12 +34,18 @@ export const routes = {
         updateProfile: "/api/v1/account/profile",
         manageNotifications: "/api/v1/account/notifications",
         recentTransactions: "/api/v1/account/recent-transactions",
+        transactionSummary: "/api/v1/account/transactions/summary",
         transactions: "/api/v1/account/transactions",
         referralActivities: "/api/v1/account/referral-activities",
         referralLeaderBoard: "/api/v1/account/referrals/leaderboard",
         settings: "/api/v1/account/settings",
         autoCryptoSettlement: "/api/v1/account/auto-crypto-settlement",
-
+        statement: {
+        preview:   "/api/v1/account/statement/preview",
+        generate:  "/api/v1/account/statement/generate",
+        sendEmail: "/api/v1/account/statement/send-email",
+       
+  },
       },
       notification: {
         index: "/api/v1/notifications",
@@ -47,10 +54,15 @@ export const routes = {
         markAllAsRead: "/api/v1/notifications/read_all",
         clearDeviceDetails: "/api/v1/notifications/clear_device_details",
       },
-      kyc: {
-        verifyBvn: "/api/v1/kyc/verify-bvn",
-        verifyNin: "/api/v1/kyc/verify-nin",
-      },
+kyc: {
+  verifyBvn:        "/api/v1/kyc/verify-bvn",
+  verifyNin:        "/api/v1/kyc/verify-nin",
+  sendPhoneOtp:     "/api/v1/kyc/tier1",
+  verifyPhoneOtp:   "/api/v1/kyc/verify-tier1-otp",
+  tier2:            "/api/v1/kyc/tier2",
+  tier3:            "/api/v1/kyc/tier3",
+  limits:           "/api/v1/kyc/limits",
+},
       bank: {
         resolveAccount: "/api/v1/bank/resolve",
         reserveAccount: "/api/v1/bank/create-dedicated-account",
@@ -78,6 +90,7 @@ export const routes = {
         resolveCable: "/api/v1/services/resolve-cable",
         cryptoAssets: "/api/v1/crypto-prices",
         cryptoDeposits: "/api/v1/crypto-deposits",
+        dynamicassets: "/api/v1/app-config",
         education: {
         purchase: "/api/v1/education/purchase",
        serviceDetails: "/api/v1/education/service-details",      
@@ -88,6 +101,7 @@ export const routes = {
         userwallet: "/api/v1/user/wallet",
         withdrawnaira: "/api/v1/withdraw/naira",
         withdrawcrypto: "/api/v1/withdraw/crypto",
+        generateaddress: "/api/v1/crypto-deposit-address",
       },
       },
       funding: {
@@ -111,6 +125,18 @@ export const routes = {
       resources: {
         checkAppVersion: "/api/v1/resources/check-app-version",
       },
+
+      p2p: {
+  connect:     "/api/v1/p2p/connect",
+  status:      "/api/v1/p2p/status",
+  orders:      "/api/v1/p2p/orders",
+   orderDetail:"/api/v1/p2p/orders",
+  disconnect:  "/api/v1/p2p/disconnect",
+  sendMessage: "/api/v1/p2p/orders/{orderId}/messages",
+  orderMessages: "/api/v1/p2p/orders/{orderId}/messages",
+  userSettings: "/api/v1/p2p/settings",
+  updateSettings: "/api/v1/p2p/settings",
+},
     },
   },
   web: {

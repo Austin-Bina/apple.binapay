@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Text, Switch } from "react-native-paper";
 import API from "@lib/api";
 import { route } from "@helpers/route";
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
 const BLUE = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -58,18 +59,17 @@ export default function AutoCryptoSettlement() {
     }
   };
 
+
   return (
-    <SafeAreaView style={s.root}>
+     <View style={s.root}>
       {/* Header */}
-      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={BRAND} />
-        </TouchableOpacity>
-        <View>
-          <Text style={s.headerTitle}>Auto Crypto Payout</Text>
-          <Text style={s.headerSub}>Auto-convert deposits to Naira</Text>
-        </View>
-      </View>
+   <ScreenHeader
+          title="Auto Crypto Payout"
+          subtitle="Auto-convert deposits to Naira"
+          onBack={() => navigation.goBack()}
+          rightIcon="shield-check-outline"
+        />
+
 
       <ScrollableView contentContainerStyle={s.scroll}>
         {/* Info card */}
@@ -144,7 +144,7 @@ export default function AutoCryptoSettlement() {
       </ScrollableView>
 
       <PleaseWaitModal visible={processing} />
-    </SafeAreaView>
+     </View>
   );
 }
 

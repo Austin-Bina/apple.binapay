@@ -1,6 +1,6 @@
 import React, { forwardRef, useRef, useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import BottomSheetModal from "@components/ui/modals/BottomSheet/BottomSheet";
+import BottomSheetModal from "./BottomSheet/BottomSheet";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Crypto from "expo-crypto";
@@ -11,14 +11,8 @@ import { authenticateWithBiometrics } from "@helpers/biometricshelper";
 import { showToast } from "@helpers/toast";
 import { formattedBalance } from "@utils/transactionutils";
 
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-const BRAND      = "#1E3A8A";
-const BLUE       = "#2563EB";
-const BLUE_LIGHT = "#EEF3FF";
-const BG         = "#F2F2F7";
-const SEPARATOR  = "#E5E7EB";
-const LABEL      = "#111827";
-const SUBLABEL   = "#6B7280";
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
 type Props = {
   payload: {
@@ -31,15 +25,16 @@ type Props = {
   ttlSeconds: number;
   onExpired: () => void;
   onClose: () => void;
-  onSuccess: (message: string) => void;
+   onSuccess: (message: string) => void;
 };
 
 const ConvertCryptoAuthSheet = forwardRef<BottomSheetModalMethods, Props>(
   ({ payload, onClose, ttlSeconds, onExpired, onSuccess }, ref) => {
-    // ── All original state + logic — untouched ──────────────────────────────
-    const [pin, setPin]                   = useState("");
+    const [pin, setPin]               = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [remaining, setRemaining]       = useState<number>(ttlSeconds);
+    const [showSuccess, setShowSuccess]   = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
+    const [remaining, setRemaining]   = useState<number>(ttlSeconds);
 
     const idempotencyKeyRef = useRef(Crypto.randomUUID());
     const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;
@@ -60,21 +55,24 @@ const ConvertCryptoAuthSheet = forwardRef<BottomSheetModalMethods, Props>(
           { ...payload, pin },
           { headers: { "Idempotency-Key": idempotencyKeyRef.current } }
         );
-        if (res.data.success) {
-          const received = res.data.conversion?.to_amount;
-          (ref as any).current?.dismiss();
-          onSuccess(`You received ${formattedBalance(received, payload.to)}`);
-        } else {
+       if (res.data.success) {
+  const received = res.data.conversion?.to_amount;
+  (ref as any).current?.dismiss();
+  onSuccess(`You received ${formattedBalance(received, payload.to)}`);
+} else {
           showToast({ title: "Conversion Failed", message: res.data?.error || "Conversion failed", variant: "error" });
         }
       } catch (err: any) {
-        if (err.response?.status === 403)
+        if (err.response?.status === 403) {
           showToast({ variant: "warning", message: "Your account is temporarily blocked. Please contact support." });
-        else if (err.response?.status === 400)
+        } else if (err.response?.status === 400) {
           showToast({ variant: "warning", message: "Invalid transaction PIN." });
-        else
+        } else {
           showToast({ title: "Conversion Failed", message: err.response?.data?.message ?? "Conversion failed, please try again.", variant: "error" });
-      } finally { setIsProcessing(false); }
+        }
+      } finally {
+        setIsProcessing(false);
+      }
     };
 
     const submitWithBiometrics = async () => {
@@ -88,18 +86,21 @@ const ConvertCryptoAuthSheet = forwardRef<BottomSheetModalMethods, Props>(
           { headers: { "Idempotency-Key": idempotencyKeyRef.current } }
         );
         if (res.data.success) {
-          const received = res.data.conversion?.to_amount;
-          (ref as any).current?.dismiss();
-          onSuccess(`You received ${formattedBalance(received, payload.to)}`);
-        }
+  const received = res.data.conversion?.to_amount;
+  (ref as any).current?.dismiss();
+  onSuccess(`You received ${formattedBalance(received, payload.to)}`);
+}
       } catch (err: any) {
-        if (err.response?.status === 403)
-          showToast({ variant: "warning", message: "Your account is temporarily blocked." });
-        else if (err.response?.status === 401)
+        if (err.response?.status === 403) {
+          showToast({ variant: "warning", message: "Your account is temporarily blocked. Please contact support." });
+        } else if (err.response?.status === 401) {
           showToast({ variant: "warning", message: "Biometric authentication failed." });
-        else
+        } else {
           showToast({ title: "Conversion Failed", message: err.response?.data?.message ?? "Conversion failed, please try again.", variant: "error" });
-      } finally { setIsProcessing(false); }
+        }
+      } finally {
+        setIsProcessing(false);
+      }
     };
 
     return (
@@ -108,58 +109,58 @@ const ConvertCryptoAuthSheet = forwardRef<BottomSheetModalMethods, Props>(
         headerTitle="Confirm Conversion"
         initialSnapPoints={["60%"]}
         index={0}
-        onDismiss={onClose}>
-
+        onDismiss={onClose}
+      >
         <View style={s.wrap}>
+          {!showSuccess ? (
+            <>
+              {/* Timer */}
+              <View style={s.timerRow}>
+                <MaterialCommunityIcons name="clock-outline" size={14} color="#dc2626" />
+                <Text style={s.timerText}>Rate expires in {remaining}s</Text>
+              </View>
 
-          {/* Timer */}
-          <View style={s.timerRow}>
-            <MaterialCommunityIcons name="clock-outline" size={14} color="#DC2626" />
-            <Text style={s.timerText}>Rate expires in {remaining}s</Text>
-          </View>
+              {/* PIN input */}
+              <Text style={s.inputLabel}>Transaction PIN</Text>
+              <TextInput
+                value={pin}
+                onChangeText={setPin}
+                secureTextEntry
+                keyboardType="numeric"
+                maxLength={4}
+                placeholder="• • • •"
+                placeholderTextColor="#d1d5db"
+                style={s.pinInput}
+              />
 
-          {/* PIN label */}
-          <Text style={s.inputLabel}>Transaction PIN</Text>
+              {/* Confirm button */}
+              <TouchableOpacity
+                onPress={submitWithPin}
+                disabled={!pin || isProcessing}
+                style={[s.confirmBtn, (!pin || isProcessing) && s.disabledBtn]}
+              >
+                <Text style={s.confirmBtnText}>Confirm Conversion</Text>
+              </TouchableOpacity>
 
-          {/* PIN input */}
-          <TextInput
-            value={pin}
-            onChangeText={setPin}
-            secureTextEntry
-            keyboardType="numeric"
-            maxLength={4}
-            placeholder="· · · ·"
-            placeholderTextColor={SUBLABEL}
-            style={s.pinInput}
-            autoFocus
-          />
-
-          {/* Confirm button */}
-          <TouchableOpacity
-            onPress={submitWithPin}
-            disabled={!pin || isProcessing}
-            style={[s.confirmBtn, (!pin || isProcessing) && s.disabledBtn]}
-            activeOpacity={0.85}>
-            <Text style={s.confirmBtnText}>Confirm Conversion</Text>
-          </TouchableOpacity>
-
-          {/* Biometric */}
-          <TouchableOpacity
-            onPress={submitWithBiometrics}
-            style={s.biometricRow}
-            activeOpacity={0.7}>
-            <View style={s.biometricIconWrap}>
-              <MaterialCommunityIcons name="fingerprint" size={28} color={BLUE} />
+              {/* Biometric */}
+              <TouchableOpacity onPress={submitWithBiometrics} style={s.biometricRow}>
+                <MaterialCommunityIcons name="fingerprint" size={40} color={BLUE} />
+                <Text style={s.biometricLabel}>Use Biometric Instead</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            /* ── Success state ── */
+            <View style={s.successWrap}>
+              <View style={s.successIcon}>
+                <MaterialCommunityIcons name="check" size={36} color="#fff" />
+              </View>
+              <Text style={s.successTitle}>Conversion Successful</Text>
+              <Text style={s.successSub}>{successMessage}</Text>
+              <TouchableOpacity style={s.doneBtn} onPress={onClose}>
+                <Text style={s.doneBtnText}>Done</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={s.biometricLabel}>Use Face ID / Touch ID</Text>
-          </TouchableOpacity>
-
-          {/* Security note */}
-          <View style={s.secureNote}>
-            <MaterialCommunityIcons name="lock-outline" size={13} color={BLUE} />
-            <Text style={s.secureText}>Protected by 256-bit encryption</Text>
-          </View>
-
+          )}
         </View>
 
         <PleaseWaitModal visible={isProcessing} />
@@ -168,30 +169,29 @@ const ConvertCryptoAuthSheet = forwardRef<BottomSheetModalMethods, Props>(
   }
 );
 
-const s = StyleSheet.create({
-  wrap:             { padding: 20 },
-
-  // Timer
-  timerRow:         { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center", marginBottom: 20, backgroundColor: "#FEF2F2", borderRadius: 10, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: "#FECACA" },
-  timerText:        { fontSize: 13, color: "#DC2626", fontWeight: "600" },
-
-  // PIN
-  inputLabel:       { fontSize: 12, fontWeight: "600", color: SUBLABEL, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
-  pinInput:         { borderWidth: 1.5, borderColor: SEPARATOR, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 14, fontSize: 24, textAlign: "center", letterSpacing: 14, color: LABEL, backgroundColor: BG, marginBottom: 16 },
-
-  // Confirm
-  confirmBtn:       { backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center", marginBottom: 16 },
-  confirmBtnText:   { fontSize: 15, fontWeight: "700", color: "#fff" },
-  disabledBtn:      { opacity: 0.5 },
-
-  // Biometric
-  biometricRow:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14 },
-  biometricIconWrap:{ width: 44, height: 44, borderRadius: 22, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
-  biometricLabel:   { fontSize: 14, color: BLUE, fontWeight: "600" },
-
-  // Security note
-  secureNote:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 4 },
-  secureText:       { fontSize: 12, color: SUBLABEL },
-});
-
 export default ConvertCryptoAuthSheet;
+
+const s = StyleSheet.create({
+  wrap:          { padding: 20 },
+
+  timerRow:      { flexDirection: "row", alignItems: "center", gap: 5, justifyContent: "center", marginBottom: 16, backgroundColor: "#fee2e2", borderRadius: 8, paddingVertical: 6 },
+  timerText:     { fontSize: 12, color: "#dc2626", fontWeight: "600" },
+
+  inputLabel:    { fontSize: 11, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
+  pinInput:      { borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 22, textAlign: "center", letterSpacing: 12, color: "#111827", backgroundColor: "#f9fafb", marginBottom: 16 },
+
+  confirmBtn:    { backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center", marginBottom: 16 },
+  confirmBtnText:{ fontSize: 15, fontWeight: "700", color: "#fff" },
+  disabledBtn:   { opacity: 0.5 },
+
+  biometricRow:  { alignItems: "center", gap: 6 },
+  biometricLabel:{ fontSize: 12, color: "#6b7280" },
+
+  // Success
+  successWrap:   { alignItems: "center", paddingVertical: 10 },
+  successIcon:   { width: 64, height: 64, borderRadius: 32, backgroundColor: "#16a34a", justifyContent: "center", alignItems: "center", marginBottom: 14 },
+  successTitle:  { fontSize: 18, fontWeight: "800", color: BRAND, marginBottom: 6 },
+  successSub:    { fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 24 },
+  doneBtn:       { width: "100%", backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+  doneBtnText:   { fontSize: 15, fontWeight: "700", color: "#fff" },
+});

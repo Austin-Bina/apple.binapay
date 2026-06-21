@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
-import { View, TouchableOpacity, Animated } from 'react-native';
-import { Text } from 'react-native-paper';
-import tw from '@lib/tailwind';
-import { Control } from 'react-hook-form';
-import NairaInput from '@components/ui/form/NairaInput';
-import WalletBalanceHelper from '@components/ui/form/wallet-balance';
-import { Package, CreditCard } from 'lucide-react-native';
+import React, { useMemo } from "react";
+import { View, StyleSheet, Animated } from "react-native";
+import { Text } from "react-native-paper";
+import { Control } from "react-hook-form";
+import NairaInput from "@components/ui/form/NairaInput";
+import WalletBalanceHelper from "@components/ui/form/wallet-balance";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+const BLUE  = "#2563EB";
+const BRAND = "#1E3A8A";
 
 interface PaymentSectionProps {
   control: Control<any>;
@@ -14,83 +16,72 @@ interface PaymentSectionProps {
 }
 
 const PaymentSection = ({ control, dataAmount, walletValidation }: PaymentSectionProps) => {
-  // Animation for data amount message
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim  = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.95)).current;
-  
-  // Animate when dataAmount changes
+
   React.useEffect(() => {
     if (dataAmount) {
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        })
+        Animated.timing(fadeAnim,  { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
       ]).start();
     } else {
-      // Reset animation values when dataAmount is empty
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.95);
     }
-  }, [dataAmount, fadeAnim, scaleAnim]);
+  }, [dataAmount]);
 
   const walletBalanceComponent = useMemo(() => (
     <WalletBalanceHelper {...walletValidation} />
   ), [walletValidation]);
 
-  // Calculate a fixed height for the data amount message container to prevent layout shifts
-  const messageContainerHeight = dataAmount ? 150 : 0;
-
   return (
-    <View style={tw`mb-5`}>
-      <View style={tw`mb-3`}>
-        <NairaInput 
-          name="amount" 
-          control={control} 
-          isDisabled 
-        />
+    <View style={s.wrap}>
+      {/* Amount input card */}
+      <Text style={s.sectionLabel}>Payment</Text>
+      <View style={s.card}>
+        <NairaInput name="amount" control={control} isDisabled />
       </View>
-      
-      {walletBalanceComponent}
 
-      {/* Fixed height container to prevent layout shifts */}
-      <View style={{ height: messageContainerHeight, overflow: 'hidden' }}>
-        {dataAmount && (
-          <Animated.View
-            style={[
-              tw`bg-green-50 rounded-2xl shadow-sm overflow-hidden mt-4`,
-              {
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }]
-              }
-            ]}
-          >
-            <View style={tw`px-5 py-3 border-b border-green-100`}>
-              <Text style={tw`text-green-800 font-bold`}>Bundle Summary</Text>
-            </View>
-            
-            <View style={tw`p-4 flex-row items-center`}>
-              <View style={tw`h-10 w-10 rounded-full bg-green-100 justify-center items-center mr-3`}>
-                <Package size={18} color={tw.color('green-600')} />
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-gray-600 text-xs mb-0.5`}>You will receive</Text>
-                <Text style={tw`text-green-700 font-bold text-base`}>
-                  {dataAmount}
-                </Text>
-              </View>
-            </View>
-          </Animated.View>
-        )}
+      {/* Wallet balance */}
+      <View style={s.balanceWrap}>
+        {walletBalanceComponent}
       </View>
+
+      {/* Bundle summary */}
+      {dataAmount && (
+        <Animated.View style={[s.summaryCard, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+          <View style={s.summaryHeader}>
+            <MaterialCommunityIcons name="package-variant-closed" size={15} color="#16A34A" />
+            <Text style={s.summaryHeaderText}>Bundle Summary</Text>
+          </View>
+          <View style={s.summaryRow}>
+            <View style={s.summaryIconWrap}>
+              <MaterialCommunityIcons name="database-outline" size={18} color="#16A34A" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.summaryLabel}>You will receive</Text>
+              <Text style={s.summaryValue}>{dataAmount}</Text>
+            </View>
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 };
 
-export default React.memo(PaymentSection); 
+export default React.memo(PaymentSection);
+
+const s = StyleSheet.create({
+  wrap:             { marginBottom: 20 },
+  sectionLabel:     { fontSize: 11, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginLeft: 2 },
+  card:             { backgroundColor: "#fff", borderRadius: 14, borderWidth: 1, borderColor: "#f0f0f0", paddingHorizontal: 14, paddingVertical: 4, marginBottom: 10 },
+  balanceWrap:      { marginBottom: 8 },
+  summaryCard:      { backgroundColor: "#f0fdf4", borderRadius: 14, borderWidth: 1, borderColor: "#bbf7d0", overflow: "hidden", marginTop: 4 },
+  summaryHeader:    { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#bbf7d0" },
+  summaryHeaderText:{ fontSize: 13, fontWeight: "700", color: "#15803d" },
+  summaryRow:       { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  summaryIconWrap:  { width: 38, height: 38, borderRadius: 19, backgroundColor: "#dcfce7", justifyContent: "center", alignItems: "center" },
+  summaryLabel:     { fontSize: 11, color: "#16a34a", marginBottom: 2 },
+  summaryValue:     { fontSize: 15, fontWeight: "700", color: "#15803d" },
+});

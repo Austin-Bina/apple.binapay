@@ -94,7 +94,6 @@ sentry.js
 ios/sentry.properties
 android/sentry.properties
 
-GoogleService-Info.plist
 
 # Project Specific files
 /svgs-to-convert

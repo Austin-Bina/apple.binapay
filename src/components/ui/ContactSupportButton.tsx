@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { scale } from "react-native-size-matters";
 import { MessageCircle } from "lucide-react-native";
 import API from "@lib/api";
-
+import { showToast } from "@helpers/toast";
 import { routes } from "@constants/routes";
 import ContactSupportModal from "@components/ui/modals/ContactSupportModal";
+import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
+
 
 type Contact = {
   whatsapp: string;
@@ -39,10 +41,7 @@ export default function ContactSupportButton() {
         });
       } catch (error: any) {
         console.error("❌ Failed to load contact settings:", error?.response?.data || error);
-        Alert.alert(
-          "Connection Error",
-          "Unable to fetch support contact info. Please check your internet connection."
-        );
+        showToast({message: "Unable to fetch support contact info. Please check your internet connection.", variant: "error"});
         setContact(null);
       } finally {
         setLoading(false);
@@ -53,29 +52,28 @@ export default function ContactSupportButton() {
   }, []);
 
   return (
-    <View>
-      {/* Floating Button */}
-      <TouchableOpacity
-        onPress={() => setOpen(true)}
-        style={styles.floatingButton}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <MessageCircle width={24} height={24} color="white" />
-        )}
-      </TouchableOpacity>
-
-      {/* Contact Modal */}
-      <ContactSupportModal
-        show={open}
-        hide={() => setOpen(false)}
-        contact={contact}
-      />
-    </View>
-  );
-}
+     <View>
+       {/* Please wait modal */}
+       <PleaseWaitModal visible={loading} />
+ 
+       {/* Floating Button */}
+       <TouchableOpacity
+         onPress={() => setOpen(true)}
+         style={styles.floatingButton}
+         disabled={loading}
+       >
+         <MessageCircle width={24} height={24} color="white" />
+       </TouchableOpacity>
+ 
+       {/* Contact Modal */}
+       <ContactSupportModal
+         show={open}
+         hide={() => setOpen(false)}
+         contact={contact}
+       />
+     </View>
+   );
+ }
 
 const styles = StyleSheet.create({
   floatingButton: {

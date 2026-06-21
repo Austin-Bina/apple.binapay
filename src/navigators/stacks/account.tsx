@@ -18,6 +18,7 @@ import LeaderboardScreen from "@screens/account/LeaderBoard";
 import ChangeTransactionPin from "@screens/account/ChangeTransactionPin";
 import AutoCryptoSettlement from "@screens/account/AutoCryptoSettlement";
 import P2PStack from "./p2p";
+import StatementScreen from "@screens/account/StatementScreen";
 
 const Stack = createNativeStackNavigator<AccountParamList>();
 
@@ -68,8 +69,14 @@ function AccountStack() {
   name={SCREENS.P2P_MANAGER_STACK}
   component={P2PStack}
   options={{ headerShown: false }}
-
 />
+
+<Stack.Screen
+  name={SCREENS.STATEMENT}
+  component={StatementScreen}
+  options={{ headerShown: false }}
+/>
+
       {/* Crypto Assets 
       <Stack.Screen name={SCREENS.CRYPTO_ASSETS} component={CryptoAssets} options={{ title: "All Assets" }} />
 */}

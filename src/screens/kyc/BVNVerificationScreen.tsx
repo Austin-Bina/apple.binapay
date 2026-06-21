@@ -1,6 +1,3 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// BVNVerificationScreen — iOS UI, all logic untouched
-// ═══════════════════════════════════════════════════════════════════════════
 import { VerifiedBadge } from "@components/icons/svg";
 import Banner from "@components/ui/banner";
 import DropdownMenuField from "@components/ui/form/DropdownMenu";
@@ -25,7 +22,10 @@ import { settingsSliceActions } from "@store/slice/settings";
 import { AxiosError } from "axios";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Keyboard, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, StatusBar } from "react-native";
+import {
+  Keyboard, View, Text, TouchableOpacity,
+  StyleSheet, ScrollView,
+} from "react-native";
 import { formatWithMask } from "react-native-mask-input";
 import { ActivityIndicator } from "react-native-paper";
 import Toast from "react-native-root-toast";
@@ -34,42 +34,31 @@ import { vs } from "react-native-size-matters";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { z } from "zod";
 
-const BRAND      = "#1E3A8A";
-const BLUE       = "#2563EB";
-const BLUE_LIGHT = "#EEF3FF";
-const BG         = "#F2F2F7";
-const SURFACE    = "#FFFFFF";
-const SEPARATOR  = "#E5E7EB";
-const LABEL      = "#111827";
-const SUBLABEL   = "#6B7280";
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
-const IOS_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
-  android: { elevation: 2 },
-});
-const IOS_SHEET_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 12 },
-  android: { elevation: 8 },
-});
+type Props = KYCStackScreenProps<typeof SCREENS.BVN_VERIFICATION>;
 
-type BVNProps = KYCStackScreenProps<typeof SCREENS.BVN_VERIFICATION>;
-
-const bvnSchema = z.object({
-  bvn: z.string().transform(v => v.replace(/\D/g, "")).refine(v => v.length === 11, { message: "BVN must be exactly 11 digits" }),
-  account_number: z.string().transform(v => v.replace(/\D/g, "")).refine(v => v.length === 10, { message: "Account number must be exactly 10 digits" }),
+const schema = z.object({
+  bvn: z.string()
+    .transform((val) => val.replace(/\D/g, ""))
+    .refine((val) => val.length === 11, { message: "BVN must be exactly 11 digits" }),
+  account_number: z.string()
+    .transform((val) => val.replace(/\D/g, ""))
+    .refine((val) => val.length === 10, { message: "Account number must be exactly 10 digits" }),
   bank_code: z.string().nonempty("Please select bank"),
 });
-type BVNFormValues = z.infer<typeof bvnSchema>;
+
+type FormValues = z.infer<typeof schema>;
 type Bank = { name: string; code: string };
 
-export default function BVNVerificationScreen({ navigation }: BVNProps) {
+export default function BVNVerificationScreen({ navigation }: Props) {
   const insets   = useSafeAreaInsets();
   const dispatch = useTypedDispatch();
   const user     = useTypedSelector(selectUser);
   const { customers } = useTypedSelector(selectSystemSettings);
   const bottomSheet   = useRef<BottomSheetModalMethods>(null);
 
-  // ── All original state + logic — untouched ────────────────────────────────
   const [banks, setBanks]                   = useState<Bank[]>([]);
   const [isProcessing, setIsProcessing]     = useState(false);
   const [hasError, setHasError]             = useState(false);
@@ -77,8 +66,8 @@ export default function BVNVerificationScreen({ navigation }: BVNProps) {
   const [resolvedAccountName, setResolvedAccountName] = useState<string | null>(null);
   const [remainingAttempts, setRemainingAttempts]     = useState<number | null>(null);
 
-  const { control, handleSubmit, setError, watch, trigger } = useForm<BVNFormValues>({
-    resolver: zodResolver(bvnSchema),
+  const { control, handleSubmit, setError, watch, trigger } = useForm<FormValues>({
+    resolver: zodResolver(schema),
     defaultValues: { bvn: "", account_number: "", bank_code: "" },
   });
 
@@ -91,38 +80,64 @@ export default function BVNVerificationScreen({ navigation }: BVNProps) {
   }, [remainingAttempts]);
 
   const filteredBanks = useMemo(() =>
-    banks.filter(b => !!b.code).map(b => ({ label: b.name, id: b.code })).sort((a, b) => a.label.localeCompare(b.label)),
+    banks.filter((b) => !!b.code)
+      .map((b) => ({ label: b.name, id: b.code }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
     [banks]
   );
 
-  useEffect(() => { if (user?.id) setRemainingAttempts(user.verification_attempts); }, [user?.id]);
   useEffect(() => {
-    API.get(route("bank.list")).then(r => setBanks(r.data.banks)).catch(console.error);
+    if (user?.id) setRemainingAttempts(user.verification_attempts);
+  }, [user?.id]);
+
+  useEffect(() => {
+    API.get(route("bank.list"))
+      .then((r) => setBanks(r.data.banks))
+      .catch(console.error);
   }, []);
 
   const openBottomSheet = useCallback(async () => {
-    if (await trigger()) { Keyboard.dismiss(); setTimeout(() => bottomSheet.current?.present(), 100); }
+    if (await trigger()) {
+      Keyboard.dismiss();
+      setTimeout(() => bottomSheet.current?.present(), 100);
+    }
   }, [trigger]);
+
   const closeBottomSheet = () => bottomSheet.current?.dismiss();
 
   const validateBank = useCallback(async () => {
-    trigger(["bank_code", "account_number"]).then(async allGood => {
+    trigger(["bank_code", "account_number"]).then(async (allGood) => {
       if (!allGood) return;
       try {
-        setIsProcessing(true); setShowProgress(true); setHasError(false); setResolvedAccountName("");
-        const response = await API.post(route("bank.resolveAccount"), { bank_code: values.bank_code, account_number: values.account_number });
+        setIsProcessing(true);
+        setShowProgress(true);
+        setHasError(false);
+        setResolvedAccountName("");
+        const response = await API.post(route("bank.resolveAccount"), {
+          bank_code: values.bank_code,
+          account_number: values.account_number,
+        });
         const { account_name } = response.data;
-        if (account_name) { setResolvedAccountName(account_name); }
-        else { setError("account_number", { message: "Account not found. Check the number and bank." }); }
+        if (account_name) {
+          setResolvedAccountName(account_name);
+         } else {
+           setError("account_number", { message: "Account not found. Check the number and bank." });
+         }
       } catch (error) {
         const axiosError = error as AxiosError<any>;
-        if (axiosError.response) { setError("account_number", { message: axiosError.response.data?.message }); }
-        else { setHasError(true); }
-      } finally { setShowProgress(false); setIsProcessing(false); }
+        if (axiosError.response) {
+          setError("account_number", { message: axiosError.response.data?.message });
+        } else {
+          setHasError(true);
+        }
+      } finally {
+        setShowProgress(false);
+        setIsProcessing(false);
+      }
     });
   }, [values]);
-
-  const onSubmit = handleSubmit(async form => {
+  
+  const onSubmit = handleSubmit(async (form) => {
     if (!resolvedAccountName) return;
     try {
       setIsProcessing(true);
@@ -130,111 +145,163 @@ export default function BVNVerificationScreen({ navigation }: BVNProps) {
       dispatch(authSliceActions.updateUser(response.data.user));
       await dispatch(authSliceActions.fetchUserProfile());
       closeBottomSheet();
-      navigation.navigate(SCREENS.VERIFICATION_SUCCESS, { tier: 1 });
+      navigation.navigate(SCREENS.VERIFICATION_HUB);
     } catch (error) {
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;
       if (response) {
         const { message, errors, error_code } = response.data;
-        if (message && typeof message === "string") showToast({ message, position: Toast.positions.TOP });
+        if (message && typeof message === "string") {
+          showToast({ message, position: Toast.positions.TOP });
+        }
         if (errors) {
           for (const [field, fieldErrors] of Object.entries(errors)) {
-            if (Array.isArray(fieldErrors)) setError(field as keyof BVNFormValues, { message: fieldErrors.join(", ") });
+            if (Array.isArray(fieldErrors)) {
+              setError(field as keyof FormValues, { message: fieldErrors.join(", ") });
+            }
           }
           return;
         }
         if (error_code === "client_insufficient_funds") {
-          return dispatch(settingsSliceActions.setApplicationError({ code: "client_insufficient_funds", context: message }));
+          return dispatch(settingsSliceActions.setApplicationError({
+            code: "client_insufficient_funds", context: message,
+          }));
         }
         setHasError(true);
       }
-    } finally { setIsProcessing(false); closeBottomSheet(); }
+    } finally {
+      setIsProcessing(false);
+      closeBottomSheet();
+    }
   });
 
   return (
-    <View style={[bv.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      <View style={bv.navBar}>
-        <TouchableOpacity style={bv.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <MaterialCommunityIcons name="chevron-left" size={26} color={BRAND} />
+    <View style={[s.root, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color={BRAND} />
         </TouchableOpacity>
-        <View style={bv.navCenter}>
-          <Text style={bv.navTitle}>BVN Verification</Text>
-          <Text style={bv.navSub}>Tier 1 – Basic Verification</Text>
+        <View>
+          <Text style={s.headerTitle}>BVN Verification</Text>
+          <Text style={s.headerSub}>Tier 1 – Basic Verification</Text>
         </View>
-        <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView contentContainerStyle={bv.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Text style={bv.title}>BVN &amp; Account Validation</Text>
-        <Text style={bv.subtitle}>Verify your BVN for added security and increased transaction limits.</Text>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={s.title}>BVN and Account Name Validation</Text>
+        <Text style={s.subtitle}>
+          Verify your BVN for added security and increased transaction limits.
+        </Text>
 
-        {hasError && <Banner content="We had trouble verifying your account name. Please try again." />}
+        {hasError && (
+          <Banner content="We had trouble verifying your account name. Please try again." />
+        )}
 
-        <View style={[bv.formCard, IOS_SHADOW]}>
-          <Controller control={control} name="bvn"
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-              <MaskedInput label="Bank Verification Number" placeholder="Enter your BVN" mode="outlined"
-                onBlur={onBlur} value={value} mask={bvn_nin_mask} onChangeText={onChange}
-                error={!!error} errorMessage={error?.message} />
-            )}
-          />
-          <Controller control={control} name="account_number"
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-              <CustomTextInput label="Account Number" placeholder="Enter account number" keyboardType="numeric"
-                mode="outlined" onBlur={onBlur} value={value} onChangeText={onChange}
-                error={!!error} errorMessage={error?.message} />
-            )}
-          />
-          {showProgress && !resolvedAccountName && (
-            <View style={bv.progressRow}>
-              <ActivityIndicator animating size="small" />
-              <Text style={bv.progressText}>Verifying account number…</Text>
-            </View>
+        <Controller
+          control={control}
+          name="bvn"
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <MaskedInput
+              label="Bank Verification Number"
+              placeholder="Enter your BVN"
+              mode="outlined"
+              onBlur={onBlur}
+              value={value}
+              mask={bvn_nin_mask}
+              onChangeText={onChange}
+              error={!!error}
+              errorMessage={error?.message}
+            />
           )}
-          {resolvedAccountName && (
-            <View style={bv.verifiedRow}>
-              <VerifiedBadge />
-              <Text style={bv.verifiedName}>{resolvedAccountName}</Text>
-            </View>
+        />
+
+        <Controller
+          control={control}
+          name="account_number"
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <CustomTextInput
+              label="Account Number"
+              placeholder="Enter account number"
+              keyboardType="numeric"
+              mode="outlined"
+              onBlur={onBlur}
+              value={value}
+              onChangeText={onChange}
+              error={!!error}
+              errorMessage={error?.message}
+            />
           )}
-          <DropdownMenuField label="Select your bank" placeholder="Select bank" name="bank_code"
-            control={control} data={filteredBanks} search={true} />
-        </View>
+        />
+
+        {showProgress && !resolvedAccountName && (
+          <View style={s.progressRow}>
+            <ActivityIndicator animating size="small" />
+            <Text style={s.progressText}>Verifying account number...</Text>
+          </View>
+        )}
+
+        {resolvedAccountName && (
+          <View style={s.verifiedRow}>
+            <VerifiedBadge />
+            <Text style={s.verifiedName}>{resolvedAccountName}</Text>
+          </View>
+        )}
+
+        <DropdownMenuField
+          label="Select your bank"
+          placeholder="Select bank"
+          name="bank_code"
+          control={control}
+          data={filteredBanks}
+          search={true}
+        />
 
         {formattedRemainingAttempts !== null && (
-          <View style={[bv.attemptsCard, IOS_SHADOW]}>
-            <MaterialCommunityIcons name="information-outline" size={16} color="#D97706" />
-            <Text style={bv.attemptsText}>
-              You have <Text style={bv.attemptsCount}>{formattedRemainingAttempts}</Text> free verification attempts remaining.
+          <View style={s.attemptsBox}>
+            <Text style={s.attemptsText}>
+              You have{" "}
+              <Text style={s.attemptsCount}>{formattedRemainingAttempts}</Text>
+              {" "}free verification attempts remaining.
             </Text>
           </View>
         )}
       </ScrollView>
 
-      <View style={[bv.footer, { paddingBottom: insets.bottom + 16 }, IOS_SHEET_SHADOW]}>
+      {/* Footer button */}
+      <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
         <TouchableOpacity
-          style={[bv.btn, isProcessing && bv.btnDisabled]}
+          style={[s.btn, isProcessing && s.btnDisabled]}
           onPress={resolvedAccountName ? openBottomSheet : validateBank}
           disabled={isProcessing}
-          activeOpacity={0.85}>
-          <Text style={bv.btnText}>
-            {isProcessing ? "Please wait…" : resolvedAccountName ? "Complete Verification" : "Verify Name"}
+        >
+          <Text style={s.btnText}>
+            {isProcessing ? "Please wait..." : resolvedAccountName ? "Complete Verification" : "Verify Name"}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <BottomSheetModal ref={bottomSheet} initialSnapPoints={[vs(280), vs(280)]} onDismiss={closeBottomSheet}
+      <BottomSheetModal
+        ref={bottomSheet}
+        initialSnapPoints={[vs(280), vs(280)]}
+        onDismiss={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
-            <Text style={bv.sheetTitle}>Please Review</Text>
-            <Text style={bv.sheetLabel}>Your BVN</Text>
-            <Text style={bv.sheetValue}>{masked}</Text>
-            <TouchableOpacity style={[bv.btn, isProcessing && bv.btnDisabled, { marginTop: 24 }]}
-              onPress={onSubmit} disabled={isProcessing} activeOpacity={0.85}>
-              <Text style={bv.btnText}>{isProcessing ? "Verifying…" : "Yes, it's correct"}</Text>
+            <Text style={s.sheetTitle}>Please Review</Text>
+            <Text style={s.sheetLabel}>Your BVN</Text>
+            <Text style={s.sheetValue}>{masked}</Text>
+            <TouchableOpacity
+              style={[s.btn, isProcessing && s.btnDisabled, { marginTop: 24 }]}
+              onPress={onSubmit}
+              disabled={isProcessing}
+            >
+              <Text style={s.btnText}>
+                {isProcessing ? "Verifying..." : "Yes, it's correct"}
+              </Text>
             </TouchableOpacity>
           </View>
         }
@@ -244,29 +311,26 @@ export default function BVNVerificationScreen({ navigation }: BVNProps) {
   );
 }
 
-const bv = StyleSheet.create({
-  root:         { flex: 1, backgroundColor: BG },
-  navBar:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, backgroundColor: SURFACE, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEPARATOR },
-  backBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
-  navCenter:    { flex: 1, alignItems: "center" },
-  navTitle:     { fontSize: 16, fontWeight: "700", color: BRAND, letterSpacing: -0.3 },
-  navSub:       { fontSize: 11, color: SUBLABEL, marginTop: 1 },
-  scroll:       { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120 },
-  title:        { fontSize: 22, fontWeight: "800", color: BRAND, letterSpacing: -0.4, marginBottom: 6 },
-  subtitle:     { fontSize: 14, color: SUBLABEL, marginBottom: 20 },
-  formCard:     { backgroundColor: SURFACE, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR, padding: 14, marginBottom: 14, gap: 4 },
-  progressRow:  { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
-  progressText: { fontSize: 12, color: SUBLABEL },
-  verifiedRow:  { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
-  verifiedName: { fontSize: 14, fontWeight: "600", color: BLUE },
-  attemptsCard: { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: "#FFFBEB", borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: "#FDE68A" },
-  attemptsText: { flex: 1, fontSize: 13, color: SUBLABEL },
-  attemptsCount:{ color: "#D97706", fontWeight: "700" },
-  footer:       { paddingHorizontal: 16, paddingTop: 12, backgroundColor: SURFACE, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEPARATOR },
-  btn:          { backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
-  btnDisabled:  { opacity: 0.5 },
-  btnText:      { fontSize: 16, fontWeight: "700", color: SURFACE },
-  sheetTitle:   { fontSize: 18, fontWeight: "700", color: BRAND, textAlign: "center", marginBottom: 16 },
-  sheetLabel:   { fontSize: 14, color: SUBLABEL, textAlign: "center" },
-  sheetValue:   { fontSize: 28, fontWeight: "800", color: BRAND, textAlign: "center", marginTop: 8 },
+const s = StyleSheet.create({
+  root:          { flex: 1, backgroundColor: "#f8f9fb" },
+  header:        { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  backBtn:       { width: 34, height: 34, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+  headerTitle:   { fontSize: 16, fontWeight: "700", color: BRAND },
+  headerSub:     { fontSize: 12, color: "#6b7280" },
+  title:         { fontSize: 20, fontWeight: "800", color: BRAND, marginBottom: 6 },
+  subtitle:      { fontSize: 14, color: "#6b7280", marginBottom: 20 },
+  progressRow:   { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  progressText:  { fontSize: 12, color: "#6b7280" },
+  verifiedRow:   { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  verifiedName:  { fontSize: 14, fontWeight: "600", color: "#2563EB" },
+  attemptsBox:   { backgroundColor: "#f9fafb", borderRadius: 10, padding: 12, marginTop: 12 },
+  attemptsText:  { fontSize: 13, color: "#6b7280", textAlign: "center" },
+  attemptsCount: { color: "#f59e0b", fontWeight: "700" },
+  footer:        { paddingHorizontal: 16, paddingTop: 12, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+  btn:           { backgroundColor: BLUE, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+  btnDisabled:   { opacity: 0.5 },
+  btnText:       { fontSize: 16, fontWeight: "700", color: "#fff" },
+  sheetTitle:    { fontSize: 18, fontWeight: "700", color: BRAND, textAlign: "center", marginBottom: 16 },
+  sheetLabel:    { fontSize: 14, color: "#6b7280", textAlign: "center" },
+  sheetValue:    { fontSize: 28, fontWeight: "800", color: BRAND, textAlign: "center", marginTop: 8 },
 });

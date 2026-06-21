@@ -81,7 +81,7 @@ export default function DropdownMenuField<T extends DataItem>({
             containerStyle={[
               styles.dropdownContainer, 
               tw`rounded-lg shadow-md border border-gray-200 bg-white`,
-              { width: dropdownWidth }
+              { width: dropdownWidth,  marginTop: 8, }
             ]}
             itemContainerStyle={tw`border-b border-gray-100`}
             itemTextStyle={tw`text-sm text-gray-700 py-1`}
@@ -108,9 +108,9 @@ export default function DropdownMenuField<T extends DataItem>({
               />
             )}
             renderInputSearch={(onSearch) => (
-              <View style={tw`flex-row items-center border-b border-gray-200 px-3 py-2`}>
+              <View style={tw`flex-row items-center border-b border-gray-200 px-2 py-2`}>
                 <Search size={16} color={tw.color("gray-500")} style={tw`mr-2`} />
-                <View style={tw`flex-1 h-8 justify-center`}>
+                <View style={tw`flex-1 h-9 justify-center`}>
                   <TextInput
                     style={tw`text-sm text-gray-800`}
                     placeholderTextColor={tw.color("gray-400")}

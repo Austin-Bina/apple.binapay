@@ -1,17 +1,18 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, TouchableOpacity, Modal, Dimensions, Animated, Pressable, ScrollView } from "react-native";
-import { IconButton, Text } from "react-native-paper";
-import tw from "@lib/tailwind";
 import {
-  Controller,
-  Control,
-  UseFormReset,
-  UseFormWatch,
-} from "react-hook-form";
+  View, TouchableOpacity, Modal, ScrollView,
+  StyleSheet, Pressable,
+} from "react-native";
+import { Text } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Controller, Control, UseFormReset, UseFormWatch } from "react-hook-form";
 import MaskedInput from "@components/ui/form/mask-input";
 import { phone_mask } from "@constants/app";
-import { User, X, Check } from "lucide-react-native";
 import { AvatarImage } from "@components/avatar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const BLUE  = "#2563EB";
+const BRAND = "#1E3A8A";
 
 interface NetworkPhoneInputProps {
   control: Control<any>;
@@ -22,44 +23,14 @@ interface NetworkPhoneInputProps {
 }
 
 const NetworkPhoneInput = ({
-  control,
-  watch,
-  reset,
-  dataProviders,
-  onOpenContactModal,
+  control, watch, reset, dataProviders, onOpenContactModal,
 }: NetworkPhoneInputProps) => {
-  const values = watch();
-  const [networkModalVisible, setNetworkModalVisible] = useState(false);
+  const values  = watch();
+  const insets  = useSafeAreaInsets();
+  const [showModal, setShowModal] = useState(false);
 
-  // Animation for modal
-  const animatedScale = useMemo(() => new Animated.Value(0.9), []);
-  const animatedOpacity = useMemo(() => new Animated.Value(0), []);
-  
-  // Animate modal when it becomes visible
-  React.useEffect(() => {
-    if (networkModalVisible) {
-      Animated.parallel([
-        Animated.timing(animatedScale, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true
-        }),
-        Animated.timing(animatedOpacity, {
-          toValue: 1, 
-          duration: 200,
-          useNativeDriver: true
-        })
-      ]).start();
-    } else {
-      // Reset animations when modal is hidden
-      animatedScale.setValue(0.9);
-      animatedOpacity.setValue(0);
-    }
-  }, [networkModalVisible, animatedScale, animatedOpacity]);
-
-  // Find the selected network provider - memoize to prevent re-calculation
-  const selectedProvider = useMemo(() => 
-    dataProviders.find((provider) => provider.serviceId === values.provider),
+  const selectedProvider = useMemo(() =>
+    dataProviders.find(p => p.serviceId === values.provider),
   [dataProviders, values.provider]);
 
   const handleNetworkChange = useCallback((serviceId: string) => {
@@ -72,152 +43,178 @@ const NetworkPhoneInput = ({
       type: "",
       vendor: "",
     });
-    setNetworkModalVisible(false);
+    setShowModal(false);
   }, [values, reset]);
 
-  const contentMaxHeight = useMemo(() => {
-    const { height } = Dimensions.get("window");
-    return Math.min(height * 0.7, 500);
-  }, []);
+  return (
+    <View style={s.wrap}>
+      <Text style={s.sectionLabel}>Network & Phone</Text>
 
-  // Memoize the network selection modal
-  const networkSelectionModal = useMemo(() => (
-    <Modal
-      visible={networkModalVisible}
-      transparent
-      animationType="none"
-      onRequestClose={() => setNetworkModalVisible(false)}
-    >
-      <View style={tw`flex-1 bg-black/50 justify-center items-center px-4`}>
-        <Animated.View 
-          style={[
-            tw`bg-white rounded-2xl w-full max-w-md shadow-xl`,
-            {
-              transform: [{ scale: animatedScale }],
-              opacity: animatedOpacity
-            }
-          ]}
-        >
-          <View style={tw`p-5 border-b border-gray-100`}>
-            <View style={tw`flex-row justify-between items-center mb-2`}>
-              <Text style={tw`text-gray-900 font-bold text-lg`}>Select Network</Text>
-              <TouchableOpacity
-                onPress={() => setNetworkModalVisible(false)}
-                style={tw`p-2 rounded-full bg-gray-100 active:bg-gray-200`}
-              >
-                <X size={18} color={tw.color('gray-600')} />
+      <View style={s.card}>
+        {/* Network selector row */}
+        <Pressable style={s.networkRow} onPress={() => setShowModal(true)}>
+          <View style={s.networkLogoWrap}>
+            {selectedProvider ? (
+              <AvatarImage avatar={selectedProvider.logo} size={36} />
+            ) : (
+              <MaterialCommunityIcons name="signal-cellular-outline" size={20} color="#9ca3af" />
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.networkLabel}>Network</Text>
+            <Text style={[s.networkName, !selectedProvider && { color: "#9ca3af" }]}>
+              {selectedProvider ? selectedProvider.name : "Select network"}
+            </Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="#9ca3af" />
+        </Pressable>
+
+        <View style={s.divider} />
+
+        {/* Phone input row */}
+        <View style={s.phoneRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.networkLabel}>Phone Number</Text>
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                <MaskedInput
+                  mask={phone_mask}
+                  placeholder="Enter phone number"
+                  mode="flat"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!error}
+                  errorMessage={error?.message}
+                  style={s.phoneInput}
+                  
+                />
+              )}
+            />
+          </View>
+          <TouchableOpacity style={s.contactBtn} onPress={onOpenContactModal} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="contacts-outline" size={20} color={BLUE} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── Network picker bottom sheet ── */}
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.modalSheet, { paddingBottom: insets.bottom + 16 }]}>
+            {/* Handle */}
+            <View style={s.sheetHandle} />
+
+            <View style={s.modalHeader}>
+              <View>
+                <Text style={s.modalTitle}>Select Network</Text>
+                <Text style={s.modalSub}>Your network will show only available plans</Text>
+              </View>
+              <TouchableOpacity style={s.closeBtn} onPress={() => setShowModal(false)} activeOpacity={0.7}>
+                <MaterialCommunityIcons name="close" size={18} color="#6b7280" />
               </TouchableOpacity>
             </View>
-          </View>
-          
-          <View style={[tw`p-2`, { maxHeight: contentMaxHeight }]}>
+
             <ScrollView showsVerticalScrollIndicator={false}>
               {dataProviders.length === 0 ? (
-                <View style={tw`py-8 items-center`}>
-                  <Text style={tw`text-gray-500`}>No networks found</Text>
+                <View style={s.emptyWrap}>
+                  <MaterialCommunityIcons name="wifi-off" size={28} color="#9ca3af" />
+                  <Text style={s.emptyText}>No networks found</Text>
                 </View>
               ) : (
-                dataProviders.map((provider) => (
-                  <TouchableOpacity
-                    key={provider.serviceId}
-                    style={tw`flex-row items-center p-4 rounded-xl mb-1 ${values.provider === provider.serviceId ? 'bg-primary/10' : 'active:bg-gray-50'}`}
-                    onPress={() => handleNetworkChange(provider.serviceId)}
-                  >
-                    <View style={tw`h-12 w-12 rounded-full overflow-hidden bg-gray-100 justify-center items-center shadow-sm`}>
-                      <AvatarImage 
-                        avatar={provider.logo} 
-                        size={48} 
-                        style={tw`rounded-full`}
-                      />
-                    </View>
-                    <Text style={tw`ml-3 font-medium text-base flex-1 ${values.provider === provider.serviceId ? 'text-primary font-bold' : 'text-gray-800'}`}>
-                      {provider.name}
-                    </Text>
-                    {values.provider === provider.serviceId && (
-                      <View style={tw`bg-primary rounded-full p-1`}>
-                        <Check size={16} color="white" />
+                dataProviders.map((provider, i) => {
+                  const isSelected = values.provider === provider.serviceId;
+                  return (
+                    <TouchableOpacity
+                      key={provider.serviceId}
+                      style={[
+                        s.providerRow,
+                        i < dataProviders.length - 1 && s.providerRowBorder,
+                        isSelected && s.providerRowActive,
+                      ]}
+                      onPress={() => handleNetworkChange(provider.serviceId)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={s.providerLogo}>
+                        <AvatarImage avatar={provider.logo} size={40} />
                       </View>
-                    )}
-                  </TouchableOpacity>
-                ))
+                      <Text style={[s.providerName, isSelected && s.providerNameActive]}>
+                        {provider.name}
+                      </Text>
+                      {isSelected && (
+                        <View style={s.selectedTick}>
+                          <MaterialCommunityIcons name="check" size={14} color="#fff" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </ScrollView>
-          </View>
-        </Animated.View>
-      </View>
-    </Modal>
-  ), [networkModalVisible, values.provider, dataProviders, contentMaxHeight, handleNetworkChange, animatedScale, animatedOpacity]);
 
-  return (
-    <View style={tw`mt-2`}>
-      <View style={tw`min-h-[70px]`}>
-        <View style={tw`flex-row items-start gap-3`}>
-          {/* Custom Network Dropdown Button */}
-          <Pressable
-            style={tw.style(
-              `h-14 w-14 rounded-full justify-center items-center overflow-hidden shadow-md flex-shrink-0`,
-              selectedProvider 
-                ? `border-2 border-primary bg-white`
-                : `border border-gray-200 bg-white`
-            )}
-            onPress={() => setNetworkModalVisible(true)}
-          >
-            {selectedProvider ? (
-              <AvatarImage 
-                avatar={selectedProvider.logo} 
-                size={40} 
-                style={tw`rounded-full bg-white`} 
-              />
-            ) : (
-              <View style={tw`h-14 w-14 rounded-full bg-gray-100 justify-center items-center`}>
-                <User size={22} color={tw.color("gray-500")} fill={tw.color("gray-200")} />
-              </View>
-            )}
-          </Pressable>
-
-          {/* Phone Input */}
-          <View style={tw`flex-1 relative`}>
-            <View style={tw`flex-row items-start`}>
-              <View style={tw`flex-1 mr-2`}>
-                <Controller
-                  control={control}
-                  name="phone"
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <MaskedInput
-                      mask={phone_mask}
-                      placeholder="Enter phone number"
-                      mode="outlined"
-                      onBlur={onBlur}
-                      value={value}
-                      onChangeText={onChange}
-                      error={!!error}
-                      errorMessage={error?.message}
-                      style={tw` h-14`}
-                    />
-                  )}
-                />
-              </View>
-              
-              {/* Contact picker button */}
-              <IconButton
-                icon={() => <User size={20} color={tw.color("primary")} />}
-                onPress={onOpenContactModal}
-                mode="contained"
-                iconColor={tw.color("primary")}
-                containerColor={tw.color('primary-50')}
-                style={tw`mt-0`}
-              />
+            {/* Security note */}
+            <View style={s.secureNote}>
+              <MaterialCommunityIcons name="shield-check-outline" size={13} color="#9ca3af" />
+              <Text style={s.secureText}>Your network will be used to show only available data plans.</Text>
             </View>
           </View>
         </View>
-      </View>
-      
-      {networkSelectionModal}
+      </Modal>
     </View>
   );
 };
 
 export default React.memo(NetworkPhoneInput);
+
+const s = StyleSheet.create({
+  wrap:         { marginBottom: 16, marginTop: 4 },
+  sectionLabel: { fontSize: 11, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginLeft: 2 },
+
+  // Main card
+  card:         { backgroundColor: "#fff", borderRadius: 14, borderWidth: 1, borderColor: "#f0f0f0", overflow: "hidden" },
+  divider:      { height: 1, backgroundColor: "#f3f4f6", marginLeft: 16 },
+
+  // Network row
+  networkRow:   { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
+  networkLogoWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#f3f4f6", justifyContent: "center", alignItems: "center", overflow: "hidden" },
+  networkLabel: { fontSize: 11, color: "#9ca3af", marginBottom: 2 },
+  networkName:  { fontSize: 14, fontWeight: "600", color: "#111827" },
+
+  // Phone row
+  phoneRow:     { flexDirection: "row", alignItems: "center", paddingLeft: 14, paddingRight: 8, paddingVertical: 4 },
+  phoneInput:   { flex: 1, fontSize: 14, backgroundColor: "transparent", paddingHorizontal: 0, height: 48 },
+  contactBtn:   { width: 38, height: 38, borderRadius: 19, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+
+  // Bottom sheet modal
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+  modalSheet:   { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 10, maxHeight: "70%" },
+  sheetHandle:  { width: 40, height: 4, borderRadius: 2, backgroundColor: "#e5e7eb", alignSelf: "center", marginBottom: 18 },
+  modalHeader:  { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+  modalTitle:   { fontSize: 17, fontWeight: "700", color: BRAND },
+  modalSub:     { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  closeBtn:     { width: 32, height: 32, borderRadius: 16, backgroundColor: "#f3f4f6", justifyContent: "center", alignItems: "center" },
+
+  // Provider list
+  providerRow:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 4 },
+  providerRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  providerRowActive: { backgroundColor: "#EEF3FF", borderRadius: 12, paddingHorizontal: 8 },
+  providerLogo:      { width: 44, height: 44, borderRadius: 22, overflow: "hidden", backgroundColor: "#f3f4f6" },
+  providerName:      { flex: 1, fontSize: 15, fontWeight: "500", color: "#111827" },
+  providerNameActive:{ color: BLUE, fontWeight: "700" },
+  selectedTick:      { width: 26, height: 26, borderRadius: 13, backgroundColor: BLUE, justifyContent: "center", alignItems: "center" },
+
+  // Empty state
+  emptyWrap:    { alignItems: "center", paddingVertical: 32, gap: 8 },
+  emptyText:    { fontSize: 14, color: "#9ca3af" },
+
+  // Secure note
+  secureNote:   { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center", paddingTop: 14 },
+  secureText:   { fontSize: 11, color: "#9ca3af", flex: 1 },
+});

@@ -164,7 +164,7 @@ export default function ManualFundScreen({ navigation, route }: ManualFundViewPr
 
  {/* Fixed bottom button */}
   <SafeAreaView style={tw`bg-white border-t border-gray-200`}>
-    <View style={tw`px-4 py-10`}>
+    <View style={tw`px-4 py-3`}>
       <Button
         mode="contained"
         onPress={onSubmit}

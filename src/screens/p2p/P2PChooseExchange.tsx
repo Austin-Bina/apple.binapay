@@ -1,6 +1,6 @@
 import React from "react";
-import { View, StyleSheet, TouchableOpacity, Platform, StatusBar } from "react-native";
-import { Text } from "react-native-paper";
+import { View, StyleSheet } from "react-native";
+import { Text, TouchableRipple } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SCREENS } from "@constants/screens";
 import { P2PStackScreenProps } from "@navigators/types";
@@ -8,82 +8,153 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type Props = P2PStackScreenProps<"P2P Choose Exchange">;
 
-const BRAND      = "#2563EB";
-const BRAND_DARK = "#1E3A8A";
-const BLUE_LIGHT = "#EEF3FF";
-const BG         = "#F2F2F7";
-const SURFACE    = "#FFFFFF";
-const SEPARATOR  = "#E5E7EB";
-const LABEL      = "#111827";
-const SUBLABEL   = "#6B7280";
-
-const IOS_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 8 },
-  android: { elevation: 2 },
-});
+const BRAND = "hsl(221, 65%, 51%)";
+const BRAND_LIGHT = "#EEF3FF";
 
 const EXCHANGES = [
-  { id: "bybit", name: "Bybit", subtitle: "Connect your Bybit P2P account", available: true },
+  {
+    id: "bybit",
+    name: "Bybit",
+    subtitle: "Connect your Bybit P2P account",
+    available: true,
+  },
+  // Enable later:
+  // { id: "bitget", name: "Bitget", subtitle: "Connect your Bitget P2P account", available: false },
+  // { id: "gate", name: "Gate.io", subtitle: "Connect your Gate.io P2P account", available: false },
 ];
 
 export default function P2PChooseExchangeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[s.root, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
 
-      {/* Header block */}
-      <View style={s.headerBlock}>
-        <View style={s.iconCircle}>
-          <MaterialCommunityIcons name="swap-horizontal" size={30} color={BRAND} />
+      {/* Header */}
+      <View style={styles.headerBlock}>
+        <View style={styles.iconCircle}>
+          <MaterialCommunityIcons name="swap-horizontal" size={28} color={BRAND} />
         </View>
-        <Text style={s.heading}>Choose Exchange</Text>
-        <Text style={s.subheading}>Select the P2P platform to connect with BinaPay</Text>
+        <Text style={styles.heading}>Choose your exchange</Text>
+        <Text style={styles.subheading}>
+          Select the P2P platform you'd like to connect to BinaPay
+        </Text>
       </View>
 
       {/* Exchange list */}
-      <View style={s.list}>
+      <View style={styles.list}>
         {EXCHANGES.map((exchange) => (
-          <TouchableOpacity
+          <TouchableRipple
             key={exchange.id}
-            style={[s.item, !exchange.available && s.itemDisabled, IOS_SHADOW]}
+            style={[styles.item, !exchange.available && styles.itemDisabled]}
             onPress={() => {
               if (exchange.available) {
                 navigation.navigate(SCREENS.P2P_WHITELIST_IP, { exchange: exchange.id });
               }
-            }}
-            activeOpacity={0.8}>
-            <View style={s.logoBox}>
-              <Text style={s.logoText}>BYBIT</Text>
+            }}>
+            <View style={styles.itemInner}>
+              {/* Logo circle */}
+              <View style={styles.logoBox}>
+                <Text style={styles.logoText}>BYBIT</Text>
+              </View>
+
+              {/* Text */}
+              <View style={styles.itemText}>
+                <Text style={styles.itemTitle}>{exchange.name}</Text>
+                <Text style={styles.itemSubtitle}>{exchange.subtitle}</Text>
+              </View>
+
+              {/* Arrow */}
+              <View style={styles.arrowBox}>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={BRAND} />
+              </View>
             </View>
-            <View style={s.itemText}>
-              <Text style={s.itemTitle}>{exchange.name}</Text>
-              <Text style={s.itemSubtitle}>{exchange.subtitle}</Text>
-            </View>
-            <View style={s.arrowBox}>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={BRAND} />
-            </View>
-          </TouchableOpacity>
+          </TouchableRipple>
         ))}
       </View>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  root:         { flex: 1, backgroundColor: SURFACE, paddingHorizontal: 20 },
-  headerBlock:  { alignItems: "center", marginBottom: 36 },
-  iconCircle:   { width: 72, height: 72, borderRadius: 36, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center", marginBottom: 18 },
-  heading:      { fontSize: 24, fontWeight: "800", color: BRAND_DARK, textAlign: "center", marginBottom: 8, letterSpacing: -0.4 },
-  subheading:   { fontSize: 14, color: SUBLABEL, textAlign: "center", lineHeight: 21 },
-  list:         { gap: 12 },
-  item:         { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: SURFACE, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR },
-  itemDisabled: { opacity: 0.45 },
-  logoBox:      { width: 48, height: 48, borderRadius: 24, backgroundColor: "#0A0F1E", justifyContent: "center", alignItems: "center" },
-  logoText:     { color: SURFACE, fontSize: 9, fontWeight: "800", letterSpacing: 0.8 },
-  itemText:     { flex: 1 },
-  itemTitle:    { fontSize: 16, fontWeight: "700", color: LABEL, marginBottom: 3 },
-  itemSubtitle: { fontSize: 13, color: SUBLABEL },
-  arrowBox:     { width: 32, height: 32, borderRadius: 16, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+  },
+
+  headerBlock: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#EEF3FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  subheading: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+
+  list: { gap: 12 },
+
+  item: {
+    borderWidth: 1.5,
+    borderColor: "#D0D9EE",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#FAFCFF",
+  },
+  itemDisabled: {
+    opacity: 0.45,
+  },
+  itemInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  logoBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#0A0F1E",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  logoText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  itemText: { flex: 1 },
+  itemTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 2,
+  },
+  itemSubtitle: { fontSize: 13, color: "#888" },
+  arrowBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#EEF3FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

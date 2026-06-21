@@ -22,6 +22,24 @@ type TransactionBody = {
   page: number;
 };
 
+type SummaryParams = {
+  period?: "today" | "week" | "month" | "all";
+  from_date?: string;
+  to_date?: string;
+};
+
+type SummaryResponse = {
+  period: string;
+  from: string | null;
+  to: string | null;
+  total_credit: string;
+  total_debit: string;
+  net_flow: string;
+  credit_count: number;
+  debit_count: number;
+  total_count: number;
+};
+
 export const accountTransactionsApi = createApi({
   reducerPath: "accountTransactions",
   baseQuery: axiosBaseQuery(),
@@ -70,9 +88,19 @@ export const accountTransactionsApi = createApi({
           ...newItems,
           transactions: mergedTransactions,
         };
-      },
+      },     
     }),
+
+    // Inside endpoints:
+fetchTransactionSummary: builder.query<SummaryResponse, SummaryParams>({
+  query: (params) => ({
+    url: route("account.transactionSummary"),
+    params,
+  }),
+  providesTags: ["Transactions Summary"],
+}),
+
   }),
 });
 
-export const { useFetchRecentTransactionsQuery, useFetchCompleteTransactionsQuery } = accountTransactionsApi;
+export const { useFetchRecentTransactionsQuery, useFetchCompleteTransactionsQuery, useFetchTransactionSummaryQuery } = accountTransactionsApi;

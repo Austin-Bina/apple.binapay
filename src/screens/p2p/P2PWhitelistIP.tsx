@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar, Clipboard, Linking } from "react-native";
-import { Text } from "react-native-paper";
+import { View, StyleSheet, Clipboard, Platform, ScrollView, Linking, TouchableOpacity } from "react-native";
+import { Text, TouchableRipple } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SCREENS } from "@constants/screens";
 import { showToast } from "@helpers/toast";
@@ -10,116 +10,134 @@ import { useGetP2PWhitelistIpsQuery } from "@store/redux-api/p2p";
 
 type Props = P2PStackScreenProps<"P2P Whitelist IP">;
 
-const BRAND      = "#2563EB";
-const BRAND_DARK = "#1E3A8A";
-const BLUE_LIGHT = "#EEF3FF";
-const BG         = "#F2F2F7";
-const SURFACE    = "#FFFFFF";
-const SEPARATOR  = "#E5E7EB";
-const LABEL      = "#111827";
-const SUBLABEL   = "#6B7280";
-const PLACEHOLDER = "#9CA3AF";
+const BRAND = "hsl(221, 65%, 51%)";
+const BRAND_LIGHT = "#EEF3FF";
 
-const IOS_CARD = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
-  android: { elevation: 2 },
-});
 
 function copyToClipboard(text: string) {
-  if (Platform.OS === "ios" || Platform.OS === "android") Clipboard.setString(text);
+  if (Platform.OS === "ios" || Platform.OS === "android") {
+    Clipboard.setString(text);
+  }
 }
 
 export default function P2PWhitelistIPScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const exchange      = (route.params as any)?.exchange ?? "bybit";
+  const exchange = (route.params as any)?.exchange ?? "bybit";
   const exchangeLabel = exchange === "bybit" ? "Bybit" : exchange;
 
-  // ── All original hooks + handlers — untouched ─────────────────────────────
   const { data, isLoading } = useGetP2PWhitelistIpsQuery();
   const BINAPAY_IPS: string[] = data?.whitelist_ips ?? [];
   const tutorialUrl = data?.tutorial_url ?? null;
 
-  const handleCopyOne = (ip: string) => { copyToClipboard(ip); showToast({ message: `${ip} copied!`, duration: 1500 }); };
-  const handleCopyAll = () => { copyToClipboard(BINAPAY_IPS.join("\n")); showToast({ message: "All IP addresses copied!", duration: 1500 }); };
-  const handleTutorial = async () => {
-    if (!tutorialUrl) { showToast({ message: "Tutorial not available yet.", duration: 1500 }); return; }
-    try {
-      const canOpen = await Linking.canOpenURL(tutorialUrl);
-      if (canOpen) await Linking.openURL(tutorialUrl);
-      else showToast({ message: "Could not open the tutorial link.", duration: 1500 });
-    } catch { showToast({ message: "Could not open the tutorial link.", duration: 1500 }); }
+  const handleCopyOne = (ip: string) => {
+    copyToClipboard(ip);
+    showToast({ message: `${ip} copied!`, duration: 1500 });
   };
 
-  return (
-    <View style={[ws.root, { paddingBottom: insets.bottom + 16 }]}>
-      <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={ws.scroll} showsVerticalScrollIndicator={false}>
+  const handleCopyAll = () => {
+    copyToClipboard(BINAPAY_IPS.join("\n"));
+    showToast({ message: "All IP addresses copied!", duration: 1500 });
+  };
 
-        {/* Step badge */}
-        <View style={ws.stepBadge}>
-          <Text style={ws.stepText}>Step 1 of 2</Text>
+   const handleTutorial = async () => {
+    if (!tutorialUrl) {
+      showToast({ message: "Tutorial not available yet.", duration: 1500 });
+      return;
+    }
+    try {
+      const canOpen = await Linking.canOpenURL(tutorialUrl);
+      if (canOpen) {
+        await Linking.openURL(tutorialUrl);
+      } else {
+        showToast({ message: "Could not open the tutorial link.", duration: 1500 });
+      }
+    } catch {
+      showToast({ message: "Could not open the tutorial link.", duration: 1500 });
+    }
+  }
+  return (
+    <View style={[styles.container, { paddingBottom: insets.bottom + 16 }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        <View style={styles.stepBadge}>
+          <Text style={styles.stepText}>Step 1 of 2</Text>
         </View>
 
-        <Text style={ws.heading}>Whitelist BinaPay IP</Text>
-        <Text style={ws.subheading}>
-          Add these IPs to your {exchangeLabel} API settings to allow BinaPay access
+        <Text style={styles.heading}>Whitelist BinaPay IP</Text>
+        <Text style={styles.subheading}>
+          Add these IP addresses to your {exchangeLabel} API settings to allow BinaPay access
         </Text>
 
-        {/* Info box */}
-        <View style={[ws.infoBox, IOS_CARD]}>
+        <View style={styles.infoBox}>
           <MaterialCommunityIcons name="shield-check-outline" size={20} color={BRAND} />
-          <View style={{ flex: 1 }}>
-            <Text style={ws.infoTitle}>Why whitelist?</Text>
-            <Text style={ws.infoBody}>{exchangeLabel} requires IP whitelisting for API security.</Text>
+          <View style={styles.infoText}>
+            <Text style={styles.infoTitle}>Why whitelist?</Text>
+            <Text style={styles.infoBody}>
+              {exchangeLabel} requires IP whitelisting for API security. This allows BinaPay to securely connect to your account.
+            </Text>
           </View>
         </View>
 
-        {/* IP list */}
-        <View style={[ws.ipCard, IOS_CARD]}>
-          {isLoading ? (
-            <View style={ws.ipRow}><Text style={[ws.ipText, { color: PLACEHOLDER }]}>Loading…</Text></View>
-          ) : (
-            BINAPAY_IPS.map((ip, i) => (
-              <View key={ip} style={[ws.ipRow, i < BINAPAY_IPS.length - 1 && ws.ipRowBorder]}>
-                <View style={ws.ipDot} />
-                <Text style={ws.ipText}>{ip}</Text>
-                <TouchableOpacity onPress={() => handleCopyOne(ip)} style={ws.copyBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} activeOpacity={0.7}>
-                  <MaterialCommunityIcons name="content-copy" size={18} color={BRAND} />
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
+        <View style={styles.ipCard}>
+  {isLoading ? (
+    <View style={styles.ipRow}>
+      <Text style={[styles.ipText, { color: "#9ca3af" }]}>
+        Loading...
+      </Text>
+    </View>
+  ) : (
+    BINAPAY_IPS.map((ip, index) => (
+      <View
+        key={ip}
+        style={[styles.ipRow, index < BINAPAY_IPS.length - 1 && styles.ipRowBorder]}
+      >
+        <View style={styles.ipDot} />
+        <Text style={styles.ipText}>{ip}</Text>
+        <TouchableRipple onPress={() => handleCopyOne(ip)} style={styles.copyBtn} borderless>
+          <MaterialCommunityIcons name="content-copy" size={18} color={BRAND} />
+        </TouchableRipple>
+      </View>
+    ))
+  )}
+</View>
 
-        {/* Copy all */}
-        <TouchableOpacity style={[ws.copyAllBtn, IOS_CARD]} onPress={handleCopyAll} activeOpacity={0.8}>
-          <MaterialCommunityIcons name="content-copy" size={16} color={BRAND} />
-          <Text style={ws.copyAllText}>Copy all IP addresses</Text>
-        </TouchableOpacity>
+        <TouchableRipple style={styles.copyAllBtn} onPress={handleCopyAll}>
+          <View style={styles.copyAllInner}>
+            <MaterialCommunityIcons name="content-copy" size={16} color={BRAND} />
+            <Text style={styles.copyAllText}>Copy all IP addresses</Text>
+          </View>
+        </TouchableRipple>
 
-        {/* Quick steps accordion */}
         <QuickSteps exchangeLabel={exchangeLabel} />
 
-        {/* Tutorial */}
-        <TouchableOpacity style={[ws.helpRow, !tutorialUrl && { opacity: 0.5 }]} onPress={handleTutorial} activeOpacity={0.8}>
-          <View style={ws.helpIconBox}>
-            <MaterialCommunityIcons name="youtube" size={20} color="#DC2626" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={ws.helpTitle}>Need help?</Text>
-            <Text style={ws.helpSub}>{tutorialUrl ? "Watch our step-by-step guide" : "Tutorial coming soon"}</Text>
-          </View>
-          {tutorialUrl && <MaterialCommunityIcons name="chevron-right" size={20} color={PLACEHOLDER} />}
-        </TouchableOpacity>
+        <TouchableOpacity
+        style={[styles.helpRow, !tutorialUrl && { opacity: 0.5 }]}
+        onPress={handleTutorial}
+        activeOpacity={0.8}
+           >
+        <View style={styles.helpIconBox}>
+        <MaterialCommunityIcons name="youtube" size={20} color="#E53935" />
+       </View>
+       <View style={{ flex: 1 }}>
+       <Text style={styles.helpTitle}>Need help?</Text>
+       <Text style={styles.helpSub}>
+        {tutorialUrl ? "Watch our step-by-step guide" : "Tutorial coming soon"}
+        </Text>
+       </View>
+        {tutorialUrl && (
+        <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
+         )}
+      </TouchableOpacity>
       </ScrollView>
 
-      <TouchableOpacity
-        style={ws.ctaBtn}
-        onPress={() => navigation.navigate(SCREENS.P2P_CONNECT_API, { exchange })}
-        activeOpacity={0.85}>
-        <MaterialCommunityIcons name="check-circle-outline" size={20} color={SURFACE} />
-        <Text style={ws.ctaText}>I have whitelisted the IP</Text>
-      </TouchableOpacity>
+      <TouchableRipple
+        style={styles.ctaBtn}
+        onPress={() => navigation.navigate(SCREENS.P2P_CONNECT_API, { exchange })}>
+        <View style={styles.ctaInner}>
+          <MaterialCommunityIcons name="check-circle-outline" size={20} color="#fff" />
+          <Text style={styles.ctaText}>I have whitelisted the IP</Text>
+        </View>
+      </TouchableRipple>
     </View>
   );
 }
@@ -135,20 +153,24 @@ function QuickSteps({ exchangeLabel }: { exchangeLabel: string }) {
     "Save your API Key and Secret",
   ];
   return (
-    <View style={[ws.accordion, IOS_CARD]}>
-      <TouchableOpacity onPress={() => setOpen(v => !v)} style={ws.accordionHeader} activeOpacity={0.7}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <MaterialCommunityIcons name="format-list-numbered" size={18} color={BRAND} />
-          <Text style={ws.accordionTitle}>Quick steps</Text>
+    <View style={styles.accordion}>
+      <TouchableRipple onPress={() => setOpen((v) => !v)} style={styles.accordionHeader}>
+        <View style={styles.accordionHeaderInner}>
+          <View style={styles.accordionLeft}>
+            <MaterialCommunityIcons name="format-list-numbered" size={18} color={BRAND} />
+            <Text style={styles.accordionTitle}>Quick steps</Text>
+          </View>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={20} color="#888" />
         </View>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={20} color={SUBLABEL} />
-      </TouchableOpacity>
+      </TouchableRipple>
       {open && (
-        <View style={ws.accordionBody}>
+        <View style={styles.accordionBody}>
           {steps.map((step, i) => (
-            <View key={i} style={ws.stepRow}>
-              <View style={ws.stepNumber}><Text style={ws.stepNumText}>{i + 1}</Text></View>
-              <Text style={ws.stepItem}>{step}</Text>
+            <View key={i} style={styles.stepRow}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumText}>{i + 1}</Text>
+              </View>
+              <Text style={styles.stepItem}>{step}</Text>
             </View>
           ))}
         </View>
@@ -157,38 +179,108 @@ function QuickSteps({ exchangeLabel }: { exchangeLabel: string }) {
   );
 }
 
-const SURFACE = "#FFFFFF";
-
-const ws = StyleSheet.create({
-  root:          { flex: 1, backgroundColor: SURFACE },
-  scroll:        { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  stepBadge:     { alignSelf: "center", backgroundColor: BLUE_LIGHT, paddingHorizontal: 14, paddingVertical: 5, borderRadius: 20, marginBottom: 16 },
-  stepText:      { fontSize: 13, fontWeight: "600", color: BRAND },
-  heading:       { fontSize: 24, fontWeight: "800", color: BRAND_DARK, textAlign: "center", marginBottom: 8, letterSpacing: -0.4 },
-  subheading:    { fontSize: 14, color: SUBLABEL, textAlign: "center", lineHeight: 21, marginBottom: 20 },
-  infoBox:       { flexDirection: "row", alignItems: "flex-start", gap: 12, backgroundColor: BLUE_LIGHT, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: "#BFDBFE" },
-  infoTitle:     { fontSize: 13, fontWeight: "700", color: LABEL, marginBottom: 3 },
-  infoBody:      { fontSize: 12, color: SUBLABEL, lineHeight: 18 },
-  ipCard:        { backgroundColor: SURFACE, borderRadius: 14, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR, marginBottom: 12 },
-  ipRow:         { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 14, gap: 10 },
-  ipRowBorder:   { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEPARATOR },
-  ipDot:         { width: 7, height: 7, borderRadius: 4, backgroundColor: BRAND },
-  ipText:        { flex: 1, fontSize: 15, color: LABEL, fontVariant: ["tabular-nums"] },
-  copyBtn:       { padding: 6 },
-  copyAllBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: SEPARATOR, borderRadius: 14, paddingVertical: 13, marginBottom: 16, backgroundColor: BG },
-  copyAllText:   { fontSize: 14, fontWeight: "600", color: BRAND },
-  accordion:     { backgroundColor: SURFACE, borderRadius: 14, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR, marginBottom: 14 },
-  accordionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 14, paddingHorizontal: 14 },
-  accordionTitle:{ fontSize: 14, fontWeight: "700", color: LABEL },
-  accordionBody: { paddingHorizontal: 14, paddingBottom: 14, gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEPARATOR },
-  stepRow:       { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  stepNumber:    { width: 24, height: 24, borderRadius: 12, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center", marginTop: 1 },
-  stepNumText:   { fontSize: 11, fontWeight: "700", color: BRAND },
-  stepItem:      { flex: 1, fontSize: 13, color: SUBLABEL, lineHeight: 20 },
-  helpRow:       { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#FFF5F5", borderRadius: 14, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: "#FECACA" },
-  helpIconBox:   { width: 36, height: 36, borderRadius: 10, backgroundColor: "#FEE2E2", justifyContent: "center", alignItems: "center" },
-  helpTitle:     { fontSize: 14, fontWeight: "700", color: LABEL },
-  helpSub:       { fontSize: 12, color: SUBLABEL },
-  ctaBtn:        { marginHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: BRAND, borderRadius: 14, paddingVertical: 16 },
-  ctaText:       { fontSize: 16, fontWeight: "700", color: SURFACE },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  stepBadge: {
+    alignSelf: "center",
+    backgroundColor: BRAND_LIGHT,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  stepText: { fontSize: 13, fontWeight: "600", color: BRAND },
+  heading: { fontSize: 22, fontWeight: "800", color: "#111", textAlign: "center", marginBottom: 8 },
+  subheading: { fontSize: 14, color: "#777", textAlign: "center", lineHeight: 21, marginBottom: 20 },
+  infoBox: {
+    flexDirection: "row",
+    backgroundColor: BRAND_LIGHT,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#D0D9EE",
+  },
+  infoText: { flex: 1 },
+  infoTitle: { fontSize: 13, fontWeight: "700", color: "#2A2A2A", marginBottom: 3 },
+  infoBody: { fontSize: 12, color: "#555", lineHeight: 18 },
+  ipCard: {
+    borderWidth: 1.5,
+    borderColor: "#D0D9EE",
+    borderRadius: 14,
+    overflow: "hidden",
+    marginBottom: 14,
+  },
+  ipRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 10,
+    backgroundColor: "#FAFCFF",
+  },
+  ipRowBorder: { borderBottomWidth: 1, borderBottomColor: "#E8EEF9" },
+  ipDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: BRAND },
+  ipText: { flex: 1, fontSize: 15, color: "#222", fontVariant: ["tabular-nums"] },
+  copyBtn: { padding: 6, borderRadius: 6 },
+  copyAllBtn: {
+    borderWidth: 1.5,
+    borderColor: "#D0D9EE",
+    borderRadius: 30,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginBottom: 20,
+    backgroundColor: "#FAFCFF",
+  },
+  copyAllInner: { flexDirection: "row", alignItems: "center", gap: 8 },
+  copyAllText: { fontSize: 14, fontWeight: "600", color: BRAND },
+  accordion: {
+    borderWidth: 1,
+    borderColor: "#E8EEF9",
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: "hidden",
+  },
+  accordionHeader: { paddingVertical: 14, paddingHorizontal: 14 },
+  accordionHeaderInner: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  accordionLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  accordionTitle: { fontSize: 14, fontWeight: "700", color: "#222" },
+  accordionBody: { paddingHorizontal: 14, paddingBottom: 14, gap: 10 },
+  stepRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  stepNumber: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: BRAND_LIGHT,
+    justifyContent: "center", alignItems: "center",
+    marginTop: 1,
+  },
+  stepNumText: { fontSize: 11, fontWeight: "700", color: BRAND },
+  stepItem: { flex: 1, fontSize: 13, color: "#555", lineHeight: 20 },
+  helpRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#FFF5F5",
+  borderRadius: 12,
+  padding: 14,
+  gap: 12,
+  borderWidth: 1,
+  borderColor: "#FFD6D6",
+},
+  helpIconBox: {
+    width: 36, height: 36, borderRadius: 8,
+    backgroundColor: "#FFE5E5",
+    justifyContent: "center", alignItems: "center",
+  },
+  helpTitle: { fontSize: 14, fontWeight: "700", color: "#222" },
+  helpSub: { fontSize: 12, color: "#888" },
+  ctaBtn: {
+    marginHorizontal: 20,
+    backgroundColor: BRAND,
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  ctaInner: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ctaText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });

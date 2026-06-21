@@ -217,4 +217,5 @@ export interface PrintProps {
   hasHighlighted?:        { value: string; copyable: boolean };
     amount?:                string;
     status?:                TransactionStatus | string;
+    providerLogo?: string;
 };

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Platform, StatusBar } from "react-native";
+import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
 import { Button, Text } from "react-native-paper";
 import { AccountStackScreenProps } from "@navigators/types";
 import { Controller, useForm } from "react-hook-form";
@@ -21,23 +21,10 @@ import { getNavigate } from "@utils/navigation";
 import { zodPhoneValidation } from "@utils/phone";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
-const BRAND      = "#1E3A8A";
-const BLUE       = "#2563EB";
-const BLUE_LIGHT = "#EEF3FF";
-const BG         = "#F2F2F7";
-const SURFACE    = "#FFFFFF";
-const SEPARATOR  = "#E5E7EB";
-const SUBLABEL   = "#6B7280";
-
-const IOS_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
-  android: { elevation: 2 },
-});
-const IOS_SHEET_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 12 },
-  android: { elevation: 8 },
-});
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
 const schema = z.object({
   name:  z.string().min(2, "Too Short").trim(),
@@ -47,12 +34,11 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) => {
-  const insets   = useSafeAreaInsets();
-  const [isProcessing, setIsProcessing]         = useState(false);
-  const [imageObject, setImageObject]           = useState<Asset | null>(null);
+  const insets     = useSafeAreaInsets();
+  const [isProcessing, setIsProcessing]   = useState(false);
+  const [imageObject, setImageObject]     = useState<Asset | null>(null);
   const [initialImageSource, setInitialImageUri] = useState(require("@assets/draft/male-avatar-circle.png"));
 
-  // ── All original logic — untouched ────────────────────────────────────────
   const user       = useTypedSelector(selectUser);
   const isVerified = useTypedSelector(selectIsAccountVerified);
   const dispatch   = useTypedDispatch();
@@ -97,27 +83,16 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
   });
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* ── iOS nav bar (centered title) ── */}
-      <View style={s.navBar}>
-        <TouchableOpacity
-          style={s.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <MaterialCommunityIcons name="chevron-left" size={26} color={BRAND} />
-        </TouchableOpacity>
-        <View style={s.navCenter}>
-          <Text style={s.navTitle}>Personal Information</Text>
-          <Text style={s.navSub}>Update your profile details</Text>
-        </View>
-        <View style={{ width: 36 }} />
-      </View>
+    <View style={s.root}>
+      {/* Header */}    
+      <ScreenHeader
+          title="Personal Information"
+          subtitle="Update your profile details"
+          onBack={() => navigation.goBack()}
+          rightIcon="shield-check-outline"       
+        />
 
       <ScrollableView contentContainerStyle={s.scroll}>
-
         {/* Avatar */}
         <View style={s.avatarWrap}>
           <ImageInput
@@ -127,47 +102,59 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
           />
         </View>
 
-        {/* Verified banner */}
         {isVerified && (
-          <View style={[s.verifiedBanner, IOS_SHADOW]}>
-            <MaterialCommunityIcons name="shield-check" size={16} color="#16A34A" />
-            <Text style={s.verifiedBannerText}>
-              Your account is verified. Some fields cannot be edited.
-            </Text>
+          <View style={s.verifiedBanner}>
+            <MaterialCommunityIcons name="shield-check" size={16} color="#16a34a" />
+            <Text style={s.verifiedBannerText}>Your account is verified. Some fields cannot be edited.</Text>
           </View>
         )}
 
-        {/* Form card */}
-        <View style={[s.card, IOS_SHADOW]}>
+        <View style={s.card}>
           <Controller
-            control={control} name="name"
+            control={control}
+            name="name"
             render={({ field: { onChange, onBlur, value } }) => (
               <CustomTextInput
-                label="Full Name" mode="outlined"
-                onBlur={onBlur} value={value} onChangeText={onChange}
-                error={!!errors.name} errorMessage={errors.name?.message}
+                label="Full Name"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
+                error={!!errors.name}
+                errorMessage={errors.name?.message}
                 disabled={isVerified}
               />
             )}
           />
           <Controller
-            control={control} name="email"
+            control={control}
+            name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <CustomTextInput
-                label="Email Address" mode="outlined"
-                onBlur={onBlur} value={value} onChangeText={onChange}
+                label="Email Address"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
                 disabled={isVerified}
-                error={!!errors.email} errorMessage={errors.email?.message}
+                error={!!errors.email}
+                errorMessage={errors.email?.message}
               />
             )}
           />
           <Controller
-            control={control} name="phone"
+            control={control}
+            name="phone"
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <CustomTextInput
-                label="Phone Number" placeholder="+234 000 000 0000" mode="outlined"
-                onBlur={onBlur} value={value} onChangeText={onChange}
-                error={!!error} errorMessage={error?.message}
+                label="Phone Number"
+                placeholder="+234 000 000 0000"
+                mode="outlined"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
+                error={!!error}
+                errorMessage={error?.message}
                 disabled={isVerified}
               />
             )}
@@ -175,10 +162,11 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
         </View>
 
         <TouchableOpacity
-          style={[s.saveBtn, isProcessing && s.disabledBtn]}
+          style={[s.saveBtn, isProcessing && { opacity: 0.6 }]}
           onPress={onSubmit}
           disabled={isProcessing}
-          activeOpacity={0.85}>
+          activeOpacity={0.85}
+        >
           <Text style={s.saveBtnText}>Save Changes</Text>
         </TouchableOpacity>
       </ScrollableView>
@@ -191,18 +179,16 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
 export default Profile;
 
 const s = StyleSheet.create({
-  root:               { flex: 1, backgroundColor: BG },
-  navBar:             { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, backgroundColor: SURFACE, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEPARATOR },
-  backBtn:            { width: 36, height: 36, borderRadius: 18, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
-  navCenter:          { flex: 1, alignItems: "center" },
-  navTitle:           { fontSize: 16, fontWeight: "700", color: BRAND, letterSpacing: -0.3 },
-  navSub:             { fontSize: 11, color: SUBLABEL, marginTop: 1 },
-  scroll:             { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
-  avatarWrap:         { alignItems: "center", marginBottom: 20 },
-  verifiedBanner:     { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#F0FDF4", borderRadius: 12, padding: 13, marginBottom: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: "#BBF7D0" },
-  verifiedBannerText: { fontSize: 13, color: "#15803D", flex: 1, lineHeight: 18 },
-  card:               { backgroundColor: SURFACE, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR, padding: 14, marginBottom: 16, gap: 4 },
-  saveBtn:            { backgroundColor: BLUE, borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  saveBtnText:        { color: SURFACE, fontSize: 15, fontWeight: "700" },
-  disabledBtn:        { opacity: 0.6 },
+  root:                { flex: 1, backgroundColor: "#f8f9fb" },
+  header:              { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  backBtn:             { width: 32, height: 32, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+  headerTitle:         { fontSize: 16, fontWeight: "700", color: BRAND },
+  headerSub:           { fontSize: 11, color: "#6b7280", marginTop: 1 },
+  scroll:              { padding: 16, paddingBottom: 40 },
+  avatarWrap:          { alignItems: "center", marginBottom: 16 },
+  verifiedBanner:      { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#f0fdf4", borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: "#bbf7d0" },
+  verifiedBannerText:  { fontSize: 12, color: "#15803d", flex: 1 },
+  card:                { backgroundColor: "#fff", borderRadius: 14, borderWidth: 1, borderColor: "#f0f0f0", padding: 14, marginBottom: 16, gap: 4 },
+  saveBtn:             { backgroundColor: BLUE, borderRadius: 12, paddingVertical: 15, alignItems: "center" },
+  saveBtnText:         { color: "#fff", fontSize: 15, fontWeight: "700" },
 });

@@ -1,62 +1,49 @@
 import Empty from "@components/ui/empty-states/empty";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
-import Screen from "@components/ui/shared/Screen";
 import { SCREENS } from "@constants/screens";
-import { Colors } from "@constants/theme/colors";
-import tw from "@lib/tailwind";
 import { NotificationStackScreenProps } from "@navigators/types";
 import { useFetchNotificationsQuery } from "@store/redux-api/notificationApi";
 import { BinaNotification } from "@type/app";
 import { getCurrentRouteName } from "@utils/navigation";
 import { formatDistanceToNow } from "date-fns";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AppState, FlatList, TouchableOpacity, View } from "react-native";
+import { AppState, FlatList, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
+import { ActivityIndicator, Text } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "react-native-element-image";
-import { ActivityIndicator, Badge, Text } from "react-native-paper";
+
+const BLUE  = "#2563EB";
+const BRAND = "#1E3A8A";
+const REFRESH_SCREEN_LIST = [SCREENS.NOTIFICATION, SCREENS.SETTINGS];
 
 type Props = NotificationStackScreenProps<"List Notifications">;
 
-const REFRESH_SCREEN_LIST = [SCREENS.NOTIFICATION, SCREENS.SETTINGS];
-
 export default function NotificationScreen({ navigation }: Props) {
   const [appState, setAppState] = useState(AppState.currentState);
-  const [page, setPage] = useState(1);
+  const [page, setPage]         = useState(1);
+  const insets                  = useSafeAreaInsets();
 
   const { data: queryData, isFetching, isLoading, refetch } = useFetchNotificationsQuery({ page });
-  const notificationData = useMemo(() => {
-    if (!queryData) {
-      return {
-        payload: {},
-        meta: {
-          has_more: false,
-          unread_count: 0,
-        },
-      };
-    }
 
+  const notificationData = useMemo(() => {
+    if (!queryData) return { payload: {}, meta: { has_more: false, unread_count: 0 } };
     return queryData;
   }, [queryData]);
 
-  // Update notifications when app comes to foreground from background
   useEffect(() => {
     const appStateListener = AppState.addEventListener("change", (nextAppState) => {
       if (appState.match(/inactive|background/) && nextAppState === "active") {
         const routeName = getCurrentRouteName();
-        if (routeName && REFRESH_SCREEN_LIST.includes(routeName as any)) {
-          refetch();
-        }
+        if (routeName && REFRESH_SCREEN_LIST.includes(routeName as any)) refetch();
       }
       setAppState(nextAppState);
     });
-    return () => {
-      appStateListener?.remove();
-    };
+    return () => appStateListener?.remove();
   }, [appState]);
 
   const onEndReached = useCallback(() => {
-    if (!isFetching && queryData?.meta.has_more) {
-      setPage((prevPage) => prevPage + 1);
-    }
+    if (!isFetching && queryData?.meta.has_more) setPage((p) => p + 1);
   }, [isFetching, queryData]);
 
   const EmptyList = useCallback(() => {
@@ -69,45 +56,48 @@ export default function NotificationScreen({ navigation }: Props) {
         />
       );
     }
-
     return null;
   }, [notificationData]);
 
-  const renderMoreLoader = useMemo(() => {
-    return (
-      <View style={tw`items-center h-full pt-2 pb-4 bg-white`}>
-        {notificationData.meta.has_more ? (
-          <View style={tw`flex-row items-center gap-2`}>
-            <ActivityIndicator size="small" color={"gray"} animating={true} />
-            <Text style={tw`text-gray-300`}>Loading more notifications...</Text>
-          </View>
-        ) : (
-          <Text style={tw`text-gray-300`}>All Notifications loaded 🎉`</Text>
-        )}
-      </View>
-    );
-  }, [notificationData.meta.has_more]);
+  const renderMoreLoader = useMemo(() => (
+    <View style={s.loaderRow}>
+      {notificationData.meta.has_more ? (
+        <>
+          <ActivityIndicator size="small" color="#9ca3af" animating />
+          <Text style={s.loaderText}>Loading more...</Text>
+        </>
+      ) : (
+        <Text style={s.loaderText}>All notifications loaded</Text>
+      )}
+    </View>
+  ), [notificationData.meta.has_more]);
 
-  const onSelectNotification = async (item: BinaNotification) => {
+  const onSelectNotification = (item: BinaNotification) => {
     navigation.navigate("View Notification", { id: item.id });
   };
 
   return (
-    <Screen style={tw`pb-0`}>
-      <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold px-4 py-5 `}>
-        Notification
-      </Text>
-      <View style={tw`px-4 flex-1`}>
-        <EmptyList />
+    <SafeAreaView style={s.root}>
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <View style={s.headerIconWrap}>
+          <MaterialCommunityIcons name="bell-outline" size={18} color={BLUE} />
+        </View>
+        <Text style={s.headerTitle}>Notifications</Text>
+        {notificationData.meta.unread_count > 0 && (
+          <View style={s.unreadBadge}>
+            <Text style={s.unreadBadgeText}>{notificationData.meta.unread_count} unread</Text>
+          </View>
+        )}
+      </View>
 
+      <View style={s.listWrap}>
+        <EmptyList />
         <FlatList
           keyExtractor={([group]) => group}
           data={Object.entries(notificationData.payload)}
           renderItem={({ item: [group, notifications] }) => (
-            <View key={group}>
-              <Text variant="titleMedium" style={tw`text-gray-900`}>
-                {group}
-              </Text>
+            <View style={s.groupWrap}>
+              <Text style={s.groupLabel}>{group}</Text>
               {notifications.map((item) => (
                 <NotificationItem key={item.id} item={item} onSelectNotification={onSelectNotification} />
               ))}
@@ -115,49 +105,71 @@ export default function NotificationScreen({ navigation }: Props) {
           )}
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
           refreshing={false}
           onRefresh={refetch}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderMoreLoader}
           onEndReached={onEndReached}
+          contentContainerStyle={{ paddingBottom: 24 }}
         />
       </View>
+
       <PleaseWaitModal visible={isLoading} />
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 type NotificationItemProps = {
   item: BinaNotification;
-  onSelectNotification: (notification: BinaNotification) => void;
+  onSelectNotification: (n: BinaNotification) => void;
 };
 
-const NotificationItem = React.memo<NotificationItemProps>(({ item, onSelectNotification }) => (
-  <TouchableOpacity
-    onPress={() => onSelectNotification(item)}
-    style={tw.style(
-      `flex-row items-center gap-2 my-3 p-2 rounded-2xl border border-gray-100`,
-      item.read_at ? "bg-white" : "bg-gray-100",
-    )}>
-    <Image source={require("@assets/icons/logo-small.png")} width={60} height={60} />
-    <View style={tw`flex-1`}>
-      <View style={tw`flex-row items-center relative`}>
-        <Text variant="titleSmall" style={tw`text-gray-900`}>
-          {item.data.title}
-        </Text>
-        <Badge
-          visible={item.read_at !== null}
-          theme={{ colors: { error: Colors.secondary.DEFAULT, onError: "white" } }}
-          style={tw`absolute rounded top-2 right-2`}
-          size={20}>
-          Seen
-        </Badge>
+const NotificationItem = React.memo<NotificationItemProps>(({ item, onSelectNotification }) => {
+  const isUnread = !item.read_at;
+  return (
+    <TouchableOpacity
+      onPress={() => onSelectNotification(item)}
+      style={[s.notifRow, isUnread && s.notifRowUnread]}
+      activeOpacity={0.7}
+    >
+      <View style={s.notifIconWrap}>
+        <Image source={require("@assets/icons/logo-small.png")} width={32} height={32} />
       </View>
-      <Text variant="bodyMedium" style={tw`text-gray-500 w-10/12`}>
-        {item.data.message}
-      </Text>
-      <Text style={tw`text-xs text-gray-400`}>Sent {formatDistanceToNow(item.created_at, { addSuffix: true })}</Text>
-    </View>
-  </TouchableOpacity>
-));
+      <View style={s.notifContent}>
+        <View style={s.notifTitleRow}>
+          <Text style={s.notifTitle} numberOfLines={1}>{item.data.title}</Text>
+          {isUnread && <View style={s.unreadDot} />}
+        </View>
+        <Text style={s.notifMessage} numberOfLines={2}>{item.data.message}</Text>
+        <Text style={s.notifTime}>{formatDistanceToNow(item.created_at, { addSuffix: true })}</Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={16} color="#d1d5db" />
+    </TouchableOpacity>
+  );
+});
+
+const s = StyleSheet.create({
+  root:            { flex: 1, backgroundColor: "#f8f9fb" },
+  header:          { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  headerIconWrap:  { width: 32, height: 32, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+  headerTitle:     { fontSize: 17, fontWeight: "700", color: BRAND, flex: 1 },
+  unreadBadge:     { backgroundColor: "#EEF3FF", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  unreadBadgeText: { fontSize: 11, fontWeight: "700", color: BLUE },
+
+  listWrap:        { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  groupWrap:       { marginBottom: 12 },
+  groupLabel:      { fontSize: 11, fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+
+  notifRow:        { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#fff", borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: "#f0f0f0" },
+  notifRowUnread:  { backgroundColor: "#EEF3FF", borderColor: "#bfdbfe" },
+  notifIconWrap:   { width: 44, height: 44, borderRadius: 22, backgroundColor: "#f3f4f6", justifyContent: "center", alignItems: "center", overflow: "hidden" },
+  notifContent:    { flex: 1 },
+  notifTitleRow:   { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 },
+  notifTitle:      { fontSize: 13, fontWeight: "700", color: "#111827", flex: 1 },
+  unreadDot:       { width: 8, height: 8, borderRadius: 4, backgroundColor: BLUE },
+  notifMessage:    { fontSize: 12, color: "#6b7280", lineHeight: 17, marginBottom: 4 },
+  notifTime:       { fontSize: 11, color: "#9ca3af" },
+
+  loaderRow:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 16 },
+  loaderText:      { fontSize: 12, color: "#9ca3af" },
+});

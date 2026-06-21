@@ -23,7 +23,7 @@ function AddMoneyStack() {
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
         headerTitle: "",
-        headerShown: true,
+        headerShown: false,
         headerLeft: () => (
           <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
             <TouchableRipple

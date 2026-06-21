@@ -20,6 +20,7 @@ import UpgradeTier2Screen        from "@screens/kyc/UpgradeTier2Screen";
 import FaceVerificationScreen    from "@screens/kyc/FaceVerification";
 import AddressVerificationScreen from "@screens/kyc/AddressVerification";
 import VerificationLimitsScreen  from "@screens/kyc/VerificationLimitsScreen";
+import PremblyVerificationScreen  from "@screens/kyc/PremblyVerificationScreen"; 
 
 const Stack = createNativeStackNavigator<KYCParamList>();
 
@@ -37,7 +38,10 @@ export default function KYCStack() {
     face: SCREENS.FACE_VERIFICATION,
     address: SCREENS.ADDRESS_VERIFICATION,
     limits: SCREENS.VERIFICATION_LIMITS,
-  });  return (
+  }); 
+    console.log("KYC STACK MOUNTED, PREMBLY SCREEN:", SCREENS.PREMBLY_VERIFICATION);
+
+  return (
     <Stack.Navigator
       initialRouteName={SCREENS.VERIFICATION_HUB}
       screenOptions={{ headerShown: false }}
@@ -104,6 +108,8 @@ export default function KYCStack() {
         name={SCREENS.VERIFICATION_LIMITS}
         component={VerificationLimitsScreen}
       />
+
+      <Stack.Screen name={SCREENS.PREMBLY_VERIFICATION} component={PremblyVerificationScreen} />
     </Stack.Navigator>
   );
 }

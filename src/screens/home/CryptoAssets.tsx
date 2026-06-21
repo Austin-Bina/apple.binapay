@@ -97,6 +97,11 @@ export default function CryptoAssetsScreen() {
   return (
     <CryptoProvider>
       <View style={styles.container}>
+        {/* Page Header */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.pageHeader}>Crypto Rates </Text>
+          <Text style={styles.pageSubtitle}>Track live crypto prices in NGN or USD</Text>
+        </View>
         <CryptoAssetsList />
       </View>
     </CryptoProvider>
@@ -127,4 +132,21 @@ const styles = StyleSheet.create({
   assetBalance: { fontSize: 14, fontWeight: "600", color: "#111" },
   assetValue: { fontSize: 12, color: "#666" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+    headerContainer: {
+    alignItems: "center",
+    marginBottom: 5,
+     paddingTop: 30,
+  },
+
+  pageHeader: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#111",
+  },
+  pageSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+ 
 });

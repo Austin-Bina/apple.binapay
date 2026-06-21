@@ -14,9 +14,10 @@ import { notificationsApi } from "./redux-api/notificationApi";
 import { supportApi } from "./redux-api/supportApi";
 import { systemSettingsApi } from "./redux-api/systemSettingsApi";
 import { accountsApi } from "./redux-api/accountsApi";
-import { p2pApi } from "./redux-api/p2p";
-import { fundsApi } from "./redux-api/fundsApi";
-import { kycApi } from "./redux-api/kycApi";
+import { p2pApi } from "@store/redux-api/p2p";
+import { fundsApi } from "@store/redux-api/fundsApi";
+import { kycApi } from "@store/redux-api/kycApi";
+import { statementApi } from "@store/redux-api/statementApi";
 
 const defaultReducer = combineReducers({
   auth: authSlice.reducer,
@@ -32,6 +33,7 @@ const defaultReducer = combineReducers({
   [p2pApi.reducerPath]: p2pApi.reducer,
   [fundsApi.reducerPath]: fundsApi.reducer,
   [kycApi.reducerPath]: kycApi.reducer,
+   [statementApi.reducerPath]: statementApi.reducer,
 });
 
 const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, UnknownAction>(
@@ -58,6 +60,7 @@ const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, Unkno
          [p2pApi.reducerPath]: {} as any,
           [fundsApi.reducerPath]: {} as any,
           [kycApi.reducerPath]: {} as any,
+          [statementApi.reducerPath]: {} as any,
       };
     }
 
@@ -93,7 +96,8 @@ export const store = createStore(
   accountsApi.middleware,
   p2pApi.middleware,
   fundsApi.middleware,
-  kycApi.middleware
+  kycApi.middleware,
+  statementApi.middleware,
 );
 
 export const persistor = persistStore(store);

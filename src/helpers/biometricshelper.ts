@@ -9,7 +9,7 @@ export async function authenticateWithBiometrics() {
   }
 
   const result = await LocalAuthentication.authenticateAsync({
-     promptMessage:           "Confirm with biometrics",
+    promptMessage: "Confirm withdrawal with fingerprint",
     fallbackLabel: "Use OTP",
     cancelLabel: "Cancel",
       disableDeviceFallback: false, // allow PIN fallback

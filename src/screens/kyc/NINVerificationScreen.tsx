@@ -18,35 +18,27 @@ import { AxiosError } from "axios";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, StatusBar } from "react-native";
+import {
+  View, Text, TouchableOpacity,
+  StyleSheet, ScrollView,
+} from "react-native";
 import { formatWithMask } from "react-native-mask-input";
 import Toast from "react-native-root-toast";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { vs } from "react-native-size-matters";
 import { z } from "zod";
 
-const BRAND      = "#1E3A8A";
-const BLUE       = "#2563EB";
-const BLUE_LIGHT = "#EEF3FF";
-const BG         = "#F2F2F7";
-const SURFACE    = "#FFFFFF";
-const SEPARATOR  = "#E5E7EB";
-const SUBLABEL   = "#6B7280";
-
-const IOS_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
-  android: { elevation: 2 },
-});
-const IOS_SHEET_SHADOW = Platform.select({
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 12 },
-  android: { elevation: 8 },
-});
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
 type Props = KYCStackScreenProps<typeof SCREENS.NIN_VERIFICATION>;
 
 const schema = z.object({
-  nin: z.string().transform(v => v.replace(/\D/g, "")).refine(v => v.length === 11, { message: "NIN must be exactly 11 digits" }),
+  nin: z.string()
+    .transform((val) => val.replace(/\D/g, ""))
+    .refine((val) => val.length === 11, { message: "NIN must be exactly 11 digits" }),
 });
+
 type FormValues = z.infer<typeof schema>;
 
 export default function NinVerificationScreen({ navigation }: Props) {
@@ -56,8 +48,7 @@ export default function NinVerificationScreen({ navigation }: Props) {
   const { customers } = useTypedSelector(selectSystemSettings);
   const bottomSheet   = useRef<BottomSheetModalMethods>(null);
 
-  // ── All original state + logic — untouched ────────────────────────────────
-  const [isProcessing, setIsProcessing]           = useState(false);
+  const [isProcessing, setIsProcessing]         = useState(false);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
 
   const { control, handleSubmit, setError, watch, trigger } = useForm<FormValues>({
@@ -74,97 +65,137 @@ export default function NinVerificationScreen({ navigation }: Props) {
     return Math.max(0, customers.nin_verification_limit - (remainingAttempts ?? 0));
   }, [remainingAttempts]);
 
-  useEffect(() => { if (user?.id) setRemainingAttempts(user.verification_attempts); }, [user?.id]);
+  useEffect(() => {
+    if (user?.id) setRemainingAttempts(user.verification_attempts);
+  }, [user?.id]);
 
   const openBottomSheet = useCallback(async () => {
-    if (await trigger()) setTimeout(() => bottomSheet.current?.present(), 100);
+    if (await trigger()) {
+      setTimeout(() => bottomSheet.current?.present(), 100);
+    }
   }, [trigger]);
+
   const closeBottomSheet = () => bottomSheet.current?.dismiss();
 
-  const onSubmit = handleSubmit(async form => {
+  const onSubmit = handleSubmit(async (form) => {
     try {
       setIsProcessing(true);
       const response = await API.post("/api/v1/kyc/verify-nin", { nin: form.nin });
       dispatch(authSliceActions.updateUser(response.data.user));
       await dispatch(authSliceActions.fetchUserProfile());
       closeBottomSheet();
-      navigation.navigate(SCREENS.VERIFICATION_SUCCESS, { tier: 1 });
+      navigation.navigate(SCREENS.VERIFICATION_HUB);
     } catch (error) {
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;
       if (response) {
         const { message, errors, error_code } = response.data;
-        if (message && typeof message === "string") showToast({ message, position: Toast.positions.TOP });
+        if (message && typeof message === "string") {
+          showToast({ message, position: Toast.positions.TOP });
+        }
         if (errors) {
           for (const [field, fieldErrors] of Object.entries(errors)) {
-            if (Array.isArray(fieldErrors)) setError(field as keyof FormValues, { message: fieldErrors.join(", ") });
+            if (Array.isArray(fieldErrors)) {
+              setError(field as keyof FormValues, { message: fieldErrors.join(", ") });
+            }
           }
           return;
         }
         if (error_code === "client_insufficient_funds") {
-          return dispatch(settingsSliceActions.setApplicationError({ code: "client_insufficient_funds", context: message }));
+          return dispatch(settingsSliceActions.setApplicationError({
+            code: "client_insufficient_funds", context: message,
+          }));
         }
       }
       showToast({ message: "We had trouble verifying your NIN. Please try again.", position: Toast.positions.TOP });
-    } finally { setIsProcessing(false); closeBottomSheet(); }
+    } finally {
+      setIsProcessing(false);
+      closeBottomSheet();
+    }
   });
 
   return (
-    <View style={[n.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      <View style={n.navBar}>
-        <TouchableOpacity style={n.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <MaterialCommunityIcons name="chevron-left" size={26} color={BRAND} />
+    <View style={[s.root, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color={BRAND} />
         </TouchableOpacity>
-        <View style={n.navCenter}>
-          <Text style={n.navTitle}>NIN Verification</Text>
-          <Text style={n.navSub}>Tier 1 – Basic Verification</Text>
+        <View>
+          <Text style={s.headerTitle}>NIN Verification</Text>
+          <Text style={s.headerSub}>Tier 1 – Basic Verification</Text>
         </View>
-        <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView contentContainerStyle={n.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Text style={n.title}>NIN Verification</Text>
-        <Text style={n.subtitle}>Verify your NIN for added security and increased transaction limits.</Text>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={s.title}>NIN Verification</Text>
+        <Text style={s.subtitle}>
+          Verify your NIN for added security and increased transaction limits.
+        </Text>
 
-        <View style={[n.formCard, IOS_SHADOW]}>
-          <Controller control={control} name="nin"
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-              <MaskedInput label="National Identity Number" placeholder="Enter your NIN" mode="outlined"
-                onBlur={onBlur} value={value} onChangeText={onChange}
-                error={!!error} errorMessage={error?.message} mask={bvn_nin_mask} />
-            )}
-          />
-        </View>
+        <Controller
+          control={control}
+          name="nin"
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <MaskedInput
+              label="National Identity Number"
+              placeholder="Enter your NIN"
+              mode="outlined"
+              onBlur={onBlur}
+              value={value}
+              onChangeText={onChange}
+              error={!!error}
+              errorMessage={error?.message}
+              mask={bvn_nin_mask}
+            />
+          )}
+        />
 
         {formattedRemainingAttempts !== null && (
-          <View style={[n.attemptsCard, IOS_SHADOW]}>
-            <MaterialCommunityIcons name="information-outline" size={16} color="#D97706" />
-            <Text style={n.attemptsText}>
-              You have <Text style={n.attemptsCount}>{formattedRemainingAttempts}</Text> free verification attempts remaining.
+          <View style={s.attemptsBox}>
+            <Text style={s.attemptsText}>
+              You have{" "}
+              <Text style={s.attemptsCount}>{formattedRemainingAttempts}</Text>
+              {" "}free verification attempts remaining.
             </Text>
           </View>
         )}
       </ScrollView>
 
-      <View style={[n.footer, { paddingBottom: insets.bottom + 16 }, IOS_SHEET_SHADOW]}>
-        <TouchableOpacity style={[n.btn, isProcessing && n.btnDisabled]} onPress={openBottomSheet}
-          disabled={isProcessing} activeOpacity={0.85}>
-          <Text style={n.btnText}>{isProcessing ? "Please wait…" : "Start Verification"}</Text>
+      {/* Footer button */}
+      <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
+        <TouchableOpacity
+          style={[s.btn, isProcessing && s.btnDisabled]}
+          onPress={openBottomSheet}
+          disabled={isProcessing}
+        >
+          <Text style={s.btnText}>
+            {isProcessing ? "Please wait..." : "Start Verification"}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <BottomSheetModal ref={bottomSheet} initialSnapPoints={[vs(250), vs(250)]} onDismiss={closeBottomSheet}
+      <BottomSheetModal
+        ref={bottomSheet}
+        initialSnapPoints={[vs(250), vs(250)]}
+        onDismiss={closeBottomSheet}
         children={
           <View style={tw`p-4`}>
-            <Text style={n.sheetTitle}>Please Review</Text>
-            <Text style={n.sheetLabel}>Your NIN</Text>
-            <Text style={n.sheetValue}>{masked}</Text>
-            <TouchableOpacity style={[n.btn, isProcessing && n.btnDisabled, { marginTop: 24 }]}
-              onPress={onSubmit} disabled={isProcessing} activeOpacity={0.85}>
-              <Text style={n.btnText}>{isProcessing ? "Verifying…" : "Yes, it's correct"}</Text>
+            <Text style={s.sheetTitle}>Please Review</Text>
+            <Text style={s.sheetLabel}>Your NIN</Text>
+            <Text style={s.sheetValue}>{masked}</Text>
+            <TouchableOpacity
+              style={[s.btn, isProcessing && s.btnDisabled, { marginTop: 24 }]}
+              onPress={onSubmit}
+              disabled={isProcessing}
+            >
+              <Text style={s.btnText}>
+                {isProcessing ? "Verifying..." : "Yes, it's correct"}
+              </Text>
             </TouchableOpacity>
           </View>
         }
@@ -174,25 +205,22 @@ export default function NinVerificationScreen({ navigation }: Props) {
   );
 }
 
-const n = StyleSheet.create({
-  root:         { flex: 1, backgroundColor: BG },
-  navBar:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, backgroundColor: SURFACE, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEPARATOR },
-  backBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: BLUE_LIGHT, justifyContent: "center", alignItems: "center" },
-  navCenter:    { flex: 1, alignItems: "center" },
-  navTitle:     { fontSize: 16, fontWeight: "700", color: BRAND, letterSpacing: -0.3 },
-  navSub:       { fontSize: 11, color: SUBLABEL, marginTop: 1 },
-  scroll:       { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120 },
-  title:        { fontSize: 22, fontWeight: "800", color: BRAND, letterSpacing: -0.4, marginBottom: 6 },
-  subtitle:     { fontSize: 14, color: SUBLABEL, marginBottom: 20 },
-  formCard:     { backgroundColor: SURFACE, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: SEPARATOR, padding: 14, marginBottom: 14 },
-  attemptsCard: { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: "#FFFBEB", borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: "#FDE68A" },
-  attemptsText: { flex: 1, fontSize: 13, color: SUBLABEL },
-  attemptsCount:{ color: "#D97706", fontWeight: "700" },
-  footer:       { paddingHorizontal: 16, paddingTop: 12, backgroundColor: SURFACE, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEPARATOR },
-  btn:          { backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
-  btnDisabled:  { opacity: 0.5 },
-  btnText:      { fontSize: 16, fontWeight: "700", color: SURFACE },
-  sheetTitle:   { fontSize: 18, fontWeight: "700", color: BRAND, textAlign: "center", marginBottom: 16 },
-  sheetLabel:   { fontSize: 14, color: SUBLABEL, textAlign: "center" },
-  sheetValue:   { fontSize: 28, fontWeight: "800", color: BRAND, textAlign: "center", marginTop: 8 },
+const s = StyleSheet.create({
+  root:          { flex: 1, backgroundColor: "#f8f9fb" },
+  header:        { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  backBtn:       { width: 34, height: 34, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+  headerTitle:   { fontSize: 16, fontWeight: "700", color: BRAND },
+  headerSub:     { fontSize: 12, color: "#6b7280" },
+  title:         { fontSize: 20, fontWeight: "800", color: BRAND, marginBottom: 6 },
+  subtitle:      { fontSize: 14, color: "#6b7280", marginBottom: 20 },
+  attemptsBox:   { backgroundColor: "#f9fafb", borderRadius: 10, padding: 12, marginTop: 12 },
+  attemptsText:  { fontSize: 13, color: "#6b7280", textAlign: "center" },
+  attemptsCount: { color: "#f59e0b", fontWeight: "700" },
+  footer:        { paddingHorizontal: 16, paddingTop: 12, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+  btn:           { backgroundColor: BLUE, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+  btnDisabled:   { opacity: 0.5 },
+  btnText:       { fontSize: 16, fontWeight: "700", color: "#fff" },
+  sheetTitle:    { fontSize: 18, fontWeight: "700", color: BRAND, textAlign: "center", marginBottom: 16 },
+  sheetLabel:    { fontSize: 14, color: "#6b7280", textAlign: "center" },
+  sheetValue:    { fontSize: 28, fontWeight: "800", color: BRAND, textAlign: "center", marginTop: 8 },
 });

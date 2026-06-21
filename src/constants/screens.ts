@@ -59,6 +59,7 @@ export const SCREENS = {
   BVN_VERIFICATION: "BVN Verification",
   NIN_VERIFICATION: "NIN Verification",
   PHONE_VERIFICATION: "Phone Verification",
+  PREMBLY_VERIFICATION: "Prembly Verification",
 
 
   // Password Recovery
@@ -88,7 +89,7 @@ export const SCREENS = {
   TRANSACTION_HISTORY: "Transaction History",
   VIEW_TRANSACTION: "View Transaction",
   TRANSACTION_DETAILS: "Transaction Details",
-
+   STATEMENT: "Statement",
   // Settings
   SETTINGS: "Settings",
 

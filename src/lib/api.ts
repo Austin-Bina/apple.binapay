@@ -77,7 +77,6 @@ const axiosBaseQuery =
 export { axiosBaseQuery };
 
 
-
 /**
  * for debugging
  */ /*
@@ -172,7 +171,7 @@ const axiosBaseQuery =
   async ({ url, method, data, params, headers }) => {
     try {
       const result = await API({
-        url: baseUrl + url,
+         url,
         method,
         data,
         params,
@@ -203,5 +202,6 @@ const axiosBaseQuery =
   };
 
 export { axiosBaseQuery };
+
 
 */

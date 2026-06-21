@@ -63,6 +63,7 @@ export type AccountParamList = {
    Leaderboard: { filter?: "weekly" | "monthly" | "alltime" };
       [SCREENS.AUTO_CRYPTO_SETTLEMENT]: undefined;
       [SCREENS.P2P_MANAGER_STACK]: NavigatorScreenParams<P2PParamList>;
+      [SCREENS.STATEMENT]: undefined;
 };
 
 export type AccountStackScreenProps<T extends keyof AccountParamList> = NativeStackScreenProps<AccountParamList, T>;
@@ -233,6 +234,12 @@ export type KYCParamList = {
   [SCREENS.FACE_VERIFICATION]: undefined;
   [SCREENS.ADDRESS_VERIFICATION]: undefined;
   [SCREENS.VERIFICATION_LIMITS]: undefined;
+   [SCREENS.PREMBLY_VERIFICATION]:
+    | {
+        verification_type?: "bvn" | "nin";
+        document_number?: string;
+      }
+    | undefined;
 };
 
 

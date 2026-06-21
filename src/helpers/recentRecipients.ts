@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const KEY = "recent_recipients";
 const MAX = 10;
-const TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+const TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export type RecentRecipient = {
   account_number: string;
