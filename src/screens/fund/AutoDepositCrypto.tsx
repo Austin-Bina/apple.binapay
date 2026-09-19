@@ -16,9 +16,8 @@ import QRCode from "react-native-qrcode-svg";
 import TransactionSuccessModal from "@components/ui/modals/TransactionSuccessModal";
 import { CryptoAsset as UserCryptoAsset, Network as UserNetwork } from "@type/user";
 import { useSubmitCryptoDepositMutation } from "@store/redux-api/fundsApi";
-import { resolveIconUrl } from "@utils/resolveIconUrl";
-import { resetNavigationToDashboard } from "@utils/navigation";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { resetNavigationToDashboard } from "@utils/navigation";
 
 const BRAND = "#1E3A8A";
 const BLUE  = "#2563EB";
@@ -42,11 +41,13 @@ export default function DepositCryptoScreen({ navigation }: any) {
 
   const [submitDeposit, { isLoading }] = useSubmitCryptoDepositMutation();
   const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;
-const [isDynamicNetwork, setIsDynamicNetwork] = useState(false);
 
   const selectedAsset    = cryptoAssets.find(a => a.symbol === selectedSymbol);
   const selectedNetwork  = networks.find(n => n.id === selectedNetworkId);
   const networkKey       = selectedNetwork?.name?.toUpperCase() ?? "";
+  const isDynamicNetwork = selectedSymbol && networkKey
+    ? !!dynamicDepositNetworks[selectedSymbol]?.[networkKey]
+    : false;
   const canShowTxHash = !!selectedSymbol && !!selectedNetworkId && !!walletAddress && !isDynamicNetwork;
   const balance = parseFloat(
     (user?.wallet_balances as any)?.[selectedSymbol?.toLowerCase()]?.balance ?? "0"
@@ -95,40 +96,24 @@ const [isDynamicNetwork, setIsDynamicNetwork] = useState(false);
   }, [selectedSymbol]);
 
   // ── Wallet address when network changes ───────────────────────────────────
-const [loadingAddress, setLoadingAddress] = useState(false);
-
-useEffect(() => {
-  if (!selectedAsset || !selectedNetwork) {
-    setWalletAddress("");
-    setIsDynamicNetwork(false);
-    return;
-  }
-
-  let cancelled = false;
-  setWalletAddress("");     // clear immediately — never show a stale/previous address
-  setLoadingAddress(true);
-
-  API.defaults.baseURL = BASE_URL;
-  API.post("/api/v1/crypto-deposit-address", {
-    currency: selectedAsset.symbol,
-    crypto_network_id: selectedNetwork.id,
-  })
-    .then(res => {
-      if (cancelled) return;
-      setWalletAddress(res.data.address);
-      setIsDynamicNetwork(!!res.data.is_dynamic);
-    })
-    .catch(() => {
-      if (!cancelled) {
-        setWalletAddress("");
-        setIsDynamicNetwork(false);
-      }
-    })
-    .finally(() => { if (!cancelled) setLoadingAddress(false); });
-
-  return () => { cancelled = true; };
-}, [selectedSymbol, selectedNetworkId]);
-
+  useEffect(() => {
+    if (!selectedAsset || !selectedNetwork) { setWalletAddress(""); return; }
+    if (isDynamicNetwork) {
+      API.defaults.baseURL = BASE_URL;
+      API.post("/api/v1/crypto-deposit-address", {
+        currency:          selectedAsset.symbol,
+        crypto_network_id: selectedNetwork.id,
+        network:
+          selectedNetwork.nowpayments_network_slug ??
+          selectedNetwork.network_slug ??
+          selectedNetwork.name.toLowerCase(),
+      })
+        .then(res => setWalletAddress(res.data.address))
+        .catch(() => setWalletAddress(""));
+      return;
+    }
+    setWalletAddress(selectedNetwork.deposit_address);
+  }, [selectedSymbol, selectedNetworkId, networks]);
 
   const copyAddress = async () => {
     if (!walletAddress) return;
@@ -148,6 +133,7 @@ useEffect(() => {
         crypto_network_id: String(selectedNetworkId),
         tx_hash:           txHash,
         amount:            amount ? parseFloat(amount) : null,
+         source:            Platform.OS === "ios" ? "ios" : "android",
       }).unwrap();
       setSuccessModalVisible(true);
     } catch (err: any) {
@@ -157,16 +143,15 @@ useEffect(() => {
   };
 
   return (
-     <View style={[s.root]}>
-    
-          {/* ── Header ── */}
-            <ScreenHeader
-            title="Deposit Crypto"
-            subtitle="Receive cryptocurrency into your BinaPay wallet"
-           onBack={() => resetNavigationToDashboard()}
-            rightIcon="help-circle-outline"
-          />
+    <View style={[s.root]}>
 
+      {/* ── Header ── */}
+        <ScreenHeader
+        title="Deposit Crypto"
+        subtitle="Receive cryptocurrency into your BinaPay wallet"
+       onBack={() => resetNavigationToDashboard()}
+        rightIcon="help-circle-outline"
+      />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={{ padding: 12, paddingBottom: 100 }}
@@ -243,27 +228,22 @@ useEffect(() => {
                 activeOpacity={0.8}
               >
                 <View style={[s.networkIconWrap, { backgroundColor: selectedNetworkId !== null ? "#EEF3FF" : "#f3f4f6" }]}>
-                 {selectedNetwork && resolveIconUrl(selectedNetwork.icon_url) ? (
-                <Image source={{ uri: resolveIconUrl(selectedNetwork.icon_url) }} style={{ width: 22, height: 22, borderRadius: 11 }} />
-                 ) : (
-                <MaterialCommunityIcons name="swap-horizontal" size={18} color={selectedNetworkId !== null ? BLUE : "#376fd1"} />
-                 )}
+                  <MaterialCommunityIcons name="swap-horizontal" size={18} color={selectedNetworkId !== null ? BLUE : "#9ca3af"} />
                 </View>
-               <View style={{ flex: 1 }}>
-  {selectedNetwork ? (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <Text style={[s.networkName, { color: BRAND }]}>{selectedNetwork.name}</Text>
-      <Text style={s.networkSlug}>{selectedNetwork.network_slug}</Text>
-      {!!dynamicDepositNetworks[selectedSymbol]?.[selectedNetwork.name.toUpperCase()] && (
-        <View style={s.recommendedBadge}>
-          <Text style={s.recommendedText}>Recommended</Text>
-        </View>
-      )}
-    </View>
-  ) : (
-    <Text style={s.networkName}>Select network</Text>
-  )}
-</View>
+                <View style={{ flex: 1 }}>
+                  {selectedNetwork ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={[s.networkName, { color: BRAND }]}>{selectedNetwork.name}</Text>
+                      {!!dynamicDepositNetworks[selectedSymbol]?.[selectedNetwork.name.toUpperCase()] && (
+                        <View style={s.recommendedBadge}>
+                          <Text style={s.recommendedText}>Recommended</Text>
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    <Text style={s.networkName}>Select network</Text>
+                  )}
+                </View>
                 <MaterialCommunityIcons name={showNetworkPicker ? "chevron-up" : "chevron-down"} size={18} color="#9ca3af" />
               </TouchableOpacity>
 
@@ -279,24 +259,19 @@ useEffect(() => {
                         onPress={() => { setSelectedNetworkId(network.id); setShowNetworkPicker(false); }}
                       >
                         <View style={[s.networkIconWrap, { backgroundColor: "#f3f4f6" }]}>
-                        {resolveIconUrl(network.icon_url) ? (
-                       <Image source={{ uri: resolveIconUrl(network.icon_url) }} style={{ width: 20, height: 20, borderRadius: 10 }} />
-                         ) : (
-                       <MaterialCommunityIcons name="swap-horizontal" size={16} color="#9ca3af" />
-                        )}
+                          <MaterialCommunityIcons name="swap-horizontal" size={16} color="#9ca3af" />
                         </View>
                         <View style={{ flex: 1 }}>
-  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-    <Text style={s.dropdownName}>{network.name}</Text>
-    <Text style={s.networkSlug}>{network.network_slug}</Text>
-    {isDynamic && (
-      <View style={s.recommendedBadge}>
-        <Text style={s.recommendedText}>Recommended</Text>
-      </View>
-    )}
-  </View>
-
-</View>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={s.dropdownName}>{network.name}</Text>
+                            {isDynamic && (
+                              <View style={s.recommendedBadge}>
+                                <Text style={s.recommendedText}>Recommended</Text>
+                              </View>
+                            )}
+                          </View>
+            
+                        </View>
                         {selectedNetworkId === network.id && (
                           <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
                         )}
@@ -353,8 +328,9 @@ useEffect(() => {
               </Text>
             </>
           )}
+          
               {/* Minimum deposit */}
-               {!canShowTxHash && minimumDeposit[selectedSymbol]?.[networkKey] != null && (
+              {!canShowTxHash && minimumDeposit[selectedSymbol]?.[networkKey] != null && (
                 <View style={s.minDepositCard}>
                   <View style={s.minDepositIcon}>
                     <MaterialCommunityIcons name="currency-usd" size={16} color="#16a34a" />
@@ -461,7 +437,6 @@ const s = StyleSheet.create({
   networkFee:        { fontSize: 11, color: "#6b7280", marginTop: 1 },
   recommendedBadge:  { backgroundColor: "#dcfce7", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8 },
   recommendedText:   { fontSize: 10, fontWeight: "600", color: "#16a34a" },
-  networkSlug:       { fontSize: 10, fontWeight: "600", color: "#6b7280", backgroundColor: "#f3f4f6", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 },
 
   autoCreditBanner:  { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 10, padding: 10, marginBottom: 8 },
   autoCreditTitle:   { fontSize: 12, fontWeight: "700", color: "#15803d", marginBottom: 1 },

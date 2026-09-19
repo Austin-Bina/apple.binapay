@@ -13,6 +13,7 @@ export interface Network {
   qr_code: string | null;
   network_slug: string;
   nowpayments_network_slug: string;
+   icon_url: string | null;
 }
 
 
@@ -83,6 +84,7 @@ export interface User {
    spreadConfig?: { spreadType: "percent" | "flat"; spread: number };
    userBankAccounts: userBankAccounts[];
   auto_process_crypto_deposits: boolean;
+  auto_convert: boolean;
   auto_withdraw_bank_account_id: string | null;
   kyc_tier?: number;
 daily_transfer_limit?: number;
@@ -92,6 +94,7 @@ daily_transfer_limit?: number;
   is_phone_verified?: boolean;
   is_face_verified?: boolean;
   is_address_verified?: boolean;
+  address_proof_url?: boolean;
 }
 
 export interface ReferralReward {
@@ -100,26 +103,40 @@ export interface ReferralReward {
   referee_id: string;
   registration_date: string;
   reward_amount: number;
-  total_reward_earned: number;
-  reward_per_withdrawal: number;
-  reward_percentage: number;
-  total_trading_volume: number;
-  total_volume: number;
-  max_reward_cap: number;
+  rewarded_at: string | null;
+  completed: boolean;
+
   referee: {
-    id: string;
+    id: string | null;
     name: string;
-    avatar: string;
+    avatar: string | null;
   };
+}
+
+export interface ReferralStep {
+    icon: string;
+    text: string;
+}
+
+export interface ReferralMeta {
+  has_more: boolean;
+  total_earnings: number;
+  total_referrals: number;
+  referrer_bonus: number;
+  referee_bonus: number;
+  min_trade_volume_usd: number;
+  minimum_reward_withdrawal: number;
+  how_it_works: ReferralStep[];
+
 }
 
 export interface ReferralLeaderboardItem {
   referrer_id: string;
   total_earned: number;
-  total_volume: number;
+  referral_count: number;
   referrer: {
     name: string;
-    avatar: string;
+    avatar: string | null;
   };
 }
 

@@ -50,6 +50,21 @@ const PLACEHOLDER = "#9CA3AF";
 const { width: SW } = Dimensions.get("window");
 const PLAN_CARD_W = (SW - 48) / 3;
 
+// Preference order for auto-selecting a plan type. Uses substring matching
+// (via normalize + includes) so "Hot Deal", "Hot Deals", "hot-deals" etc.
+// all resolve to the same bucket regardless of exact backend naming.
+const DEFAULT_TYPE_PRIORITY = ["hotdeal", "monthly", "weekly", "daily"];
+
+const normalize = (s: string) => s?.toLowerCase().replace(/[\s_-]/g, "") ?? "";
+
+function pickPreferredType(dataTypes: { id: string; label: string }[]): string {
+  if (dataTypes.length === 0) return "";
+  const preferred = DEFAULT_TYPE_PRIORITY
+    .map(key => dataTypes.find(t => normalize(t.id).includes(key)))
+    .find(Boolean);
+  return preferred?.id ?? dataTypes[0].id;
+}
+
 type Props = ServicesStackScreenProps<"Data Purchase">;
 
 const schema = z.object({
@@ -80,7 +95,7 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   const {
     control, watch, trigger, clearErrors, setError,
-    reset, setValue, handleSubmit, formState: { isValid },
+    reset, setValue, getValues, handleSubmit, formState: { isValid },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -145,8 +160,11 @@ export default function DataPurchaseScreen({ navigation }: Props) {
       }));
   }, [queryData, values.provider, values.type]);
 
+  // Initial default — runs once plan types load, only if nothing is selected yet.
   useEffect(() => {
-    if (dataTypes.length > 0 && !values.type) setValue("type", dataTypes[0].id);
+    if (dataTypes.length > 0 && !values.type) {
+      setValue("type", pickPreferredType(dataTypes));
+    }
   }, [dataTypes]);
 
   const transactionDetails = useMemo(() => ([
@@ -222,21 +240,22 @@ export default function DataPurchaseScreen({ navigation }: Props) {
 
   useEffect(() => { debouncedDetect(values.phone); }, [values.phone]);
 
-  // Add after your other useEffects
-useEffect(() => {
-  const unsubscribe = navigation.addListener("focus", () => {
-    reset({
-      provider:    values.provider,
-      phone:       values.phone,
-      data_bundle: undefined,
-      data_amount: "",
-      amount:      "0",
-      type:        values.type,
-      vendor:      "",
+  // Re-apply the preferred type (Hot Deals, if available) every time the
+  // screen regains focus — uses getValues() instead of the closed-over
+  // `values` so it never resets to a stale/empty type.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      reset({
+        ...getValues(),
+        type:        pickPreferredType(dataTypes),
+        data_bundle: undefined,
+        data_amount: "",
+        amount:      "0",
+        vendor:      "",
+      });
     });
-  });
-  return unsubscribe;
-}, [navigation]);
+    return unsubscribe;
+  }, [navigation, dataTypes]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

@@ -9,6 +9,7 @@ import { View } from "react-native";
 import { TouchableRipple } from "react-native-paper";
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import CompleteRegistration from "@screens/auth/register/complete";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const Stack = createNativeStackNavigator<RegistrationParamList>();
 
@@ -16,25 +17,32 @@ function RegistrationStack() {
   return (
     <Stack.Navigator
       initialRouteName="Start"
+      
       screenOptions={({ navigation }) => ({
-        headerStyle: tw`bg-white`,
+        headerStyle: { backgroundColor: "#f8f9fb" },
         headerShadowVisible: false,
         headerTitle: "",
         headerShown: true,
+        headerBackVisible: false, 
         headerLeft: () => (
-          <View style={tw`mr-2.5 rounded-xl overflow-hidden p-0.5 mt-11`}>
-            <TouchableRipple
-              onPress={() => {
-                navigation.getParent()?.reset({ routes: [{ name: "Onboarding" }] });
-              }}>
-              <LeftArrowIcon width={38} height={38} />
-            </TouchableRipple>
-          </View>
-        ),
+  <TouchableRipple
+    onPress={() => navigation.goBack()}
+    style={{ borderRadius: 10, overflow: "hidden" }}
+  >
+    <View style={{
+      width: 36, height: 36, borderRadius: 10,
+      backgroundColor: "#EEF3FF",
+      justifyContent: "center", alignItems: "center"
+      
+    }}>
+      <MaterialCommunityIcons name="arrow-left" size={20} color="#1E3A8A" />
+    </View>
+  </TouchableRipple>
+),
       })}>
-      <Stack.Screen name="Start" component={RegisterScreen} />
-      <Stack.Screen name="Verify Email" component={VerifyEmail} />
-      <Stack.Screen name="Complete Registration" component={CompleteRegistration} />
+      <Stack.Screen name="Start" component={RegisterScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Verify Email" component={VerifyEmail} options={{ headerShown: false }}/>
+      <Stack.Screen name="Complete Registration" component={CompleteRegistration}options={{ headerShown: false }}/>
       <Stack.Screen name="Register Success" options={{ headerShown: false }} component={RegisterSuccessScreen} />
     </Stack.Navigator>
   );

@@ -70,7 +70,7 @@ const handleContinue = async () => {
                     const { navigate } = await getNavigate();
                     navigate(SCREENS.MAIN, {
                       screen: SCREENS.HOME,
-                      params: { screen: SCREENS.TRANSACTION_HISTORY },
+                      params: { screen: SCREENS.TRANSACTION_HISTORY, params: {} },
                     });
                   }}
                 >

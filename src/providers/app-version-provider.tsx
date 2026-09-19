@@ -28,86 +28,76 @@ const AppVersionContext = createContext<AppVersionContextType>({
 
 export const useAppVersion = () => useContext(AppVersionContext);
 
-export const AppVersionProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AppVersionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
   const [skippedVersion, setSkippedVersion] = useState<string | null>(null);
-  const [lastChecked, setLastChecked] = useState<number>(0);
-  const [forceCheck, setForceCheck] = useState(false);
-  
+  const [storageLoaded, setStorageLoaded] = useState(false);
+  const [shouldQuery, setShouldQuery] = useState(false);
+
   const currentVersion = Application.nativeApplicationVersion || "1.0.0";
   const buildNumber = Application.nativeBuildVersion || "";
 
-  const { data: updateInfo, isFetching } = useCheckAppVersionQuery(undefined, {
-    skip: !shouldCheckForUpdates(lastChecked) && !forceCheck,
+  const { data: updateInfo, isFetching, refetch } = useCheckAppVersionQuery(undefined, {
+    skip: !shouldQuery,
     refetchOnReconnect: true,
   });
 
   useEffect(() => {
-    const loadVersionCheckData = async () => {
+    (async () => {
       try {
-        const storedData = await AsyncStorage.getItem(VERSION_CHECK_STORAGE_KEY);
-        if (storedData) {
-          const parsedData: VersionStorage = JSON.parse(storedData);
-          setSkippedVersion(parsedData.skippedVersion);
-          setLastChecked(parsedData.lastChecked);
+        const stored = await AsyncStorage.getItem(VERSION_CHECK_STORAGE_KEY);
+        let lastChecked = 0;
+
+        if (stored) {
+          const parsed: VersionStorage = JSON.parse(stored);
+          setSkippedVersion(parsed.skippedVersion);
+          lastChecked = parsed.lastChecked;
         }
+
+        // Only decide whether to query once we actually know lastChecked —
+        // never before storage has resolved, which is what broke the throttle.
+        setShouldQuery(Date.now() - lastChecked > VERSION_CHECK_INTERVAL);
       } catch (error) {
         console.error("Failed to load version check data:", error);
+        setShouldQuery(true); // fail open — check rather than silently skip forever
+      } finally {
+        setStorageLoaded(true);
       }
-    };
-
-    loadVersionCheckData();
+    })();
   }, []);
 
   useEffect(() => {
-    if (!updateInfo) return;
-    
-    if (updateInfo.updateAvailable) {
-      if (updateInfo.isForced || updateInfo.latestVersion !== skippedVersion) {
-        setShowUpdatePrompt(true);
-      }
-    }
-    
-    saveVersionCheckData(skippedVersion);
-    
-    if (forceCheck) {
-      setForceCheck(false);
+    if (!updateInfo?.updateAvailable) return;
+
+    if (updateInfo.isForced || String(updateInfo.latestVersion) !== skippedVersion) {
+      setShowUpdatePrompt(true);
     }
   }, [updateInfo, skippedVersion]);
 
-  const checkForUpdates = () => {
-    setForceCheck(true);
-    saveVersionCheckData(null);
-  };
+  useEffect(() => {
+    if (!storageLoaded || !updateInfo) return;
+    persistCheckTime(skippedVersion);
+  }, [storageLoaded, updateInfo]);
 
-  const handleDismiss = (version: string) => {
-    setSkippedVersion(version);
-    setShowUpdatePrompt(false);
-    saveVersionCheckData(version);
-  };
-
-  const saveVersionCheckData = async (skippedVer: string | null) => {
+  const persistCheckTime = async (skippedVer: string | null) => {
     try {
-      const now = Date.now();
-      setLastChecked(now);
-      
-      const data: VersionStorage = {
-        lastChecked: now,
-        skippedVersion: skippedVer
-      };
-      
+      const data: VersionStorage = { lastChecked: Date.now(), skippedVersion: skippedVer };
       await AsyncStorage.setItem(VERSION_CHECK_STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
       console.error("Failed to save version check data:", error);
     }
   };
-  
-  function shouldCheckForUpdates(lastCheckedTime: number): boolean {
-    const now = Date.now();
-    return now - lastCheckedTime > VERSION_CHECK_INTERVAL;
-  }
+
+  const handleDismiss = (version: string) => {
+    setSkippedVersion(version);
+    setShowUpdatePrompt(false);
+    persistCheckTime(version);
+  };
+
+  const checkForUpdates = () => {
+    setShouldQuery(true);
+    refetch();
+  };
 
   const contextValue: AppVersionContextType = {
     checkForUpdates,
@@ -120,7 +110,7 @@ export const AppVersionProvider: React.FC<{ children: React.ReactNode }> = ({
     <AppVersionContext.Provider value={contextValue}>
       <Fragment>
         {children}
-        <UpdatePrompt 
+        <UpdatePrompt
           visible={showUpdatePrompt}
           updateInfo={updateInfo}
           onDismiss={handleDismiss}

@@ -12,6 +12,7 @@ import { ActivityIndicator, Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "react-native-element-image";
+import { htmlToPlainText } from "@utils/htmlToPlainText";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -77,7 +78,7 @@ export default function NotificationScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={s.root}>
+    <View style={s.root}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <View style={s.headerIconWrap}>
           <MaterialCommunityIcons name="bell-outline" size={18} color={BLUE} />
@@ -115,7 +116,7 @@ export default function NotificationScreen({ navigation }: Props) {
       </View>
 
       <PleaseWaitModal visible={isLoading} />
-    </SafeAreaView>
+  </View>
   );
 }
 
@@ -140,7 +141,7 @@ const NotificationItem = React.memo<NotificationItemProps>(({ item, onSelectNoti
           <Text style={s.notifTitle} numberOfLines={1}>{item.data.title}</Text>
           {isUnread && <View style={s.unreadDot} />}
         </View>
-        <Text style={s.notifMessage} numberOfLines={2}>{item.data.message}</Text>
+        <Text style={s.notifMessage} numberOfLines={2}>{htmlToPlainText(item.data.message)}</Text>
         <Text style={s.notifTime}>{formatDistanceToNow(item.created_at, { addSuffix: true })}</Text>
       </View>
       <MaterialCommunityIcons name="chevron-right" size={16} color="#d1d5db" />

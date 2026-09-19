@@ -7,7 +7,9 @@ import { ReferralLeaderboardItem } from "@type/user";
 import { AccountStackScreenProps } from "@navigators/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatToNaira } from "@utils/money";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { AvatarImage } from "@components/avatar"; 
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -30,12 +32,14 @@ export default function LeaderboardScreen() {
   const { data, isFetching } = useGetReferralLeaderboardQuery({ limit: 20, filter: activeFilter });
 
   return (
-    <View style={s.root}>
-      {/* Header */}
+  
+ <View style={[s.root]}>
+
         <ScreenHeader
-          title="Leaderboard"
-          subtitle="Top referrers on BinaPay"
-          onBack={() => navigation.goBack()} 
+       title="Leaderboard"
+       subtitle="Top referrers on BinaPay"
+       onBack={() => navigation.goBack()}
+       rightIcon="shield-check-outline"
         />
 
       {/* Filter tabs */}
@@ -87,24 +91,25 @@ export default function LeaderboardScreen() {
                 </View>
 
                 {/* Avatar */}
-                <Image
-                  source={{ uri: `/storage/${item.referrer.avatar}` }}
-                  style={s.avatar}
-                  defaultSource={require("@assets/draft/male-avatar-circle.png")}
-                />
+                {/* Avatar */}
+  <AvatarImage avatar={item.referrer.avatar ?? undefined} size={38} />
 
                 {/* Name + volume */}
                 <View style={s.info}>
-                  <Text style={s.name} numberOfLines={1}>{item.referrer.name}</Text>
-                  <Text style={s.volume}>Vol: ₦{item.total_volume.toLocaleString()}</Text>
-                </View>
+  <Text style={s.name} numberOfLines={1}>{item.referrer.name}</Text>
+  <Text style={s.volume}>
+    {item.referral_count} referral{item.referral_count === 1 ? "" : "s"}
+  </Text>
+</View>
 
-                {/* Earned */}
-                <View style={[s.earnedBadge, isTop3 && { backgroundColor: "#dcfce7" }]}>
-                  <Text style={[s.earnedText, isTop3 && { color: "#16a34a" }]}>
-                    ₦{item.total_earned.toLocaleString()}
-                  </Text>
-                </View>
+<View style={[s.earnedBadge, isTop3 && { backgroundColor: "#dcfce7" }]}>
+  <Text style={[s.earnedText, isTop3 && { color: "#16a34a" }]}>
+    {formatToNaira(item.total_earned)}
+  </Text>
+</View>
+
+               
+              
               </View>
             );
           }}

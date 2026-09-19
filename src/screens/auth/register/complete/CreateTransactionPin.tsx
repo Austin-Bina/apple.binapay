@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text } from "react-native";
-import { Button } from "react-native-paper";
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { RegistrationStackScreenProps } from "@navigators/types";
-import tw from "@lib/tailwind";
-import Screen from "@components/ui/shared/Screen";
 import { RegistrationFormValues, useCompleteRegisterForm } from "@providers/complete-registration";
 import { useFormContext } from "react-hook-form";
 import OtpInput from "@components/ui/form/OtpInput";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+const BLUE  = "#2563EB";
+const BRAND = "#1E3A8A";
 
 type Props = RegistrationStackScreenProps<"Complete Registration">;
-
 const maximumLength = 4;
-const CreateTransactionPin: React.FC<Props> = () => {
+
+const CreateTransactionPin: React.FC<Props> = ({ navigation }) => {
   const [pinReady, setPinReady] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [firstPin, setFirstPin] = useState("");
+  const insets = useSafeAreaInsets();
 
   const { dispatch } = useCompleteRegisterForm();
   const { control, watch, reset, trigger, setError, setValue } = useFormContext<RegistrationFormValues>();
@@ -48,36 +52,60 @@ const CreateTransactionPin: React.FC<Props> = () => {
   );
 
   return (
-    <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
-        <View>
-          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>
-            {isConfirming ? "Confirm Your Transaction PIN" : "Set Your Transaction PIN"}
-          </Text>
-          <Text style={tw`w-full mb-10 text-gray-500 font-normal`}>
-            {isConfirming
-              ? "Please re-enter the 4-digit PIN to confirm it."
-              : "Secure your transactions with a 4-digit PIN. Choose a PIN that is easy for you to remember but hard for others to guess."}
-          </Text>
-          <View style={tw`mb-10`}>
-            <View style={tw`flex flex-row items-center justify-center`}>
-              <OtpInput control={control} name="pin" maximumLength={maximumLength} />
-            </View>
+    <View style={s.root}>
+      <ScreenHeader
+        title={isConfirming ? "Confirm Transaction PIN" : "Set Transaction PIN"}
+        subtitle={isConfirming ? "Re-enter your 4-digit PIN to confirm" : "Secure your transactions with a PIN"}
+        onBack={() => navigation.goBack()}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={0}
+      >
+        <View style={s.content}>
+          <View style={s.infoCard}>
+            <MaterialCommunityIcons name="shield-lock-outline" size={18} color={BLUE} />
+            <Text style={s.infoText}>
+              {isConfirming
+                ? "Please re-enter the 4-digit PIN to confirm it."
+                : "Choose a 4-digit PIN that is easy for you to remember but hard for others to guess."}
+            </Text>
+          </View>
+
+          <View style={s.otpWrap}>
+            <OtpInput control={control} name="pin" maximumLength={maximumLength} />
           </View>
         </View>
-        <View style={tw`gap-4 mb-5`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            mode="contained"
+
+        <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
+          <TouchableOpacity
+            style={[s.continueBtn, !pinReady && s.disabledBtn]}
             disabled={!pinReady}
-            onPress={handleNext}>
-            {isConfirming ? "Confirm PIN" : "Continue"}
-          </Button>
+            onPress={handleNext}
+            activeOpacity={0.85}
+          >
+            <Text style={s.continueBtnText}>
+              {isConfirming ? "Confirm PIN" : "Continue"}
+            </Text>
+          </TouchableOpacity>
         </View>
-      </View>
-    </Screen>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
+
+const s = StyleSheet.create({
+  root:            { flex: 1, backgroundColor: "#f8f9fb" },
+  content:         { flex: 1, padding: 16 },
+  infoCard:        { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: "#EEF3FF", borderRadius: 12, padding: 12, marginBottom: 32 },
+  infoText:        { flex: 1, fontSize: 13, color: "#374151", lineHeight: 18 },
+  otpWrap:         { alignItems: "center", marginTop: 16 },
+  footer:          { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+  continueBtn:     { backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+  continueBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  disabledBtn:     { opacity: 0.5 },
+});
 
 export default CreateTransactionPin;

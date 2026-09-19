@@ -9,7 +9,7 @@ import {
 import { useListAccountsQuery } from "@store/redux-api/accountsApi";
 import { WalletTransaction } from "@type/transaction";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
-import React, { Fragment, useCallback, useMemo, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList, Modal, ScrollView,
   StyleSheet, TouchableOpacity, View, TextInput,
@@ -169,12 +169,47 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker]     = useState(false);
   const [searchQuery, setSearchQuery]       = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showSearch, setShowSearch]         = useState(false);
+  const [showSummary, setShowSummary]       = useState(true);
 
-  const { data: queryData, isLoading, isFetching, refetch } =
-    useFetchCompleteTransactionsQuery({ page });
   const { data: accountsData } = useListAccountsQuery(undefined, { refetchOnMountOrArgChange: false });
   const firstAccount = accountsData?.accounts?.[0] ?? null;
+
+  const effectiveCategory = activeCategory || activeTab;
+
+  // ── Debounce search input — avoids firing a network request on every
+  //    keystroke; waits 400ms after the user stops typing. ──────────────────
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // ── Any real filter change means the currently-loaded pages are no longer
+  //    the right result set — jump back to page 1 so the query re-runs
+  //    fresh with the new filters instead of trying to keep paging through
+  //    stale results. ───────────────────────────────────────────────────────
+  useEffect(() => {
+    setPage(1);
+  }, [effectiveCategory, dateFrom, dateTo, debouncedSearch]);
+
+  // ── Query args sent to the backend. Filtering/search now happens in SQL,
+  //    not by scanning whatever happens to already be loaded client-side —
+  //    so search and category filters now cover the user's FULL history. ───
+  const queryArgs = useMemo(
+    () => ({
+      page,
+      per_page: 50,
+      search: debouncedSearch || undefined,
+      category: effectiveCategory || undefined,
+      from_date: dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined,
+      to_date:   dateTo   ? format(dateTo,   "yyyy-MM-dd") : undefined,
+    }),
+    [page, debouncedSearch, effectiveCategory, dateFrom, dateTo],
+  );
+
+  const { data: queryData, isLoading, isFetching, refetch } =
+    useFetchCompleteTransactionsQuery(queryArgs);
 
   // ── Backend summary — changes when period or custom dates change ───────────
   const summaryParams = useMemo(() => {
@@ -192,65 +227,40 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
       refetchOnMountOrArgChange: true,
     });
 
-  // DEBUG — remove once summary is confirmed correct
-  React.useEffect(() => {
-    if (summaryData) {
-      console.log("SUMMARY RESPONSE:", JSON.stringify(summaryData));
-      console.log("SUMMARY PARAMS:", JSON.stringify(summaryParams));
-    }
-  }, [summaryData]);
-
   const transactionsData = useMemo(() => {
     if (!queryData) return { transactions: {}, meta: { has_more: false } };
     return queryData;
   }, [queryData]);
 
-  const effectiveCategory = activeCategory || activeTab;
-
-  // ── Filtered transactions for list display only ───────────────────────────
-  const filteredTransactions = useMemo(() => {
-    const hasFilter = effectiveCategory || activeStatus || dateFrom || dateTo || searchQuery;
-    if (!hasFilter) return transactionsData.transactions;
+  // ── Status filter — kept client-side. Search/category/date are handled
+  //    server-side (see accountTransactionsApi + UserRepository), but status
+  //    is derived from several different sources depending on transaction
+  //    type (utility transaction status, withdrawal status, P2P processor
+  //    status, etc.) and isn't currently queryable in one SQL condition.
+  //    This filter therefore only applies to whatever page(s) are already
+  //    loaded — it is NOT a full-history status search. If you need reliable
+  //    full-history status filtering, that requires a backend change to
+  //    normalize status onto the transaction row itself (e.g. a computed
+  //    `status` column) so it can be filtered in SQL like category/search
+  //    are now. ──────────────────────────────────────────────────────────────
+  const displayedTransactions = useMemo(() => {
+    if (!activeStatus) return transactionsData.transactions;
 
     const result: Record<string, WalletTransaction[]> = {};
     Object.entries(transactionsData.transactions).forEach(([group, txs]) => {
       const filtered = txs.filter(tx => {
-        const form = tx.meta?.form ?? "";
-
-        const matchCategory = !effectiveCategory || form === effectiveCategory ||
-          (effectiveCategory === "tv_subscription_change" && (form === "tv_subscription_change" || form === "tv_subscription_renew")) ||
-          (effectiveCategory === "naira_withdrawal" && (form === "naira_withdrawal" || form === "naira_deposit")) ||
-          (effectiveCategory === "crypto_withdrawal" && (form === "crypto_withdrawal" || form === "crypto_deposit"));
-
         let txStatus = "successful";
         if (tx.payment_transaction?.utilityTransaction?.status) {
           txStatus = tx.payment_transaction.utilityTransaction.status.toLowerCase();
         }
-        const matchStatus = !activeStatus || txStatus === activeStatus;
-
-        let matchDate = true;
-        if (dateFrom || dateTo) {
-          try {
-            const txDate = new Date(tx.created_at);
-            if (dateFrom && dateTo) matchDate = isWithinInterval(txDate, { start: startOfDay(dateFrom), end: endOfDay(dateTo) });
-            else if (dateFrom) matchDate = txDate >= startOfDay(dateFrom);
-            else if (dateTo)   matchDate = txDate <= endOfDay(dateTo);
-          } catch { matchDate = true; }
-        }
-
-        const matchSearch = !searchQuery ||
-          (tx.meta?.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-
-        return matchCategory && matchStatus && matchDate && matchSearch;
+        return txStatus === activeStatus;
       });
       if (filtered.length > 0) result[group] = filtered;
     });
     return result;
-  }, [transactionsData.transactions, effectiveCategory, activeStatus, dateFrom, dateTo, searchQuery]);
+  }, [transactionsData.transactions, activeStatus]);
 
   // ── Format helpers for backend summary values ─────────────────────────────
-  // Backend returns number_format strings like "18,157,142.44" — strip commas
-  // before parsing, otherwise parseFloat("18,157,142.44") returns 18.
   const fmtAmount = (v: string | undefined) => {
     if (!v) return "₦0.00";
     const num = parseFloat(v.replace(/,/g, ""));
@@ -262,6 +272,19 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
   const onEndReached = useCallback(() => {
     if (!isFetching && transactionsData.meta.has_more) setPage(p => p + 1);
   }, [isFetching, transactionsData]);
+
+  // ── Pull-to-refresh — resets to page 1. Since the cache is keyed by
+  //    filters (not page), this forces a fresh network request for page 1
+  //    of the CURRENT filter set, and the api's `merge` logic prepends that
+  //    fresh data instead of burying it at the bottom of an already-loaded
+  //    page. ─────────────────────────────────────────────────────────────────
+  const onRefresh = useCallback(() => {
+    if (page === 1) {
+      refetch();
+    } else {
+      setPage(1);
+    }
+  }, [page, refetch]);
 
   const onSelectTransaction = async (item: WalletTransaction) => {
     navigateToTransaction({
@@ -296,15 +319,6 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
           <TouchableOpacity style={s.headerBtn} onPress={() => setShowSearch(v => !v)}>
             <MaterialCommunityIcons name={showSearch ? "close" : "magnify"} size={18} color={BRAND} />
           </TouchableOpacity>
-         {/*} <TouchableOpacity
-            style={[s.headerBtn, activeFilterCount > 0 && s.headerBtnActive]}
-            onPress={() => setShowFilters(true)}
-          >
-            <MaterialCommunityIcons name="filter-variant" size={18} color={activeFilterCount > 0 ? "#fff" : BRAND} />
-            {activeFilterCount > 0 && (
-              <View style={s.filterBadge}><Text style={s.filterBadgeText}>{activeFilterCount}</Text></View>
-            )}
-          </TouchableOpacity>*/}
           <TouchableOpacity 
   style={s.headerBtn} 
   onPress={() => navigation.navigate(SCREENS.MAIN, {
@@ -327,6 +341,9 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
             style={s.searchInput} value={searchQuery} onChangeText={setSearchQuery}
             placeholder="Search transactions..." placeholderTextColor="#9ca3af" autoFocus
           />
+          {isFetching && !!debouncedSearch && (
+            <ActivityIndicator size={14} color="#9ca3af" />
+          )}
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
               <MaterialCommunityIcons name="close-circle" size={16} color="#9ca3af" />
@@ -337,50 +354,62 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
 
       {/* ── Summary card — data from backend ── */}
       <View style={s.summaryCard}>
-        <View style={s.summaryHeader}>
-          <TouchableOpacity style={s.periodBtn} onPress={() => setShowPeriod(true)}>
-            <Text style={s.periodBtnText}>{periodLabel}</Text>
-            <MaterialCommunityIcons name="chevron-down" size={14} color={BRAND_MID} />
-          </TouchableOpacity>
-          {isSummaryFetching
-            ? <ActivityIndicator size={14} color={BRAND_MID} />
-            : <TouchableOpacity style={s.eyeBtn}><MaterialCommunityIcons name="eye-outline" size={18} color="#9ca3af" /></TouchableOpacity>}
+  <View style={s.summaryHeader}>
+    <TouchableOpacity style={s.periodBtn} onPress={() => setShowPeriod(true)}>
+      <Text style={s.periodBtnText}>{periodLabel}</Text>
+      <MaterialCommunityIcons name="chevron-down" size={14} color={BRAND_MID} />
+    </TouchableOpacity>
+    {isSummaryFetching
+      ? <ActivityIndicator size={14} color={BRAND_MID} />
+      : (
+        <TouchableOpacity style={s.eyeBtn} onPress={() => setShowSummary(v => !v)}>
+          <MaterialCommunityIcons
+            name={showSummary ? "eye-outline" : "eye-off-outline"}
+            size={18}
+            color="#9ca3af"
+          />
+        </TouchableOpacity>
+      )}
+  </View>
+
+  {showSummary && (
+    <>
+      <View style={s.summaryGrid}>
+        <View style={s.summaryItem}>
+          <Text style={s.summaryItemLabel}>Total Inflow</Text>
+          <View style={s.summaryAmountRow}>
+            <Text style={s.summaryInflow}>{fmtAmount(summaryData?.total_credit)}</Text>
+            <MaterialCommunityIcons name="arrow-up" size={14} color="#16a34a" />
+          </View>
         </View>
-
-        <View style={s.summaryGrid}>
-          <View style={s.summaryItem}>
-            <Text style={s.summaryItemLabel}>Total Inflow</Text>
-            <View style={s.summaryAmountRow}>
-              <Text style={s.summaryInflow}>{fmtAmount(summaryData?.total_credit)}</Text>
-              <MaterialCommunityIcons name="arrow-up" size={14} color="#16a34a" />
-            </View>
-          </View>
-          <View style={s.summaryDividerV} />
-          <View style={s.summaryItem}>
-            <Text style={s.summaryItemLabel}>Total Outflow</Text>
-            <View style={s.summaryAmountRow}>
-              <Text style={s.summaryOutflow}>{fmtAmount(summaryData?.total_debit)}</Text>
-              <MaterialCommunityIcons name="arrow-down" size={14} color="#dc2626" />
-            </View>
-          </View>
-        </View>
-
-        <View style={s.summaryDividerH} />
-
-        <View style={s.summaryGrid}>
-          <View style={s.summaryItem}>
-            <Text style={s.summaryItemLabel}>Transactions</Text>
-            <Text style={s.summaryCount}>{summaryData?.total_count ?? "—"}</Text>
-          </View>
-          <View style={s.summaryDividerV} />
-          <View style={s.summaryItem}>
-            <Text style={s.summaryItemLabel}>Net Flow</Text>
-            <Text style={[s.summaryNet, { color: netIsPositive ? "#16a34a" : "#dc2626" }]}>
-              {netIsPositive ? "+" : ""}{fmtAmount(summaryData?.net_flow)}
-            </Text>
+        <View style={s.summaryDividerV} />
+        <View style={s.summaryItem}>
+          <Text style={s.summaryItemLabel}>Total Outflow</Text>
+          <View style={s.summaryAmountRow}>
+            <Text style={s.summaryOutflow}>{fmtAmount(summaryData?.total_debit)}</Text>
+            <MaterialCommunityIcons name="arrow-down" size={14} color="#dc2626" />
           </View>
         </View>
       </View>
+
+      <View style={s.summaryDividerH} />
+
+      <View style={s.summaryGrid}>
+        <View style={s.summaryItem}>
+          <Text style={s.summaryItemLabel}>Transactions</Text>
+          <Text style={s.summaryCount}>{summaryData?.total_count ?? "—"}</Text>
+        </View>
+        <View style={s.summaryDividerV} />
+        <View style={s.summaryItem}>
+          <Text style={s.summaryItemLabel}>Net Flow</Text>
+          <Text style={[s.summaryNet, { color: netIsPositive ? "#16a34a" : "#dc2626" }]}>
+            {netIsPositive ? "+" : ""}{fmtAmount(summaryData?.net_flow)}
+          </Text>
+        </View>
+      </View>
+    </>
+  )}
+</View>
 
       {/* ── Category tabs ── */}
       <View style={s.tabsWrap}>
@@ -403,12 +432,12 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
       {/* ── Content ── */}
       {isLoading ? (
         <View style={{ padding: 16 }}><TransactionLoader groups={["Today", "Yesterday"]} /></View>
-      ) : Object.keys(filteredTransactions).length === 0 ? (
+      ) : Object.keys(displayedTransactions).length === 0 ? (
         <TransactionEmptyState />
       ) : (
         <FlatList
           keyExtractor={([group]) => group}
-          data={Object.entries(filteredTransactions)}
+          data={Object.entries(displayedTransactions)}
           renderItem={({ item: [group, transactions] }) => (
             <View style={s.group}>
               <View style={s.groupHeaderRow}>
@@ -427,8 +456,8 @@ export default function TransactionHistoryScreen({ navigation: navProp }: any) {
           )}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
-          refreshing={false}
-          onRefresh={refetch}
+          refreshing={isFetching && page === 1}
+          onRefresh={onRefresh}
           onEndReachedThreshold={0.5}
           onEndReached={onEndReached}
           ListFooterComponent={() => (

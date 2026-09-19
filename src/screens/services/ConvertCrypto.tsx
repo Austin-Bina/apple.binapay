@@ -24,6 +24,7 @@ import ConvertCryptoAuthSheet from "@components/ui/modals/ConvertCryptoAuthSheet
 import { useGoToDashboard } from "@helpers/useGoToDashboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { State } from "@store/main"; 
 
 const BRAND      = "#1E3A8A";
 const BLUE       = "#2563EB";
@@ -215,7 +216,9 @@ export default function ConvertCrypto({ cryptoAssets, adminNgnUsdtRate, spreadCo
   const confirmSheetRef = useRef<BottomSheetModalMethods>(null);
   const authSheetRef    = useRef<BottomSheetModalMethods>(null);
   const idempotencyKeyRef = useRef<string>(Crypto.randomUUID());
-  const RATE_TTL = 600;
+  const noSpreadSymbols = useSelector((s: State) => s.auth.noSpreadSymbols ?? ["USDT"]);
+
+  const RATE_TTL = 300;
   const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;
 
   // ── Mode switch ────────────────────────────────────────────────────────────
@@ -270,10 +273,10 @@ export default function ConvertCrypto({ cryptoAssets, adminNgnUsdtRate, spreadCo
       return;
     }
     const result = calculateConversion(
-      fromSymbol, toSymbol, parsed, livePrices, adminNgnUsdtRate, spreadConfig
+      fromSymbol, toSymbol, parsed, livePrices, adminNgnUsdtRate, spreadConfig, noSpreadSymbols,
     );
     setConversionResult(result);
-  }, [fromSymbol, toSymbol, amount, livePrices, adminNgnUsdtRate]);
+  }, [fromSymbol, toSymbol, amount, livePrices, adminNgnUsdtRate, spreadConfig, noSpreadSymbols]);
 
   // ── Asset lists ────────────────────────────────────────────────────────────
   const ngnAsset = { symbol: "ngn", name: "Nigerian Naira", icon_url: undefined };

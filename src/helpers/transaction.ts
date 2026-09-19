@@ -10,9 +10,8 @@ import { SCREENS } from "@constants/screens";
 import { getTransactionIcon, upperCaseFirst } from "@utils/index";
 import { P, match } from "ts-pattern";
 import { TransactionStatus } from "@enum/transaction";
-import { formatTransactionAmount } from "../utils/transactionutils";
 import { TransferDetails } from "@type/transaction";
-
+import { formatTransactionAmount, formattedBalance } from "../utils/transactionutils";
 const formatDate = (date: string) => {
   return format(new Date(date), "MMM dd, yyyy h:mm a");
 };
@@ -148,6 +147,7 @@ const getTransactionStatus = (transaction: WalletTransaction | UtilityTransactio
     const ps = meta.payment_status as string | undefined;
     if (ps === 'success')                           return TransactionStatus.Successful;
     if (ps === 'failed')                            return TransactionStatus.Failed;
+    if (ps === 'refunded') return TransactionStatus.Refunded;
     if (['pending', 'processing', 'submitted']
         .includes(ps ?? ''))                        return TransactionStatus.Pending;
   }
@@ -174,25 +174,12 @@ const formatDescription = (description: string | undefined): string => {
     (_, prefix, amount, space, symbol) => {
       const num = parseFloat(amount);
       if (isNaN(num)) return _;
-
-      if (symbol === "NGN") {
-        return `${prefix}${num.toLocaleString("en-NG", {
-          style: "currency",
-          currency: "NGN",
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`;
-      }
-
-      // Crypto — trim trailing zeros but keep at least 2 decimals
-      const formatted = num.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 8,
-      });
-      return `${prefix}${formatted}${space}${symbol}`;
+      return `${prefix}${formattedBalance(num, symbol)}`;
     }
   );
 };
+
+     
 
 const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTransaction | null => {
   return match(transaction)
@@ -229,6 +216,8 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
             provider:            details.transfer_details.provider            ?? null,
             payment_status:      details.transfer_details.payment_status      ?? 'pending',
             amount:              details.transfer_details.amount              ?? null,
+            transfer_amount: details.transfer_details.transfer_amount ?? null,
+            service_fee:     details.transfer_details.service_fee     ?? null,
             narration:           details.transfer_details.narration           ?? null,
           }
         : undefined;

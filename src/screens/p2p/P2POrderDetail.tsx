@@ -70,6 +70,7 @@ export default function P2POrderDetailScreen({ navigation, route }: Props) {
   const { data: userSettingsData } = useGetUserP2PSettingsQuery();
   const feeEnabled  = userSettingsData?.settings?.fee_enabled ?? false;
   const defaultFee  = userSettingsData?.settings?.fee_amount  ?? "0";
+  const [verifyModalStep, setVerifyModalStep] = useState<"form" | "bankPicker">("form");
 
   const [manualFee, setManualFee] = useState("");
   const isFocused = useIsFocused();
@@ -549,186 +550,185 @@ export default function P2POrderDetailScreen({ navigation, route }: Props) {
 
       </View>
 
-      {/* ── Verify / Process Modal ── */}
-      <Modal visible={showVerifyModal} transparent animationType="slide">
-        <View style={styles.bsOverlay}>
-          <TouchableOpacity style={{ flex: 1 }} onPress={resetVerifyModal} />
-          <View style={styles.bsCard}>
-            <View style={styles.bsHandle} />
-            <Text style={styles.bsTitle}>Process Payment</Text>
-            <Text style={styles.bsSub}>
-              Verify account details before processing payment.
-            </Text>
+     {/* ── Verify / Process Modal (merged with bank picker to avoid iOS double-modal bug) ── */}
+<Modal visible={showVerifyModal || showBankPickerModal} transparent animationType="slide">
+  <View style={styles.bsOverlay}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }}>
+      <TouchableOpacity
+        style={{ flex: 1 }}
+        onPress={() => {
+          if (showBankPickerModal) {
+            setShowBankPickerModal(false);
+          } else {
+            resetVerifyModal();
+          }
+        }}
+      />
 
-            {/* Fee input */}
-            {feeEnabled && (
-              <>
-                <Text style={styles.bsLabel}>Platform Fee (₦)</Text>
-                <TextInput
-                  style={styles.bsInput}
-                  value={manualFee}
-                  onChangeText={setManualFee}
-                  keyboardType="numeric"
-                  placeholder="e.g. 200"
-                  placeholderTextColor="#BBB"
-                />
-              </>
-            )}
-
-            <Text style={styles.bsLabel}>Account Number</Text>
+      {showBankPickerModal ? (
+        // ── Bank picker content ──
+        <View style={[styles.bsCard, { maxHeight: "75%" }]}>
+          <View style={styles.bsHandle} />
+          <Text style={styles.bsTitle}>Select Bank</Text>
+          <View style={styles.bsSearchRow}>
+            <MaterialCommunityIcons name="magnify" size={16} color="#AAA" />
             <TextInput
-              style={styles.bsInput}
-              value={manualAccountNo}
-              onChangeText={(v) => {
-                setManualAccountNo(v);
-                // Clear verified name if account number changes
-                if (verifiedAccountName) setVerifiedAccountName(null);
-              }}
-              keyboardType="numeric"
-              placeholder="0000000000"
+              style={styles.bsSearchInput}
+              value={bankSearch}
+              onChangeText={setBankSearch}
+              placeholder="Search bank..."
               placeholderTextColor="#BBB"
-              maxLength={10}
             />
-
-            <Text style={styles.bsLabel}>Bank</Text>
-            <TouchableOpacity
-              style={styles.bsBankPicker}
-              onPress={() => setShowBankPickerModal(true)}>
-              <Text style={[styles.bsBankPickerText, !selectedVerifyBank && { color: "#BBB" }]}>
-                {selectedVerifyBank ? selectedVerifyBank.name : "Select bank"}
-              </Text>
-              <MaterialCommunityIcons name="chevron-down" size={18} color="#AAA" />
-            </TouchableOpacity>
-
-            {verifiedAccountName && (
-              <View style={styles.verifiedNameBox}>
-                <MaterialCommunityIcons name="check-circle" size={16} color="#2E7D32" />
-                <Text style={styles.verifiedNameText}>{verifiedAccountName}</Text>
-              </View>
-            )}
-
-            <View style={styles.bsActions}>
-              <TouchableRipple
-                style={styles.bsCancel}
-                onPress={resetVerifyModal}>
-                <Text style={styles.bsCancelText}>Cancel</Text>
-              </TouchableRipple>
-
-              {/* Step 1: Verify Account (only if not yet verified) */}
-              {!verifiedAccountName ? (
-                <TouchableRipple
-                  style={[
-                    styles.bsConfirm,
-                    (isVerifying || manualAccountNo.length < 10 || !selectedVerifyBank) && styles.btnDisabled,
-                  ]}
-                  disabled={isVerifying || manualAccountNo.length < 10 || !selectedVerifyBank}
-                  onPress={async () => {
-                    try {
-                      // verify_only=true — does NOT trigger payment processing
-                      const result = await verifyOrderDetails({
-                        orderId,
-                        account_number: manualAccountNo,
-                        bank_code: selectedVerifyBank!.code,
-                        bank_name: selectedVerifyBank!.name,
-                        platform_fee: manualFee || "0",
-                        verify_only: true,
-                      }).unwrap();
-                      setVerifiedAccountName(result.account_name);
-                      showToast({ message: "Account verified!", duration: 2000 });
-                    } catch (err: any) {
-                      showToast({ message: err?.data?.message ?? "Verification failed.", duration: 3000 });
-                    }
-                  }}>
-                  <View style={styles.btnInner}>
-                    {isVerifying
-                      ? <ActivityIndicator size={16} color="#fff" />
-                      : <Text style={styles.bsConfirmText}>Verify Account</Text>}
-                  </View>
-                </TouchableRipple>
-
-              ) : (
-                /* Step 2: Save & Process (triggers payment) */
-                <TouchableRipple
-                  style={styles.bsConfirm}
-                  onPress={async () => {
-                    try {
-                      // verify_only=false (default) — triggers payment processing
-                      await verifyOrderDetails({
-                        orderId,
-                        account_number: manualAccountNo,
-                        bank_code: selectedVerifyBank!.code,
-                        bank_name: selectedVerifyBank!.name,
-                        platform_fee: manualFee || "0",
-                        verify_only: false,
-                      }).unwrap();
-                    } catch (err: any) {
-                      // Non-fatal — payment may still process in background
-                      console.warn("Save & process error (non-fatal):", err?.data?.message);
-                    }
-
-                    // Always close cleanly and refresh — never crash
-                    resetVerifyModal();
-                    showToast({
-                      message: feeEnabled
-                        ? "Details saved. Processing payment now..."
-                        : "Details saved. Payment will process on next cycle.",
-                      duration: 3000,
-                    });
-                    // Stable refresh — single call after short delay
-                    setTimeout(() => navigation.goBack(), 500);
-                  }}>
-                  <Text style={styles.bsConfirmText}>Save & Process</Text>
-                </TouchableRipple>
-              )}
-            </View>
           </View>
+          <FlatList
+            data={filteredBanks}
+            keyExtractor={item => item.code}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableRipple
+                style={[styles.bsBankItem, selectedVerifyBank?.code === item.code && styles.bsBankItemActive]}
+                onPress={() => {
+                  setSelectedVerifyBank(item);
+                  setBankSearch("");
+                  setShowBankPickerModal(false);
+                }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={[styles.bsBankItemText, selectedVerifyBank?.code === item.code && { color: BRAND, fontWeight: "700" }]}>
+                    {item.name}
+                  </Text>
+                  {selectedVerifyBank?.code === item.code && (
+                    <MaterialCommunityIcons name="check" size={16} color={BRAND} />
+                  )}
+                </View>
+              </TouchableRipple>
+            )}
+          />
         </View>
-      </Modal>
+      ) : (
+        // ── Verify / process form content ──
+        <View style={styles.bsCard}>
+          <View style={styles.bsHandle} />
+          <Text style={styles.bsTitle}>Process Payment</Text>
+          <Text style={styles.bsSub}>
+            Verify account details before processing payment.
+          </Text>
 
-      {/* ── Bank Picker Modal ── */}
-      <Modal visible={showBankPickerModal} transparent animationType="slide">
-        <View style={styles.bsOverlay}>
-          <TouchableOpacity style={{ flex: 1 }} onPress={() => setShowBankPickerModal(false)} />
-          <View style={[styles.bsCard, { maxHeight: "75%" }]}>
-            <View style={styles.bsHandle} />
-            <Text style={styles.bsTitle}>Select Bank</Text>
-            <View style={styles.bsSearchRow}>
-              <MaterialCommunityIcons name="magnify" size={16} color="#AAA" />
+          {feeEnabled && (
+            <>
+              <Text style={styles.bsLabel}>Platform Fee (₦)</Text>
               <TextInput
-                style={styles.bsSearchInput}
-                value={bankSearch}
-                onChangeText={setBankSearch}
-                placeholder="Search bank..."
+                style={styles.bsInput}
+                value={manualFee}
+                onChangeText={setManualFee}
+                keyboardType="numeric"
+                placeholder="e.g. 200"
                 placeholderTextColor="#BBB"
               />
+            </>
+          )}
+
+          <Text style={styles.bsLabel}>Account Number</Text>
+          <TextInput
+            style={styles.bsInput}
+            value={manualAccountNo}
+            onChangeText={(v) => {
+              setManualAccountNo(v);
+              if (verifiedAccountName) setVerifiedAccountName(null);
+            }}
+            keyboardType="numeric"
+            placeholder="0000000000"
+            placeholderTextColor="#BBB"
+            maxLength={10}
+          />
+
+          <Text style={styles.bsLabel}>Bank</Text>
+          <TouchableOpacity
+            style={styles.bsBankPicker}
+            onPress={() => setShowBankPickerModal(true)}>
+            <Text style={[styles.bsBankPickerText, !selectedVerifyBank && { color: "#BBB" }]}>
+              {selectedVerifyBank ? selectedVerifyBank.name : "Select bank"}
+            </Text>
+            <MaterialCommunityIcons name="chevron-down" size={18} color="#AAA" />
+          </TouchableOpacity>
+
+          {verifiedAccountName && (
+            <View style={styles.verifiedNameBox}>
+              <MaterialCommunityIcons name="check-circle" size={16} color="#2E7D32" />
+              <Text style={styles.verifiedNameText}>{verifiedAccountName}</Text>
             </View>
-            <FlatList
-              data={filteredBanks}
-              keyExtractor={item => item.code}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableRipple
-                  style={[styles.bsBankItem, selectedVerifyBank?.code === item.code && styles.bsBankItemActive]}
-                  onPress={() => {
-                    setSelectedVerifyBank(item);
-                    setBankSearch("");
-                    setShowBankPickerModal(false);
-                  }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={[styles.bsBankItemText, selectedVerifyBank?.code === item.code && { color: BRAND, fontWeight: "700" }]}>
-                      {item.name}
-                    </Text>
-                    {selectedVerifyBank?.code === item.code && (
-                      <MaterialCommunityIcons name="check" size={16} color={BRAND} />
-                    )}
-                  </View>
-                </TouchableRipple>
-              )}
-            />
+          )}
+
+          <View style={styles.bsActions}>
+            <TouchableRipple
+              style={styles.bsCancel}
+              onPress={resetVerifyModal}>
+              <Text style={styles.bsCancelText}>Cancel</Text>
+            </TouchableRipple>
+
+            {!verifiedAccountName ? (
+              <TouchableRipple
+                style={[
+                  styles.bsConfirm,
+                  (isVerifying || manualAccountNo.length < 10 || !selectedVerifyBank) && styles.btnDisabled,
+                ]}
+                disabled={isVerifying || manualAccountNo.length < 10 || !selectedVerifyBank}
+                onPress={async () => {
+                  try {
+                    const result = await verifyOrderDetails({
+                      orderId,
+                      account_number: manualAccountNo,
+                      bank_code: selectedVerifyBank!.code,
+                      bank_name: selectedVerifyBank!.name,
+                      platform_fee: manualFee || "0",
+                      verify_only: true,
+                    }).unwrap();
+                    setVerifiedAccountName(result.account_name);
+                    showToast({ message: "Account verified!", duration: 2000 });
+                  } catch (err: any) {
+                    showToast({ message: err?.data?.message ?? "Verification failed.", duration: 3000 });
+                  }
+                }}>
+                <View style={styles.btnInner}>
+                  {isVerifying
+                    ? <ActivityIndicator size={16} color="#fff" />
+                    : <Text style={styles.bsConfirmText}>Verify Account</Text>}
+                </View>
+              </TouchableRipple>
+            ) : (
+              <TouchableRipple
+                style={styles.bsConfirm}
+                onPress={async () => {
+                  try {
+                    await verifyOrderDetails({
+                      orderId,
+                      account_number: manualAccountNo,
+                      bank_code: selectedVerifyBank!.code,
+                      bank_name: selectedVerifyBank!.name,
+                      platform_fee: manualFee || "0",
+                      verify_only: false,
+                    }).unwrap();
+                  } catch (err: any) {
+                    console.warn("Save & process error (non-fatal):", err?.data?.message);
+                  }
+
+                  resetVerifyModal();
+                  showToast({
+                    message: feeEnabled
+                      ? "Details saved. Processing payment now..."
+                      : "Details saved. Payment will process on next cycle.",
+                    duration: 3000,
+                  });
+                  setTimeout(() => navigation.goBack(), 500);
+                }}>
+                <Text style={styles.bsConfirmText}>Save & Process</Text>
+              </TouchableRipple>
+            )}
           </View>
         </View>
-      </Modal>
-
+      )}
+    </KeyboardAvoidingView>
+  </View>
+</Modal>
       {/* ── Release Confirmation Modal ── */}
       <Modal visible={showReleaseModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>

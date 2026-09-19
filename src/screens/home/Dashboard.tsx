@@ -17,12 +17,7 @@ import { getNavigate } from "@utils/navigation";
 import Banner from "@components/ui/banner";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { formatToNaira } from "@utils/money";
-import {
-  selectHasFetchError,
-  selectIsAccountVerified,
-  selectIsFetchingProfile,
-  selectUser,
-} from "@store/selectors/auth";
+import { selectHasFetchError, selectIsAccountVerified, selectIsFetchingProfile, selectUser, selectNgnUsdtRateWithSpread } from "@store/selectors/auth";
 import {
   accountTransactionsApi,
   useFetchRecentTransactionsQuery,
@@ -49,6 +44,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CryptoProvider } from "./CryptoContext";
 import FundAccountSheet from "@components/ui/modals/fund-account";
 import { WalletTransaction } from "@type/transaction";
+import WithdrawFundsSheet from "@components/ui/modals/withdraw-funds";
+import ContactSupportButton from "@components/ui/ContactSupportButton";
 
 const BRAND = "#1a3a8a";
 const GRADIENT_START = "#2563EB";
@@ -66,6 +63,7 @@ export default function HomeScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
   const insets = useSafeAreaInsets();
   const [showFundSheet, setShowFundSheet] = useState(false);
+  const [showWithdrawSheet, setShowWithdrawSheet] = useState(false);
 
 
   const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
@@ -78,8 +76,12 @@ const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 
   const nairaWalletBalance = user?.wallet_balances?.naira?.balance ?? "0";
-  const cryptoUsdBalance = user?.wallet_balances?.crypto_usd?.balance ?? 0;
-
+  const ngnUsdtRate = useTypedSelector(selectNgnUsdtRateWithSpread);
+const nairaBalance = parseFloat(user?.wallet_balances?.naira?.balance ?? "0");
+const nairaInUsd = ngnUsdtRate?.sell && ngnUsdtRate.sell > 0 
+  ? nairaBalance / ngnUsdtRate.sell 
+  : 0;
+const cryptoUsdBalance = user?.wallet_balances?.crypto_usd?.balance ?? 0;
 
   const initCable = useCallback(() => {
     if (!user?.id) return;
@@ -235,7 +237,8 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
         {/* Primary balance */}
         <View style={s.balanceRow}>
           {balanceVisible ? (
-            <Text style={s.balanceText}>{formatToNaira(nairaWalletBalance)}</Text>
+            <Text style={s.balanceText}>{formatToNaira(nairaWalletBalance)}
+            </Text>
           ) : (
             <Text style={s.balanceText}>₦ ••••••</Text>
           )}
@@ -246,7 +249,10 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
           <View>
             <Text style={s.usdLabel}>USD Wallet</Text>
             <Text style={s.usdValue}>
+
+             {/*} {balanceVisible ? `$${formattedBalance(nairaInUsd, "", 2)}` : "$ ••••"}*/}
               {balanceVisible ? `$${formattedBalance(cryptoUsdBalance, "", 2)}` : "$ ••••"}
+
             </Text>
           </View>
           <TouchableOpacity
@@ -263,18 +269,20 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
         {/* Action buttons */}
         <View style={s.cardActions}>
           <TouchableOpacity
-            style={s.cardActionBtn}
-            onPress={() =>
-              navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_NAIRA })
-            }
-          >
-            <MaterialCommunityIcons name="send" size={18} color={GRADIENT_START} />
-            <Text style={s.cardActionText}>Send Money</Text>
-          </TouchableOpacity>
+  style={s.cardActionBtn}
+  onPress={() => //setShowWithdrawSheet(true)
+ navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_NAIRA })
+  }>
+  <MaterialCommunityIcons name="send" size={18} color={GRADIENT_START} />
+  <Text style={s.cardActionText}>Send Money</Text>
+</TouchableOpacity>
 
           <TouchableOpacity
            style={s.cardActionBtn}
-           onPress={() => setShowFundSheet(true)}>
+           onPress={() => setShowFundSheet(true)
+          // navigation.navigate(SCREENS.ADD_MONEY, { screen: SCREENS.FUND_WITH_BANK })
+ 
+           }>
          <MaterialCommunityIcons name="plus" size={18} color={GRADIENT_START} />
         <Text style={s.cardActionText}>Add Money</Text>
          </TouchableOpacity>
@@ -317,10 +325,7 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
 
       {/* ── Recent Transactions header ── */}
       <View style={[s.sectionHeader, { paddingHorizontal: 16, marginTop: 8 }]}>
-        <Text style={s.sectionTitle}>Recent Transactions</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Transaction History", {})}>
-          <Text style={s.seeAll}>See All</Text>
-        </TouchableOpacity>
+        
       </View>
     </View>
   );
@@ -335,6 +340,7 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
           refreshing={loaderMode === "profile"}
           onRefresh={onRefresh}
         />
+         <ContactSupportButton />
       </View>
 <FundAccountSheet
   show={showFundSheet}
@@ -350,6 +356,25 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
       setShowFundSheet(false);
       setTimeout(() => {
         navigation.navigate(SCREENS.ADD_MONEY, { screen: SCREENS.FUND_WITH_BANK });
+      }, 200);
+    },
+  }}
+/>
+
+<WithdrawFundsSheet
+  show={showWithdrawSheet}
+  hide={() => setShowWithdrawSheet(false)}
+  navigation={{
+    handleWithdrawNaira: () => {
+      setShowWithdrawSheet(false);
+      setTimeout(() => {
+        navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_NAIRA });
+      }, 200);
+    },
+    handleWithdrawCrypto: () => {
+      setShowWithdrawSheet(false);
+      setTimeout(() => {
+        navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_CRYPTO });
       }, 200);
     },
   }}

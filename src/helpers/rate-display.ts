@@ -21,6 +21,7 @@ type GetPairRateDisplayParams = {
   livePrices: Record<string, number>;
   liveNgnUsdt: { buy: number; sell: number } | null;
   spreadConfig?: SpreadConfig | null;
+  noSpreadSymbols?: string[];
 };
 
 export const getPairRateDisplay = ({
@@ -29,9 +30,11 @@ export const getPairRateDisplay = ({
   livePrices,
   liveNgnUsdt,
   spreadConfig,
+  noSpreadSymbols = ["USDT"],
 }: GetPairRateDisplayParams) => {
   const from = fromSymbol.toUpperCase();
   const to = toSymbol.toUpperCase();
+  const isNoSpreadSymbol = (symbol: string) => noSpreadSymbols.includes(symbol);
 
   if (!from || !to || from === to) return "";
 
@@ -43,49 +46,63 @@ export const getPairRateDisplay = ({
 
   let rate: number | null = null;
 
-  // NGN ↔ USDT — no spread applied
-  if (from === "NGN" && to === "USDT" && liveNgnUsdt) {
-    rate = liveNgnUsdt.sell;
-    return `1 USDT ≈ ₦${rate.toLocaleString()}`;
+  // NGN ↔ stablecoin (USDT/USDC) — no spread applied
+  if (from === "NGN" && isNoSpreadSymbol(to) && liveNgnUsdt) {
+    if (to === "USDT") {
+      rate = liveNgnUsdt.sell;
+    } else {
+      const toPrice = getPrice(to);
+      if (!toPrice) return "";
+      rate = liveNgnUsdt.sell * toPrice;
+    }
+    return `1 ${to} ≈ ₦${rate.toLocaleString()}`;
   }
-  if (from === "USDT" && to === "NGN" && liveNgnUsdt) {
-    rate = liveNgnUsdt.buy;
-    return `1 USDT ≈ ₦${rate.toLocaleString()}`;
+  if (isNoSpreadSymbol(from) && to === "NGN" && liveNgnUsdt) {
+    if (from === "USDT") {
+      rate = liveNgnUsdt.buy;
+    } else {
+      const fromPrice = getPrice(from);
+      if (!fromPrice) return "";
+      rate = liveNgnUsdt.buy * fromPrice;
+    }
+    return `1 ${from} ≈ ₦${rate.toLocaleString()}`;
   }
 
-  // NGN → Crypto (buy crypto)
-  if (from === "NGN" && to !== "USDT") {
+  // NGN → other crypto (buy, apply spread)
+  if (from === "NGN" && !isNoSpreadSymbol(to)) {
     const toPrice = getPrice(to);
     if (!toPrice || !liveNgnUsdt) return "";
     rate = applySpread(toPrice * liveNgnUsdt.sell, spreadConfig?.spreadType ?? "percent", spreadConfig?.spread ?? 0, true);
     return `1 ${to} ≈ ₦${rate.toLocaleString()}`;
   }
 
-  // Crypto → NGN (sell crypto)
-  if (from !== "USDT" && to === "NGN") {
+  // other crypto → NGN (sell, apply spread)
+  if (!isNoSpreadSymbol(from) && to === "NGN") {
     const fromPrice = getPrice(from);
     if (!fromPrice || !liveNgnUsdt) return "";
     rate = applySpread(fromPrice * liveNgnUsdt.buy, spreadConfig?.spreadType ?? "percent", spreadConfig?.spread ?? 0, false);
     return `1 ${from} ≈ ₦${rate.toLocaleString()}`;
   }
 
-  // USDT → Crypto
-  if (from === "USDT" && to !== "NGN") {
+  // stablecoin (USDT/USDC) → other crypto
+  if (isNoSpreadSymbol(from) && to !== "NGN") {
+    const fromPrice = getPrice(from) ?? 1; // USDT/USDC ≈ $1 baseline
     const toPrice = getPrice(to);
     if (!toPrice) return "";
-    rate = applySpread(toPrice, spreadConfig?.spreadType ?? "percent", spreadConfig?.spread ?? 0, true);
+    rate = applySpread(toPrice / fromPrice, spreadConfig?.spreadType ?? "percent", spreadConfig?.spread ?? 0, true);
     return `1 ${to} ≈ $${rate.toLocaleString()}`;
   }
 
-  // Crypto → USDT
-  if (from !== "NGN" && to === "USDT") {
+  // Crypto → stablecoin (USDT/USDC)
+  if (from !== "NGN" && isNoSpreadSymbol(to)) {
     const fromPrice = getPrice(from);
+    const toPrice = getPrice(to) ?? 1; // USDT/USDC ≈ $1 baseline
     if (!fromPrice) return "";
-    rate = applySpread(fromPrice, spreadConfig?.spreadType ?? "percent", spreadConfig?.spread ?? 0, false);
+    rate = applySpread(fromPrice / toPrice, spreadConfig?.spreadType ?? "percent", spreadConfig?.spread ?? 0, false);
     return `1 ${from} ≈ $${rate.toLocaleString()}`;
   }
 
-  // Crypto ↔ Crypto
+  // Crypto ↔ Crypto (neither side is NGN or a no-spread stablecoin)
   const fromPrice = getPrice(from);
   const toPrice = getPrice(to);
   if (!fromPrice || !toPrice) return "";

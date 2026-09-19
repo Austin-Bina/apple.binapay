@@ -44,6 +44,7 @@ export const routes = {
         preview:   "/api/v1/account/statement/preview",
         generate:  "/api/v1/account/statement/generate",
         sendEmail: "/api/v1/account/statement/send-email",
+        
        
   },
       },

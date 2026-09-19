@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { View, Text } from "react-native";
-import { Button } from "react-native-paper";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { RegistrationStackScreenProps } from "@navigators/types";
-import tw from "@lib/tailwind";
 import Screen from "@components/ui/shared/Screen";
 import OtpInput from "@components/ui/form/OtpInput";
-import { Colors } from "@constants/theme/colors";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,17 +13,21 @@ import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { AxiosError } from "axios";
 import { SCREENS } from "@constants/screens";
 import Toast from "react-native-root-toast";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+const BLUE  = "#2563EB";
+const BRAND = "#1E3A8A";
 
 const maximumLength = 6;
 const RESEND_TIMEOUT = 30;
+
 const schema = z.object({
   code: z
     .string()
     .trim()
-    .transform((val) => {
-      const numericValue = val.slice(0, maximumLength);
-      return numericValue;
-    })
+    .transform((val) => val.slice(0, maximumLength))
     .refine((val) => /^[0-9]+$/.test(val), {
       message: "Code must only contain numbers",
     }),
@@ -38,6 +39,7 @@ type Props = RegistrationStackScreenProps<typeof SCREENS.VERIFY_EMAIL>;
 
 const VerifyEmail: React.FC<Props> = (props) => {
   const params = props.route.params;
+  const insets = useSafeAreaInsets();
 
   const [pinReady, setPinReady] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -47,10 +49,7 @@ const VerifyEmail: React.FC<Props> = (props) => {
   const { control, watch, setError, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
-    defaultValues: {
-      code: "",
-      email: params.email,
-    },
+    defaultValues: { code: "", email: params.email },
   });
 
   const { code } = watch();
@@ -60,42 +59,34 @@ const VerifyEmail: React.FC<Props> = (props) => {
   }, [code]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-
+    let timer: ReturnType<typeof setTimeout>;
     if (countdown > 0) {
       timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     } else {
       setResendAvailable(true);
     }
-
     return () => clearTimeout(timer);
   }, [countdown]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
       setFetching(true);
-
       await API.post(route("auth.verifyEmail"), {
         code: values.code,
         email: params.email,
       });
-
       props.navigation.navigate("Complete Registration", { email: params.email });
     } catch (error) {
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;
-
       if (response) {
         const { message } = response.data;
-
         const hasAuthErrorMsg = message && typeof message === "string";
-
         if (hasAuthErrorMsg) {
-          showToast({ message: message, position: Toast.positions.TOP });
+          showToast({ message, position: Toast.positions.TOP });
         } else {
           showToast({ message: "Something went wrong. Please try again.", position: Toast.positions.TOP });
         }
-
         setError("code", { message });
       }
     } finally {
@@ -113,14 +104,11 @@ const VerifyEmail: React.FC<Props> = (props) => {
     } catch (error) {
       const axiosError = error as AxiosError<any>;
       const { response } = axiosError;
-
       if (response) {
         const { message } = response.data;
-
         const hasAuthErrorMsg = message && typeof message === "string";
-
         if (hasAuthErrorMsg) {
-          showToast({ message: message });
+          showToast({ message });
         } else {
           showToast({ message: "Something went wrong. Please try again." });
         }
@@ -131,46 +119,81 @@ const VerifyEmail: React.FC<Props> = (props) => {
   };
 
   return (
-    <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
-        <View>
-          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Verify Your Email Address</Text>
-          <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>
-            A verification code has been sent to your email. Please enter it below to verify your email address.
-          </Text>
-          <View style={tw`mb-10`}>
-            <View style={tw`flex flex-row items-center justify-center`}>
-              <OtpInput control={control} name="code" maximumLength={maximumLength} />
-            </View>
-          </View>
-          <Text style={tw`text-sm text-center`}>
-            Resend the OTP in <Text style={tw`text-primary`}>{resendAvailable ? "now" : `${countdown} sec`}</Text>
+    <View style={[s.root]}>
+      <ScreenHeader
+        title="Verify Email Address"
+        subtitle="Enter the code sent to your email"
+        onBack={() => props.navigation.goBack()}
+      />
+
+      <View style={s.content}>
+
+        {/* Info card */}
+        <View style={s.infoCard}>
+          <MaterialCommunityIcons name="email-outline" size={18} color={BLUE} />
+          <Text style={s.infoText}>
+            A 6-digit verification code has been sent to{" "}
+            <Text style={s.infoEmail}>{params.email}</Text>
           </Text>
         </View>
 
-        <View style={tw`gap-4 mb-5`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            mode="contained"
-            disabled={!pinReady || fetching}
-            onPress={onSubmit}>
-            Continue
-          </Button>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2 w-full`}
-            mode="outlined"
-            textColor={Colors.gray[500]}
-            disabled={!resendAvailable}
-            onPress={handleResendOTP}>
-            Resend OTP
-          </Button>
+        {/* OTP input */}
+        <View style={s.otpWrap}>
+          <OtpInput control={control} name="code" maximumLength={maximumLength} />
         </View>
+
+        {/* Countdown */}
+        <Text style={s.countdown}>
+          Resend the OTP in{" "}
+          <Text style={s.countdownValue}>
+            {resendAvailable ? "now" : `${countdown} sec`}
+          </Text>
+        </Text>
       </View>
+
+      {/* Footer buttons */}
+      <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
+        <TouchableOpacity
+          style={[s.continueBtn, (!pinReady || fetching) && s.disabledBtn]}
+          disabled={!pinReady || fetching}
+          onPress={onSubmit}
+          activeOpacity={0.85}
+        >
+          <Text style={s.continueBtnText}>Continue</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[s.resendBtn, !resendAvailable && s.disabledBtn]}
+          disabled={!resendAvailable}
+          onPress={handleResendOTP}
+          activeOpacity={0.85}
+        >
+          <Text style={[s.resendBtnText, !resendAvailable && { color: "#9ca3af" }]}>
+            Resend OTP
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <PleaseWaitModal visible={fetching} />
-    </Screen>
+    </View>
   );
 };
+
+const s = StyleSheet.create({
+  root:            { flex: 1, backgroundColor: "#f8f9fb" },
+  content:         { flex: 1, padding: 16 },
+  infoCard:        { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: "#EEF3FF", borderRadius: 12, padding: 12, marginBottom: 32 },
+  infoText:        { flex: 1, fontSize: 13, color: "#374151", lineHeight: 18 },
+  infoEmail:       { fontWeight: "700", color: BRAND },
+  otpWrap:         { alignItems: "center", marginBottom: 24 },
+  countdown:       { fontSize: 13, textAlign: "center", color: "#6b7280" },
+  countdownValue:  { color: BLUE, fontWeight: "600" },
+  footer:          { paddingHorizontal: 16, paddingTop: 10, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0", gap: 10 },
+  continueBtn:     { backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+  continueBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  resendBtn:       { borderWidth: 1.5, borderColor: "#e5e7eb", paddingVertical: 13, borderRadius: 12, alignItems: "center" },
+  resendBtnText:   { fontSize: 15, fontWeight: "600", color: BRAND },
+  disabledBtn:     { opacity: 0.5 },
+});
 
 export default VerifyEmail;

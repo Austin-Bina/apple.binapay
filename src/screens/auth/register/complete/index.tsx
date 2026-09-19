@@ -1,5 +1,5 @@
 import React from "react";
-import Swiper from "react-native-swiper";
+import { View } from "react-native";
 import { RegistrationStackScreenProps } from "@navigators/types";
 import { RegistrationFormProvider } from "@providers/complete-registration";
 import CreatePassword from "./CreatePassword";
@@ -9,19 +9,12 @@ import ChooseAvatar from "./ChooseAvatar";
 const CompleteRegistration: React.FC<RegistrationStackScreenProps<"Complete Registration">> = (props) => {
   return (
     <RegistrationFormProvider defaultParams={props.route.params}>
-      {({ state, dispatch }) => (
-        <Swiper
-          loop={false}
-          autoplay={false}
-          onIndexChanged={(index) => {
-            dispatch({ type: "updateScreenIndex", index });
-          }}
-          index={state.screenIndex}
-          showsPagination={false}>
-          <CreatePassword {...props} />
-          <CreateTransactionPin {...props} />
-          <ChooseAvatar {...props} />
-        </Swiper>
+      {({ state }) => (
+        <View style={{ flex: 1 }}>
+          {state.screenIndex === 0 && <CreatePassword {...props} />}
+          {state.screenIndex === 1 && <CreateTransactionPin {...props} />}
+          {state.screenIndex === 2 && <ChooseAvatar {...props} />}
+        </View>
       )}
     </RegistrationFormProvider>
   );

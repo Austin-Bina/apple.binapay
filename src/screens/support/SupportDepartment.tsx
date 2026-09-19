@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -89,17 +90,13 @@ export default function SupportDepartment({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={s.root}>
-      {/* Header */}
-      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <View style={s.headerIconWrap}>
-          <MaterialCommunityIcons name="headset" size={20} color={BLUE} />
-        </View>
-        <View>
-          <Text style={s.headerTitle}>Help & Support</Text>
-          <Text style={s.headerSub}>We're available 24/7 to assist you</Text>
-        </View>
-      </View>
+      
 
+       <ScreenHeader
+        title="Help & Support"
+        subtitle="We're available 24/7 to assist you"
+        onBack={() => navigation.goBack()}
+      />
       <ScrollableView
         contentContainerStyle={s.scroll}
         refreshControl={<RefreshControl refreshing={false} onRefresh={handleRefresh} />}

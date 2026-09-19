@@ -34,27 +34,41 @@ export default function VerificationHubScreen({ navigation }: Props) {
   { label: "Email Verified", subtitle: user?.email ?? "", done: isEmailVerified, icon: "email-check-outline" },
   { label: "Phone Number", subtitle: isPhoneVerified ? user?.phone ?? "Verified" : "Not verified", done: isPhoneVerified, icon: "phone-check-outline",
     onPress: isPhoneVerified ? undefined : () => navigation.navigate(SCREENS.PHONE_VERIFICATION) },
-  { label: "BVN or NIN", subtitle: isBvnOrNin ? "Verified" : "Not verified", done: isBvnOrNin, icon: "card-account-details-outline",
-    onPress: isBvnOrNin ? undefined : () => navigation.navigate(SCREENS.BVN_NIN_CHOICE) },
-];
-  
-    //{ label: "BVN or NIN", subtitle: isBvnOrNin ? "Verified" : "Not verified", done: isBvnOrNin, icon: "card-account-details-outline",
-   //onPress: isBvnOrNin ? undefined : () => {
- // navigation.dispatch(CommonActions.navigate(SCREENS.PREMBLY_VERIFICATION));
-//}  }
-
+ // { label: "BVN or NIN", subtitle: isBvnOrNin ? "Verified" : "Not verified", done: isBvnOrNin, icon: "card-account-details-outline",
+  //  onPress: isBvnOrNin ? undefined : () => navigation.navigate(SCREENS.BVN_NIN_CHOICE) },
 //];
-
-  const tier2Steps = [
   
-    { label: "Address Verification", subtitle: "Verify your residential address",  
-      done: kycTier >= 2, 
-      icon: "home-outline",
-       onPress: undefined,
-        locked: true,
-        comingSoon: true,
-    },
-  ];
+    { label: "BVN or NIN", subtitle: isBvnOrNin ? "Verified" : "Not verified", done: isBvnOrNin, icon: "card-account-details-outline",
+   onPress: isBvnOrNin ? undefined : () => {
+  navigation.dispatch(CommonActions.navigate(SCREENS.PREMBLY_VERIFICATION));
+}  }
+
+];
+
+const addressProofSubmitted = !!user?.address_proof_url;
+const isAddressVerified = kycTier >= 2;
+
+const isTier1Complete = isEmailVerified && isPhoneVerified && isBvnOrNin;
+
+const tier2Steps = [
+  { 
+    label: "Address Verification", 
+    subtitle: !isTier1Complete
+      ? "Complete Tier 1 first"
+      : isAddressVerified 
+        ? "Verified" 
+        : addressProofSubmitted 
+          ? "Under review — we'll notify you"
+          : "Verify your residential address",  
+    done: isAddressVerified, 
+    icon: "home-outline",
+    locked: !isTier1Complete,
+    pending: isTier1Complete && addressProofSubmitted && !isAddressVerified,
+    onPress: !isTier1Complete || isAddressVerified || addressProofSubmitted 
+      ? undefined 
+      : () => navigation.navigate(SCREENS.ADDRESS_VERIFICATION),
+  },
+];
 
   // Progress: email(1) + phone(1) + bvnNin(1) + face(1) + address(1) = 5 total
   const completedCount = [isEmailVerified, isPhoneVerified, isBvnOrNin, kycTier >= 2, kycTier >= 2].filter(Boolean).length;
@@ -120,9 +134,9 @@ export default function VerificationHubScreen({ navigation }: Props) {
   );
 }
 
-function TierRow({ label, subtitle, done, icon, onPress, locked, isLast }: {
+function TierRow({ label, subtitle, done, icon, onPress, locked, pending, isLast }: {
   label: string; subtitle: string; done: boolean; icon: string;
-  onPress?: () => void; locked?: boolean; isLast: boolean;
+  onPress?: () => void; locked?: boolean; pending?: boolean; isLast: boolean;
 }) {
   return (
     <TouchableOpacity
@@ -131,11 +145,16 @@ function TierRow({ label, subtitle, done, icon, onPress, locked, isLast }: {
       disabled={!onPress || locked}
       activeOpacity={0.7}
     >
-      <View style={[s.tierIcon, done && s.tierIconDone, locked && s.tierIconLocked]}>
+      <View style={[
+        s.tierIcon, 
+        done && s.tierIconDone, 
+        locked && s.tierIconLocked,
+        pending && s.tierIconPending,
+      ]}>
         <MaterialCommunityIcons
           name={locked ? "lock-outline" : icon as any}
           size={20}
-          color={done ? "#16a34a" : locked ? "#9ca3af" : BLUE}
+          color={done ? "#16a34a" : pending ? "#f59e0b" : locked ? "#9ca3af" : BLUE}
         />
       </View>
       <View style={{ flex: 1 }}>
@@ -144,6 +163,8 @@ function TierRow({ label, subtitle, done, icon, onPress, locked, isLast }: {
       </View>
       {done ? (
         <MaterialCommunityIcons name="check-circle" size={22} color="#16a34a" />
+      ) : pending ? (
+        <MaterialCommunityIcons name="clock-outline" size={20} color="#f59e0b" />
       ) : locked ? (
         <MaterialCommunityIcons name="lock" size={18} color="#d1d5db" />
       ) : (
@@ -178,4 +199,5 @@ const s = StyleSheet.create({
 
   limitsBtn:      { flexDirection: "row", alignItems: "center", gap: 8, justifyContent: "center", marginTop: 20, backgroundColor: "#EEF3FF", borderRadius: 12, padding: 14 },
   limitsBtnText:  { fontSize: 14, fontWeight: "600", color: BLUE, flex: 1 },
+  tierIconPending: { backgroundColor: "#fef3c7" },
 });

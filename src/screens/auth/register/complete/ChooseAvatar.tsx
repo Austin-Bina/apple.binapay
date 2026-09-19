@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Animated, TouchableOpacity } from "react-native";
-import { Button, SegmentedButtons } from "react-native-paper";
+import { View, Text, Animated, TouchableOpacity, StyleSheet } from "react-native";
+import { SegmentedButtons } from "react-native-paper";
 import { RegistrationStackScreenProps } from "@navigators/types";
-import tw from "@lib/tailwind";
-import Screen from "@components/ui/shared/Screen";
 import { Colors } from "@constants/theme/colors";
 import MaleOne from "@assets/images/avatars/male-1.svg";
 import MaleTwo from "@assets/images/avatars/male-2.svg";
@@ -26,6 +24,13 @@ import { showToast } from "@helpers/toast";
 import { authSliceActions } from "@store/slice/auth";
 import { useTypedDispatch, useTypedSelector } from "@store/common";
 import { selectIsLoggingIn } from "@store/selectors/auth";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import ScrollableView from "@components/ui/shared/ScrollableView";
+
+const BLUE  = "#2563EB";
+const BRAND = "#1E3A8A";
 
 type Props = RegistrationStackScreenProps<"Complete Registration">;
 
@@ -49,6 +54,7 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
   const { dispatch } = useCompleteRegisterForm();
   const storeDispatch = useTypedDispatch();
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
+  const insets = useSafeAreaInsets();
   const { control, watch, trigger, setError, handleSubmit } = useFormContext<RegistrationFormValues>();
 
   const { avatar: selectedAvatar, gender } = watch();
@@ -81,22 +87,18 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
     } catch (error: any) {
       if (error.errors) {
         const { errors } = error;
-
         if (errors) {
           for (const [field, fieldErrors] of Object.entries(errors)) {
             if (Array.isArray(fieldErrors)) {
               setError(field as keyof RegistrationFormValues, {
-                message: fieldErrors.join(", "),
+                message: (fieldErrors as string[]).join(", "),
               });
             }
           }
-
           const page1Fields = [...passwordFields];
           const page2Fields = [...transactionPinFields];
           const page3Fields = [...avatarFields];
-
           const errorKeys = Object.keys(errors);
-
           if (errorKeys.some((key: any) => page1Fields.includes(key))) {
             dispatch({ type: "updateScreenIndex", index: 0 });
           } else if (errorKeys.some((key: any) => page2Fields.includes(key))) {
@@ -115,20 +117,19 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
 
   const renderAvatars = () => {
     const avatars = AVATARS[gender as keyof typeof AVATARS];
-
     return (
       <Controller
         control={control}
         name="avatar"
         render={({ field: { onChange, value } }) => (
-          <View style={tw`flex-row flex-wrap gap-2 justify-around`}>
+          <View style={s.avatarGrid}>
             {avatars.map((avatar) => (
               <TouchableOpacity
                 key={avatar.id}
                 onPress={() => onChange(avatar.id)}
                 style={[
-                  tw`mb-2 border-2 border-transparent rounded-full justify-center items-center p-2`,
-                  selectedAvatar === avatar.id && tw`border-blue-500 border-2`,
+                  s.avatarBtn,
+                  selectedAvatar === avatar.id && s.avatarBtnActive,
                   { width: scale(130), height: scale(130) },
                 ]}>
                 {avatar.component}
@@ -141,54 +142,84 @@ const ChooseAvatar: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <Screen>
-      <View style={tw`flex flex-col justify-between h-full px-4 pt-5`}>
-        <View>
-          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Choose Your Avatar</Text>
-          <Text style={tw`w-full mb-10 text-gray-500 text-base font-normal leading-snug`}>
-            Select an avatar that represents you best from the options below.
+    <View style={[s.root]}>
+      <ScreenHeader
+        title="Choose Your Avatar"
+        subtitle="Select an avatar that represents you"
+        onBack={() => navigation.goBack()}
+      />
+
+      <ScrollableView contentContainerStyle={s.scroll}>
+
+        {/* Info card */}
+        <View style={s.infoCard}>
+          <MaterialCommunityIcons name="account-circle-outline" size={18} color={BLUE} />
+          <Text style={s.infoText}>
+            Pick an avatar below. You can always change it later from your profile settings.
           </Text>
-          <Controller
-            name="gender"
-            control={control}
-            render={({ field: { onChange, value } }) => (
-              <SegmentedButtons
-                value={value}
-                onValueChange={onChange}
-                buttons={[
-                  { value: "male", label: "Male" },
-                  { value: "female", label: "Female" },
-                ]}
-                theme={{
-                  colors: {
-                    secondaryContainer: Colors.gray[700],
-                    onSecondaryContainer: "white",
-                  },
-                }}
-              />
-            )}
-          />
-          <Animated.View
-            style={{
-              ...tw`py-8`,
-              opacity: fadeAnim,
-            }}>
-            {renderAvatars()}
-          </Animated.View>
         </View>
-        <View style={tw`pb-4 pt-1`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            mode="contained"
-            disabled={!selectedAvatar || isLoggingIn}
-            onPress={handleValidate}>
-            Continue
-          </Button>
-        </View>
+
+        {/* Gender selector */}
+        <Text style={s.sectionLabel}>Select Gender</Text>
+        <Controller
+          name="gender"
+          control={control}
+          render={({ field: { onChange, value } }) => (
+            <SegmentedButtons
+              value={value}
+              onValueChange={onChange}
+              buttons={[
+                { value: "male", label: "Male" },
+                { value: "female", label: "Female" },
+              ]}
+              theme={{
+                colors: {
+                  secondaryContainer: Colors.gray[700],
+                  onSecondaryContainer: "white",
+                },
+              }}
+            />
+          )}
+        />
+
+        {/* Avatars */}
+        <Text style={[s.sectionLabel, { marginTop: 20 }]}>Select Avatar</Text>
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {renderAvatars()}
+        </Animated.View>
+
+      </ScrollableView>
+
+      {/* Footer */}
+      <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
+        <TouchableOpacity
+          style={[s.continueBtn, (!selectedAvatar || isLoggingIn) && s.disabledBtn]}
+          disabled={!selectedAvatar || isLoggingIn}
+          onPress={handleValidate}
+          activeOpacity={0.85}
+        >
+          <Text style={s.continueBtnText}>
+            {isLoggingIn ? "Setting up your account..." : "Continue"}
+          </Text>
+        </TouchableOpacity>
       </View>
-    </Screen>
+    </View>
   );
 };
+
+const s = StyleSheet.create({
+  root:            { flex: 1, backgroundColor: "#f8f9fb" },
+  scroll:          { padding: 16, paddingBottom: 100 },
+  infoCard:        { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: "#EEF3FF", borderRadius: 12, padding: 12, marginBottom: 20 },
+  infoText:        { flex: 1, fontSize: 13, color: "#374151", lineHeight: 18 },
+  sectionLabel:    { fontSize: 12, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  avatarGrid:      { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-around", paddingVertical: 8 },
+  avatarBtn:       { borderWidth: 2, borderColor: "transparent", borderRadius: 999, justifyContent: "center", alignItems: "center", padding: 4 },
+  avatarBtnActive: { borderColor: BLUE, backgroundColor: "#EEF3FF" },
+  footer:          { paddingHorizontal: 16, paddingTop: 10, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+  continueBtn:     { backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+  continueBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  disabledBtn:     { opacity: 0.5 },
+});
 
 export default ChooseAvatar;

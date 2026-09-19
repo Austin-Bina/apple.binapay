@@ -28,6 +28,7 @@ import PushTokenBootstrap from "@helpers/PushTokenBootstrap";
 import PushNotificationManager from "@helpers/pushnotificationmanager";
 
 
+
 /*SplashScreen.preventAutoHideAsync();  */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

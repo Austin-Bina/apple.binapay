@@ -146,14 +146,14 @@ export const TabBar = () => {
             tabBarIcon: ({ color, size }) => <Icon source="home-variant" color={color} size={size} />,
           }}
         />
-        <Tab.Screen
+        { <Tab.Screen
           name="Assets"
           component={AssetsStack}
           options={{
             tabBarLabel: "Assets",
             tabBarIcon: ({ color, size }) => <Icon source="chart-line" color={color} size={size} />,
           }}
-        />
+        />}
         <Tab.Screen
           name="Services"
           component={ServicesStack}

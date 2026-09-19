@@ -6,7 +6,7 @@ import { authSlice, initialState as initialAuthState } from "./slice/auth";
 import { settingsSlice } from "./slice/settings";
 import { initialTransactionState, transactionSlice } from "./slice/transactionSlice";
 import { devToolsEnhancer } from "@redux-devtools/extension";
-import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { utilityBillsQueryApi } from "./redux-api/utilityBillsQueryApi";
 import { accountTransactionsApi } from "./redux-api/accountTransactionsApi";
 import { referralQueryApi } from "./redux-api/referralQueryApi";
@@ -40,7 +40,7 @@ const persistedReducer = persistReducer<ReturnType<typeof defaultReducer>, Unkno
   {
     key: "binapay",
     version: 1,
-    storage: ExpoFileSystemStorage,
+    storage: AsyncStorage,
     blacklist: ["transaction", "settings", utilityBillsQueryApi.reducerPath],
     debug: true,
   },

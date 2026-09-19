@@ -30,7 +30,7 @@ function AuthStack() {
           </View>
         ),
       })}>
-      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Register" options={{ headerShown: false }} component={RegistrationStack} />
     </Stack.Navigator>
   );

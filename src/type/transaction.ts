@@ -161,6 +161,8 @@ export interface TransferDetails {
   payment_status:      string;
   amount:              string | null;
   narration:           string | null;
+ transfer_amount:     number | null;  // ← add
+  service_fee:         number | null;  // ← add
 }
 
 

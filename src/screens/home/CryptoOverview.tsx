@@ -4,12 +4,12 @@ import { useCrypto } from "./CryptoContext";
 import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { StackParamList, TabParamList } from "@navigators/types";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs/lib/typescript/src/types";
 import { SCREENS } from "@constants/screens";
 import { formattedBalance } from "../../utils/transactionutils";
 import { useSelector } from "react-redux";
 import { selectNgnUsdtRateWithSpread } from "@store/selectors/auth";
 import React, { useState } from "react";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 
 // ✅ Main Component
 export default function CryptoOverview() {

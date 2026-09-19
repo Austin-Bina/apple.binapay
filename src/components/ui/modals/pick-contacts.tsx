@@ -144,8 +144,8 @@ const ContactPickerModal = ({ index, isVisible, onClose, onSelectContact }: Prop
         <CustomTextInput placeholder="Search Contacts" value={searchQuery} onChangeText={handleSearch} />
         <BottomSheetFlatList
           data={searchQuery ? filteredContacts : contacts}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
-          renderItem={({ item }) => (
+          keyExtractor={(item: Contacts.Contact, index: number) => `${item.id}-${index}`}
+          renderItem={({ item }: { item: Contacts.Contact }) => (
             <TouchableOpacity
               style={tw`p-2 border-b border-gray-300`}
               onPress={() => {

@@ -10,7 +10,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import * as Print from "expo-print";
 import { shareAsync } from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import {
   useGenerateStatementMutation,
   StatementPreviewResponse,

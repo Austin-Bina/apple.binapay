@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { TouchableOpacity, View } from "react-native";
-import { Button, Text, TextInput } from "react-native-paper";
-import tw from "@lib/tailwind";
+import { TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { Text, TextInput } from "react-native-paper";
 import CustomTextInput from "@components/ui/form/TextInput";
 import { AuthStackScreenProps } from "@navigators/types";
 import { StackActions } from "@react-navigation/native";
 import { Controller, useForm } from "react-hook-form";
-import Screen from "@components/ui/shared/Screen";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +17,11 @@ import Banner from "@components/ui/banner";
 import CustomButton from "@components/ui/form/button";
 import { registerForPushNotifications } from "@helpers/registerForPushNotifications";
 import { syncPushToken } from "@helpers/syncPushToken";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
 const schema = z.object({
   email: z
@@ -34,16 +37,14 @@ type FormValues = z.infer<typeof schema>;
 const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const isLoggingIn = useTypedSelector(selectIsLoggingIn);
   const dispatch = useTypedDispatch();
 
   const { control, setError, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
   useEffect(() => {
@@ -53,124 +54,140 @@ const LoginScreen: React.FC<AuthStackScreenProps<"Login">> = ({ navigation }) =>
   const onSubmit = handleSubmit(async function (values) {
     try {
       setHasError(false);
-
-      //await dispatch(authSliceActions.doLogin(values)).unwrap();
-     await dispatch(authSliceActions.doLogin(values)).unwrap();
-
-// Ask permission + get token
-const token = await registerForPushNotifications();
-
-// Save token
-if (token) {
-  await syncPushToken(token);
-}
-
-
+      await dispatch(authSliceActions.doLogin(values)).unwrap();
+      const token = await registerForPushNotifications();
+      if (token) await syncPushToken(token);
     } catch (error) {
       const { errors } = error as any;
-
       if (errors) {
-        if (errors) {
-          for (const [field, fieldErrors] of Object.entries(errors)) {
-            if (Array.isArray(fieldErrors)) {
-              setError(field as keyof FormValues, {
-                message: fieldErrors.join(", "),
-              });
-            }
+        for (const [field, fieldErrors] of Object.entries(errors)) {
+          if (Array.isArray(fieldErrors)) {
+            setError(field as keyof FormValues, { message: fieldErrors.join(", ") });
           }
         }
-
         return;
       }
-
       setHasError(true);
     }
   });
 
   return (
-    <Screen>
-      <ScrollableView contentContainerStyle={tw`py-5 px-4 justify-between`}>
-        <View>
-          <Text style={tw`text-gray-900 text-2xl font-bold leading-relaxed`}>Welcome Back to BinaPay</Text>
-          <Text style={tw`w-full mb-[30px] text-gray-500 text-base font-normal leading-snug`}>
-            Log in to your account to continue.
-          </Text>
+    <View style={[s.root]}>
+      <ScreenHeader
+        title="Welcome Back"
+        subtitle="Log in to your BinaPay account"
+        onBack={() => navigation.goBack()}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollableView contentContainerStyle={s.scroll}>
 
           {hasError && (
-            <View style={tw`mb-3`}>
+            <View style={s.bannerWrap}>
               <Banner title="Failed to connect" content="Something went wrong. Please try again." />
             </View>
           )}
 
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-              <CustomTextInput
-                label="Email Address"
-                placeholder="example@example.com"
-                mode="outlined"
-                onBlur={onBlur}
-                value={value}
-                onChangeText={onChange}
-                error={!!error}
-                errorMessage={error?.message}
-              />
-            )}
-          />
+          {/* Info card */}
+          <View style={s.infoCard}>
+            <Text style={s.infoText}>
+              Enter your registered email and password to access your account.
+            </Text>
+          </View>
 
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <CustomTextInput
-                label="Password"
-                placeholder="••••••••"
-                mode="outlined"
-                onBlur={onBlur}
-                value={value}
-                onChangeText={onChange}
-                secureTextEntry={!passwordVisible}
-                left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
-                right={
-                  <TextInput.Icon
-                    onPress={() => setPasswordVisible((prev) => !prev)}
-                    icon={passwordVisible ? (props) => <EyeOpen {...props} /> : "eye-off-outline"}
-                    color="#71717A"
-                    forceTextInputFocus={false}
-                  />
-                }
-              />
-            )}
-          />
-          <Text
-            onPress={() => {
-              navigation.dispatch(
-                StackActions.push("Forgot Password", {
-                  email: "",
-                }),
-              );
-            }}
-            style={tw`text-primary text-sm text-center my-5`}>
-            Forgot Password?
-          </Text>
-          <View style={tw`flex flex-row items-center justify-center mb-10 gap-2`}>
-            <Text style={tw`text-gray-700`}>New to BinaPay?</Text>
+          {/* Form card */}
+          <View style={s.formCard}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                <CustomTextInput
+                  label="Email Address"
+                  placeholder="example@example.com"
+                  mode="outlined"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!error}
+                  errorMessage={error?.message}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <CustomTextInput
+                  label="Password"
+                  placeholder="••••••••"
+                  mode="outlined"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry={!passwordVisible}
+                  left={<TextInput.Icon icon={(props) => <PasswordLock {...props} />} color="#71717A" />}
+                  right={
+                    <TextInput.Icon
+                      onPress={() => setPasswordVisible((prev) => !prev)}
+                      icon={passwordVisible ? (props) => <EyeOpen {...props} /> : "eye-off-outline"}
+                      color="#71717A"
+                      forceTextInputFocus={false}
+                    />
+                  }
+                />
+              )}
+            />
+
             <TouchableOpacity
-              onPress={() => {
-                navigation.navigate("Register", { screen: "Start" });
-              }}>
-              <Text style={tw`text-primary`}>Create an account here</Text>
+              onPress={() => navigation.dispatch(StackActions.push("Forgot Password", { email: "" }))}
+              style={s.forgotWrap}
+            >
+              <Text style={s.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
-        </View>
+
+          {/* Register link */}
+          <View style={s.registerRow}>
+            <Text style={s.registerText}>New to BinaPay?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Register", { screen: "Start" })}>
+              <Text style={s.registerLink}>Create an account here</Text>
+            </TouchableOpacity>
+          </View>
+
+        </ScrollableView>
+      </KeyboardAvoidingView>
+
+      {/* Footer button */}
+      <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
         <CustomButton disabled={isLoggingIn} onPress={onSubmit}>
           Login
         </CustomButton>
-      </ScrollableView>
+      </View>
+
       <PleaseWaitModal visible={isLoggingIn} />
-    </Screen>
+    </View>
   );
 };
+
+const s = StyleSheet.create({
+  root:        { flex: 1, backgroundColor: "#f8f9fb" },
+  scroll:      { padding: 16, paddingBottom: 100 },
+  bannerWrap:  { marginBottom: 12 },
+  infoCard:    { backgroundColor: "#EEF3FF", borderRadius: 12, padding: 12, marginBottom: 16 },
+  infoText:    { fontSize: 13, color: "#374151", lineHeight: 18 },
+  formCard:    { backgroundColor: "#fff", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#f0f0f0", marginBottom: 16, gap: 4 },
+  forgotWrap:  { alignItems: "center", marginTop: 8 },
+  forgotText:  { fontSize: 13, color: BLUE, fontWeight: "600" },
+  registerRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  registerText:{ fontSize: 14, color: "#6b7280" },
+  registerLink:{ fontSize: 14, color: BLUE, fontWeight: "600" },
+  footer:      { paddingHorizontal: 16, paddingTop: 10, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+});
 
 export default LoginScreen;

@@ -33,10 +33,9 @@ export const formatTransactionAmount = (transaction: WalletTransaction) => {
       transaction.meta?.decimal_places ??
       8;
 
-    const humanAmount = amount / Math.pow(10, decimalPlaces);
-    return `${direction === "debit" ? "" : "+"}${humanAmount} ${symbol}`;
-  }
-
+// After
+const humanAmount = amount / Math.pow(10, decimalPlaces);
+return `${direction === "debit" ? "" : "+"}${formattedBalance(humanAmount, symbol, decimalPlaces)}`;}
   // --- Case 2: Crypto deposit/withdrawal ---
   const cryptoForms = ["crypto_deposit", "crypto_withdrawal"];
   if (cryptoForms.includes(form)) {
@@ -45,9 +44,10 @@ export const formatTransactionAmount = (transaction: WalletTransaction) => {
       transaction.meta?.decimal_places ??
       8;
 
-    const humanAmount = amount / Math.pow(10, decimalPlaces);
-    const symbol = (transaction.meta?.crypto_asset_symbol ?? "CRYPTO").toUpperCase();
-    return `${humanAmount} ${symbol}`;
+    // After
+const humanAmount = amount / Math.pow(10, decimalPlaces);
+const symbol = (transaction.meta?.crypto_asset_symbol ?? "CRYPTO").toUpperCase();
+return formattedBalance(humanAmount, symbol, decimalPlaces);
   }
 
   // --- Case 3: Fiat (NGN & others) ---

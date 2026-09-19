@@ -23,7 +23,7 @@ import { useForm } from "react-hook-form";
 import { View, useWindowDimensions } from "react-native";
 import { Image } from "react-native-element-image";
 import { Button, Text, Divider } from "react-native-paper";
-import { Paystack, paystackProps } from "react-native-paystack-webview";
+import { Paystack, PaystackProps } from "react-native-paystack-webview";
 import { scale } from "react-native-size-matters";
 import { z } from "zod";
 

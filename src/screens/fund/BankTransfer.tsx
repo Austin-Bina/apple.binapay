@@ -169,21 +169,20 @@ export default function BankTransferScreen() {
         {/* How it works */}
         <Text style={s.sectionLabel}>How It Works</Text>
         <View style={s.stepsCard}>
-          {[
-            { icon: "content-copy", text: "Copy your dedicated account number above" },
-            { icon: "bank-transfer-out", text: "Transfer any amount from your bank app" },
-            { icon: "wallet-plus-outline", text: "Your BinaPay wallet is credited instantly" },
-          ].map((step, i) => (
-            <View key={i} style={[s.stepRow, i < 2 && s.stepRowBorder]}>
-              <View style={s.stepNum}>
-                <Text style={s.stepNumText}>{i + 1}</Text>
-              </View>
-              <View style={s.stepIconWrap}>
-                <MaterialCommunityIcons name={step.icon as any} size={18} color={BLUE} />
-              </View>
-              <Text style={s.stepText}>{step.text}</Text>
-            </View>
-          ))}
+         {[
+  { text: "Transfer only from a bank account registered in your name. Deposits from a third-party account will not be credited." },
+  { text: "Copy your dedicated account number above and transfer any amount from your own bank app." },
+  { text: minAmount
+      ? `Deposits below ${formatToNaira(minAmount)} attract attract ${formatToNaira(bankSettings?.manual_funding_fee)} processing fee, deducted from the amount credited to your wallet.`
+      : "Deposits below the minimum transfer amount attract a small processing fee, deducted from the amount credited to your wallet." },
+].map((step, i) => (
+  <View key={i} style={[s.stepRow, i < 2 && s.stepRowBorder]}>
+    <View style={s.stepNum}>
+      <Text style={s.stepNumText}>{i + 1}</Text>
+    </View>
+    <Text style={s.stepText}>{step.text}</Text>
+  </View>
+))}
         </View>
 
       </ScrollableView>

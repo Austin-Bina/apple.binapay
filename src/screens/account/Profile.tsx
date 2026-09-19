@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Button, Text } from "react-native-paper";
 import { AccountStackScreenProps } from "@navigators/types";
 import { Controller, useForm } from "react-hook-form";
@@ -22,6 +31,7 @@ import { zodPhoneValidation } from "@utils/phone";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import Toast, { type ToastOptions } from "react-native-root-toast"
 
 const BRAND = "#1E3A8A";
 const BLUE  = "#2563EB";
@@ -32,6 +42,12 @@ const schema = z.object({
   phone: zodPhoneValidation,
 });
 type FormValues = z.infer<typeof schema>;
+
+type DeleteErrors = {
+  password?: string;
+  transaction_pin?: string;
+  account?: string;
+};
 
 const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) => {
   const insets     = useSafeAreaInsets();
@@ -47,6 +63,74 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
     defaultValues: { name: user?.name, email: user?.email, phone: user?.phone },
     resolver: zodResolver(schema),
   });
+
+  // ── Delete account state ──────────────────────────────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword]   = useState("");
+  const [deletePin, setDeletePin]             = useState("");
+  const [deleteReason, setDeleteReason]       = useState("");
+  const [isDeleting, setIsDeleting]           = useState(false);
+  const [deleteErrors, setDeleteErrors]       = useState<DeleteErrors>({});
+
+  const resetDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeletePassword("");
+    setDeletePin("");
+    setDeleteReason("");
+    setDeleteErrors({});
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteErrors({});
+
+    if (!deletePassword) {
+      setDeleteErrors({ password: "Password is required." });
+      return;
+    }
+    if (!deletePin) {
+      setDeleteErrors({ transaction_pin: "Transaction PIN is required." });
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await API.post(route("account.delete"), {
+        password: deletePassword,
+        transaction_pin: deletePin,
+        reason: deleteReason.trim() || undefined,
+      });
+
+      dispatch(authSliceActions.logout());
+      const { reset } = await getNavigate();
+      reset({ routes: [{ name: "Auth", params: { screen: "Login" } }] });
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      const { response } = axiosError;
+
+      if (response) {
+        const { message, errors: fieldErrors } = response.data ?? {};
+
+        if (fieldErrors) {
+          const mapped: DeleteErrors = {};
+          for (const [field, msgs] of Object.entries(fieldErrors)) {
+            const text = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+            if (field === "password" || field === "transaction_pin" || field === "account") {
+              mapped[field as keyof DeleteErrors] = text;
+            }
+          }
+          setDeleteErrors(mapped);
+          const firstMessage = Object.values(mapped)[0];
+          if (firstMessage) showToast({ message: firstMessage });
+        } else {
+          showToast({ message: message || "Could not delete account. Please try again.", position: Toast.positions.TOP });
+        }
+      } else {
+        showToast({ message: "Could not delete account. Please try again.", position: Toast.positions.TOP });
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     const result = zodPhoneValidation.safeParse(values.phone);
@@ -84,12 +168,12 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
 
   return (
     <View style={s.root}>
-      {/* Header */}    
+      {/* Header */}
       <ScreenHeader
           title="Personal Information"
           subtitle="Update your profile details"
           onBack={() => navigation.goBack()}
-          rightIcon="shield-check-outline"       
+          rightIcon="shield-check-outline"
         />
 
       <ScrollableView contentContainerStyle={s.scroll}>
@@ -169,9 +253,103 @@ const Profile: React.FC<AccountStackScreenProps<"Profile">> = ({ navigation }) =
         >
           <Text style={s.saveBtnText}>Save Changes</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={s.deleteBtn}
+          onPress={() => setShowDeleteModal(true)}
+          activeOpacity={0.85}
+        >
+          <Text style={s.deleteBtnText}>Delete Account</Text>
+        </TouchableOpacity>
       </ScrollableView>
 
       <PleaseWaitModal visible={isProcessing} />
+
+      {/* ── Delete account modal ── */}
+      <Modal visible={showDeleteModal} transparent animationType="slide" onRequestClose={resetDeleteModal}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={s.modalOverlay}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }}>
+              
+                <View style={s.modalCard}>
+                  <Text style={s.modalTitle}>Delete Account</Text>
+                  <Text style={s.modalHint}>
+                    This permanently deletes your account. Any remaining wallet balance must be
+                    withdrawn first. Enter your password and transaction PIN to confirm.
+                  </Text>
+
+                  {deleteErrors.account && (
+                    <View style={s.deleteWarningBox}>
+                      <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#B91C1C" />
+                      <Text style={s.deleteWarningText}>{deleteErrors.account}</Text>
+                    </View>
+                  )}
+
+                  <CustomTextInput
+                    label="Password"
+                    mode="outlined"
+                    secureTextEntry
+                    value={deletePassword}
+                    onChangeText={(val) => {
+                      setDeletePassword(val);
+                      if (deleteErrors.password) setDeleteErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    error={!!deleteErrors.password}
+                    errorMessage={deleteErrors.password}
+                  />
+
+                  <CustomTextInput
+                    label="Transaction PIN"
+                    mode="outlined"
+                    secureTextEntry
+                    keyboardType="numeric"
+                    maxLength={4}
+                    value={deletePin}
+                    onChangeText={(val) => {
+                      setDeletePin(val);
+                      if (deleteErrors.transaction_pin) setDeleteErrors((prev) => ({ ...prev, transaction_pin: undefined }));
+                    }}
+                    error={!!deleteErrors.transaction_pin}
+                    errorMessage={deleteErrors.transaction_pin}
+                  />
+
+                  <CustomTextInput
+                    label="Reason (optional)"
+                    mode="outlined"
+                    multiline
+                    numberOfLines={3}
+                    placeholder="Help us improve — why are you leaving?"
+                    value={deleteReason}
+                    onChangeText={setDeleteReason}
+                    style={{ minHeight: 70, textAlignVertical: "top" }}
+                  />
+
+                  <View style={s.modalActions}>
+                    <Button
+                      mode="outlined"
+                      style={s.modalCancelBtn}
+                      onPress={resetDeleteModal}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      mode="contained"
+                      buttonColor="#dc2626"
+                      style={s.modalDeleteBtn}
+                      loading={isDeleting}
+                      disabled={isDeleting}
+                      onPress={handleDeleteAccount}
+                    >
+                      Delete
+                    </Button>
+                  </View>
+                </View>
+              
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -191,4 +369,17 @@ const s = StyleSheet.create({
   card:                { backgroundColor: "#fff", borderRadius: 14, borderWidth: 1, borderColor: "#f0f0f0", padding: 14, marginBottom: 16, gap: 4 },
   saveBtn:             { backgroundColor: BLUE, borderRadius: 12, paddingVertical: 15, alignItems: "center" },
   saveBtnText:         { color: "#fff", fontSize: 15, fontWeight: "700" },
+  deleteBtn:           { marginTop: 12, alignItems: "center", paddingVertical: 12 },
+  deleteBtnText:       { color: "#dc2626", fontSize: 14, fontWeight: "600" },
+
+  // Delete modal
+  modalOverlay:        { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalCard:           { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, gap: 12 },
+  modalTitle:          { fontSize: 18, fontWeight: "800", color: "#111", marginBottom: 2 },
+  modalHint:           { fontSize: 12, color: "#888", lineHeight: 18, marginBottom: 4 },
+  modalActions:        { flexDirection: "row", gap: 12, marginTop: 8 },
+  modalCancelBtn:       { flex: 1, borderRadius: 30, borderColor: "#D0D9EE" },
+  modalDeleteBtn:       { flex: 1.5, borderRadius: 30 },
+  deleteWarningBox:     { flexDirection: "row", gap: 8, alignItems: "flex-start", backgroundColor: "#FEF2F2", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#FECACA" },
+  deleteWarningText:    { flex: 1, fontSize: 12, color: "#B91C1C", lineHeight: 17 },
 });

@@ -141,11 +141,14 @@ export default function ViewTransaction({ route }: Props) {
 
   // ── Amount ─────────────────────────────────────────────────────────────────
   const displayAmount = useMemo(() => {
-    if (pageData.transferDetails?.amount) {
-      return `₦${Number(pageData.transferDetails.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
-    }
-    return pageData.transactionDetails.find(d => d.label.toLowerCase().includes("amount"))?.value ?? "";
-  }, [pageData]);
+  if (pageData.transferDetails?.transfer_amount) {
+    return `₦${Number(pageData.transferDetails.transfer_amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+  }
+  if (pageData.transferDetails?.amount) {
+    return `₦${Number(pageData.transferDetails.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+  }
+  return pageData.transactionDetails.find(d => d.label.toLowerCase().includes("amount"))?.value ?? "";
+}, [pageData]);
 
   // ── Is transfer (bank transfer) ─────────────────────────────────────────
   const isTransfer = pageData.receiptType === "transfer";
@@ -233,13 +236,11 @@ const detailRows = useMemo(() => {
       >
 
         {/* ── Hero status ── */}
-        <View style={s.hero}>
-          <View style={[s.heroBadge, { backgroundColor: sc.bg }]}>
-            <MaterialCommunityIcons name={sc.icon as any} size={36} color={sc.color} />
-          </View>
-          <Text style={[s.heroStatus, { color: sc.color }]}>{sc.label}</Text>
-          {!!displayAmount && <Text style={s.heroAmount}>{displayAmount}</Text>}
-        </View>
+        {/* ── Hero status — compact ── */}
+<View style={s.hero}>
+  {!!displayAmount && <Text style={s.heroAmount}>{displayAmount}</Text>}
+  <Text style={[s.heroStatus, { color: sc.color }]}>{sc.label}</Text>
+</View>
 
         {/* ── Transfer recipient card (for bank transfers) ── */}
         {isTransfer && td?.beneficiary_name && (
@@ -260,6 +261,32 @@ const detailRows = useMemo(() => {
           </View>
         )}
 
+{/* ── Fee breakdown (transfers only) ── */}
+{isTransfer && td && (
+  <View style={s.feeCard}>
+    <View style={s.feeRow}>
+      <Text style={s.feeLabel}>Transfer Amount</Text>
+      <Text style={s.feeValue}>
+        ₦{Number(td.transfer_amount ?? 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+      </Text>
+    </View>
+    <View style={s.feeRow}>
+      <Text style={s.feeLabel}>Transaction Fee</Text>
+      <Text style={[s.feeValue, { color: td.service_fee && Number(td.service_fee) > 0 ? FAIL : SUCCESS }]}>
+        {td.service_fee && Number(td.service_fee) > 0
+          ? `−₦${Number(td.service_fee).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
+          : "Free"}
+      </Text>
+    </View>
+    <View style={s.feeDivider} />
+    <View style={s.feeRow}>
+      <Text style={s.feeTotalLabel}>Total Charged</Text>
+      <Text style={s.feeTotalValue}>
+        ₦{(Number(td.transfer_amount ?? 0) + Number(td.service_fee ?? 0)).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+      </Text>
+    </View>
+  </View>
+)}
         {/* ── Detail rows ── */}
         {detailRows.length > 0 && (
           <View style={s.detailSection}>
@@ -323,7 +350,7 @@ const detailRows = useMemo(() => {
 
       {/* ── Bottom action buttons ── */}
       <View style={[s.bottomActions, { paddingBottom: insets.bottom + 12 }]}>
-        {showReceipt && (
+     {/*}   {showReceipt && (
   <TouchableOpacity
     style={s.shareBtn}
     onPress={() => pageData.epins?.length
@@ -335,7 +362,7 @@ const detailRows = useMemo(() => {
     <MaterialCommunityIcons name="share-variant-outline" size={18} color={BRAND_MID} />
     <Text style={s.shareBtnText}>Share Receipt</Text>
   </TouchableOpacity>
-)}
+)}*/}
 {showReceipt && (
   <TouchableOpacity
     style={s.downloadBtn}
@@ -372,11 +399,10 @@ const s = StyleSheet.create({
 
   scroll:     { padding: 16, gap: 14 },
 
-  // Hero
-  hero:       { alignItems: "center", paddingVertical: 20, gap: 8 },
-  heroBadge:  { width: 72, height: 72, borderRadius: 36, justifyContent: "center", alignItems: "center", marginBottom: 4 },
-  heroStatus: { fontSize: 16, fontWeight: "700" },
-  heroAmount: { fontSize: 32, fontWeight: "800", color: BRAND, letterSpacing: -1 },
+hero:       { alignItems: "center", paddingVertical: 20, paddingHorizontal: 16, gap: 6 },
+heroAmount: { fontSize: 32, fontWeight: "800", color: BRAND, letterSpacing: -1, textAlign: "center" },
+heroStatus: { fontSize: 14, fontWeight: "600", textAlign: "center" },
+
 
   // Recipient card (transfers)
   recipientCard:      { backgroundColor: "#fff", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#f0f0f0" },
@@ -390,7 +416,7 @@ const s = StyleSheet.create({
   detailSection:      { gap: 10 },
   detailSectionTitle: { fontSize: 11, fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5, paddingLeft: 4 },
   detailCard:         { backgroundColor: "#fff", borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#f0f0f0" },
-  detailRow:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13 },
+  detailRow:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10 },
   detailBorder:       { borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
   detailLabel:        { fontSize: 13, color: "#6b7280", flex: 1 },
   detailValueRow:     { flexDirection: "row", alignItems: "center", flex: 1.4, justifyContent: "flex-end" },
@@ -412,4 +438,13 @@ const s = StyleSheet.create({
   shareBtnText:   { fontSize: 15, fontWeight: "700", color: BRAND_MID },
   downloadBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: BLUE, borderRadius: 14, paddingVertical: 13 },
   downloadBtnText:{ fontSize: 15, fontWeight: "700", color: "#fff" },
+
+ // fee amount breakdown
+ feeCard:        { backgroundColor: "#fff", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#f0f0f0" },
+feeRow:         { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
+feeLabel:       { fontSize: 13, color: "#6b7280" },
+feeValue:       { fontSize: 13, fontWeight: "600", color: "#374151" },
+feeDivider:     { height: 1, backgroundColor: "#f0f0f0", marginVertical: 6 },
+feeTotalLabel:  { fontSize: 14, fontWeight: "700", color: BRAND },
+feeTotalValue:  { fontSize: 16, fontWeight: "800", color: BLUE },
 });

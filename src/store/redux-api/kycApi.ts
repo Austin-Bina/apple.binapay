@@ -11,6 +11,8 @@ export type KycLimits = {
   is_address_verified: boolean;
   daily_transfer_limit: number;
   per_txn_limit: number;
+   wallet_balance: number;
+  daily_transfer_spent: number;
   wallet_balance_limit: number;
   tier_limits: Record<number, {
     daily_transfer_limit: number;
@@ -59,6 +61,20 @@ export const kycApi = createApi({
       query: (body) => ({ url: "/api/v1/kyc/tier3", method: "POST", data: body }),
       invalidatesTags: ["KycLimits"],
     }),
+
+    initiateSession: builder.mutation<{ data: { url: string } }, void>({
+  query: () => ({ url: "/api/v1/kyc/prembly-initiate", method: "POST" }),
+}),
+
+submitAddressVerification: builder.mutation<any, FormData>({
+  query: (body) => ({ 
+    url: "/api/v1/kyc/address-verification", 
+    method: "POST", 
+    data: body,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  invalidatesTags: ["KycLimits"],
+}),
   }),
 });
 
@@ -70,4 +86,6 @@ export const {
   useVerifyNinMutation,
   useSubmitTier2Mutation,
   useSubmitTier3Mutation,
+  useInitiateSessionMutation,
+  
 } = kycApi;

@@ -202,6 +202,4 @@ const axiosBaseQuery =
   };
 
 export { axiosBaseQuery };
-
-
 */

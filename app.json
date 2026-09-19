@@ -2,9 +2,9 @@
   "expo": {
     "name": "BinaPay",
     "slug": "BinaPay",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
-    "runtimeVersion": "1.0.1",
+    "runtimeVersion": "1.0.3",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -19,7 +19,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.binapay",
-      "buildNumber": "4",
+      "buildNumber": "10",
       "googleServicesFile": "./GoogleService-Info.plist",
       "entitlements": {
         "aps-environment": "production"
@@ -31,11 +31,11 @@
         "NSPhotoLibraryUsageDescription": "BinaPay needs access to your photo library so you can upload images such as receipts or identity documents.",
         "NSCameraUsageDescription": "BinaPay needs access to your camera so you can take photos for verification or support.",
         "NSMicrophoneUsageDescription": "BinaPay may use your microphone when sending audio messages to support.",
-        "NSContactsUsageDescription": "BinaPay needs access to your contacts so you can easily send airtime or services to saved contacts."
-      }
+        "NSContactsUsageDescription": "Allow access to your contacts so you can conveniently choose a recipient's phone number. Your contact list is not uploaded or stored on our servers."      }
     },
     "android": {
       "versionCode": 25,
+      
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -76,19 +76,24 @@
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts. We use this permission to fetch your contacts and select a contact to buy or gift services to."
         }
       ],
+
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan wallet QR codes."
+        }
+      ],
       "expo-router",
       "@react-native-community/datetimepicker",
       "expo-web-browser"
     ],
-    "updates": {
-      "url": "https://u.expo.dev/04587ef0-aa8f-4c87-bcde-e89b00d969a3"
-    },
+    "owner": "binapay_app",
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "28111690-1e6a-44eb-88de-9e8025f5e7ee"
+        "projectId": "0c484780-9052-4173-a9e4-2ed77e6e2e8c"
       }
-    },
-    "owner": "austin_bina"
+    }
   },
   "submit": {
     "production": {

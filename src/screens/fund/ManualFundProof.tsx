@@ -12,7 +12,7 @@ import { Button, Chip, HelperText, Text, TouchableRipple } from "react-native-pa
 import { vs } from "react-native-size-matters";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import { useEffect, useState } from "react";
 import { findFileSize, formatBytes, MAXIMUM_FILE_UPLOAD_SIZE, MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES } from "@utils/file";
 import API from "@lib/api";

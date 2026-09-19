@@ -76,7 +76,7 @@ export const showToast = ({
 
   Toast.show(message, {
     duration,
-    position: Toast.positions.BOTTOM,
+    position: position ?? Toast.positions.BOTTOM,
     textColor: textColor ?? variantStyles.textColor,
     textStyle: [tw.style(variantStyles.textStyle), textStyle],
     containerStyle: [responsiveContainerStyle, containerStyle],

@@ -9,6 +9,7 @@ import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import HtmlText from "@components/ui/shared/HtmlText";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -48,7 +49,7 @@ export default function ViewNotificationScreen({ route, navigation }: Props) {
   const isRead = notification.read_at !== null;
 
   return (
-    <SafeAreaView style={s.root}>
+    <View style={s.root}>
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
@@ -80,7 +81,7 @@ export default function ViewNotificationScreen({ route, navigation }: Props) {
         {/* Message */}
         <Text style={s.sectionLabel}>Message</Text>
         <View style={s.card}>
-          <Text style={s.messageText}>{notification.data.message}</Text>
+          <HtmlText html={notification.data.message} textStyle={s.messageText} />
         </View>
 
         {/* Details */}
@@ -101,7 +102,7 @@ export default function ViewNotificationScreen({ route, navigation }: Props) {
           </>
         )}
       </ScrollableView>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -1,3 +1,6 @@
+const NO_SPREAD_SYMBOLS = ["USDT", "USDC"];
+const isNoSpreadSymbol = (symbol: string) => NO_SPREAD_SYMBOLS.includes(symbol);
+
 export type ConversionResult = {
   finalAmount: number | null;
   spreadApplied?: number | null;
@@ -12,10 +15,12 @@ export const calculateConversion = (
   amount: number,
   livePrices: Record<string, number>,
   liveNgnUsdt: { buy: number; sell: number } | null,
-  spreadConfig?: { spreadType: "percent" | "flat"; spread: number }
+  spreadConfig?: { spreadType: "percent" | "flat"; spread: number },
+  noSpreadSymbols: string[] = ["USDT"] 
 ): ConversionResult => {
   const from = fromSymbol.toUpperCase();
   const to = toSymbol.toUpperCase();
+  const isNoSpreadSymbol = (symbol: string) => noSpreadSymbols.includes(symbol);
 
   if (!from || !to || from === to || isNaN(amount) || amount <= 0) {
     return { finalAmount: null };
@@ -42,18 +47,33 @@ export const calculateConversion = (
   let spreadApplied: number | null = null;
 
   try {
-    // NGN ↔ USDT — no spread
-    if (from === "NGN" && to === "USDT") {
-      rate = liveNgnUsdt!.sell;
+    // NGN → stablecoin (USDT/USDC) — no spread
+    if (from === "NGN" && isNoSpreadSymbol(to)) {
+      if (to === "USDT") {
+        rate = liveNgnUsdt!.sell;
+      } else {
+        const toPrice = getPrice(to);
+        if (!toPrice) throw new Error(`${to} price not found`);
+        rate = liveNgnUsdt!.sell * toPrice;
+      }
       converted = amount / rate;
       spreadApplied = 0;
-    } else if (from === "USDT" && to === "NGN") {
-      rate = liveNgnUsdt!.buy;
+    }
+
+    // Stablecoin (USDT/USDC) → NGN — no spread
+    else if (to === "NGN" && isNoSpreadSymbol(from)) {
+      if (from === "USDT") {
+        rate = liveNgnUsdt!.buy;
+      } else {
+        const fromPrice = getPrice(from);
+        if (!fromPrice) throw new Error(`${from} price not found`);
+        rate = liveNgnUsdt!.buy * fromPrice;
+      }
       converted = amount * rate;
       spreadApplied = 0;
     }
 
-    // NGN → Crypto (buy crypto)
+    // NGN → other crypto (apply spread)
     else if (from === "NGN") {
       const toPrice = getPrice(to);
       if (!toPrice || !liveNgnUsdt) throw new Error(`${to} price not found`);
@@ -63,7 +83,7 @@ export const calculateConversion = (
       converted = amount / rateWithSpread;
     }
 
-    // Crypto → NGN (sell crypto)
+    // Other crypto → NGN (apply spread)
     else if (to === "NGN") {
       const fromPrice = getPrice(from);
       if (!fromPrice || !liveNgnUsdt) throw new Error(`${from} price not found`);
@@ -73,13 +93,16 @@ export const calculateConversion = (
       converted = amount * rateWithSpread;
     }
 
-    // Crypto ↔ Crypto
+    // Crypto ↔ Crypto — skip spread if either side is a no-spread stablecoin
     else {
       const fromPrice = getPrice(from);
       const toPrice = getPrice(to);
       if (!fromPrice || !toPrice) throw new Error(`${from} or ${to} price not found`);
       rate = toPrice / fromPrice;
-      const rateWithSpread = spreadConfig ? applySpread(rate, spreadConfig.spreadType, spreadConfig.spread, false) : rate;
+      const skipSpread = isNoSpreadSymbol(from) || isNoSpreadSymbol(to);
+      const rateWithSpread = spreadConfig && !skipSpread
+        ? applySpread(rate, spreadConfig.spreadType, spreadConfig.spread, false)
+        : rate;
       spreadApplied = rate - rateWithSpread;
       converted = amount * rateWithSpread;
     }
@@ -94,5 +117,3 @@ export const calculateConversion = (
     spreadApplied,
   };
 };
-
-

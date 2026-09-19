@@ -1,17 +1,19 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+  TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Modal
+} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTypedDispatch, useTypedSelector } from "@store/common";
-import { selectUser } from "@store/selectors/auth";
+import { useTypedDispatch } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
 import { showToast } from "@helpers/toast";
 import { SCREENS } from "@constants/screens";
 import { KYCStackScreenProps } from "@navigators/types";
 import API from "@lib/api";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
-import { WebView } from "react-native-webview";
-
+import * as WebBrowser from "expo-web-browser";
+//import { WebView } from "react-native-webview";
 
 const BRAND = "#1E3A8A";
 const BLUE  = "#2563EB";
@@ -21,179 +23,297 @@ type Props = KYCStackScreenProps<typeof SCREENS.PREMBLY_VERIFICATION>;
 export default function PremblyVerificationScreen({ navigation }: Props) {
   const insets   = useSafeAreaInsets();
   const dispatch = useTypedDispatch();
-  const user     = useTypedSelector(selectUser);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [showWidget, setShowWidget] = React.useState(false);
 
-  const handleVerified = async (data: any) => {
-  try {
-    console.log("PREMBLY FULL RESPONSE:", JSON.stringify(data, null, 2));
-    setIsLoading(true);
+  const [isLoading, setIsLoading]   = React.useState(false);
+  const [idType, setIdType]         = React.useState<"bvn" | "nin">("bvn");
+  const [idNumber, setIdNumber]     = React.useState("");
+  const [webViewUrl, setWebViewUrl] = React.useState<string | null>(null);
+  const sessionIdRef                = React.useRef<string | null>(null);
 
-    const premblyRef = data?.data?.reference ?? "prembly_" + Date.now();
-    const userData = data?.data?.user_data ?? {};
+  const isValid = idNumber.length === 11 && /^\d{11}$/.test(idNumber);
 
-    const verificationType: "bvn" | "nin" =
-      userData?.bvn ? "bvn" : "nin";
+  const handleIdChange = (text: string) => {
+    setIdNumber(text);
+    if (text.length === 11) Keyboard.dismiss();
+  };
 
-    const documentNumber = userData?.bvn ?? userData?.nin ?? userData?.id_number ?? "";
+  const [errorModal, setErrorModal] = React.useState<{ visible: boolean; title: string; message: string }>({
+    visible: false, title: "", message: "",
+  });
 
-    const verifiedName = userData?.full_name ??
-      (`${userData?.first_name ?? ""} ${userData?.last_name ?? ""}`.trim() || undefined);
+  const showError = (title: string, message: string) => {
+    setErrorModal({ visible: true, title, message });
+  };
 
-    if (!documentNumber) {
-      showToast({ variant: "error", message: "Could not extract ID number. Please try again." });
-      setShowWidget(false);
+  const handleStartVerification = async () => {
+    if (!isValid) {
+      showToast({ variant: "error", message: "Please enter a valid 11-digit number." });
       return;
     }
 
-    const payload: any = {
-      verification_type: verificationType,
-      prembly_ref: premblyRef,
-      ...(verifiedName && { verified_name: verifiedName }),
-    };
-    if (verificationType === "bvn") payload.bvn = documentNumber;
-    else payload.nin = documentNumber;
-
-    const response = await API.post("/api/v1/kyc/prembly-callback", payload);
-    dispatch(authSliceActions.updateUser(response.data.user));
-    await dispatch(authSliceActions.fetchUserProfile());
-    navigation.navigate(SCREENS.VERIFICATION_SUCCESS, { tier: 1 });
-
-  } catch (error: any) {
-    showToast({
-      variant: "error",
-      message: error?.response?.data?.message ?? "Verification failed. Please try again.",
-    });
-    setShowWidget(false);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
- 
-
-// ── Widget active: render full screen ────────────────────────────────
-if (showWidget) {
-  const widgetUrl = 
-  `https://mobile.prembly.com/v2/?` +
-  `widgetKey=wdgt_724459dca876421fbe926d55f6de4c1f` +
-  `&configId=b1304d3c-627a-4c16-81f4-0cba8f29bc0d` +
-  `&merchantKey=live_pk_5638af43a940463eb99230b784d1d2f0` +
-  `&merchant_key=live_pk_5638af43a940463eb99230b784d1d2f0` +
-  `&config_id=b1304d3c-627a-4c16-81f4-0cba8f29bc0d` +
-  `&firstName=${encodeURIComponent(user?.name?.split(" ")[0] ?? "")}` +
-  `&lastName=${encodeURIComponent(user?.name?.split(" ").slice(1).join(" ") ?? "")}` +
-  `&email=${encodeURIComponent(user?.email ?? "")}` +
-  `&userRef=${encodeURIComponent(String(user?.id ?? ""))}` +
-  `&user_ref=${encodeURIComponent(String(user?.id ?? ""))}`;
-
-  return (
-    <View style={s.root}>
-      <WebView
-  style={{ flex: 1 }}
-  source={{ uri: widgetUrl }}
-  javaScriptEnabled={true}
-  allowsInlineMediaPlayback={true}
-  mediaPlaybackRequiresUserAction={false}
-  domStorageEnabled={true}
-  allowsFullscreenVideo={true}
-  mixedContentMode="always"
-  originWhitelist={["*"]}
-  userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
-  onMessage={(e) => {
-    console.log("RAW PREMBLY MESSAGE:", e.nativeEvent.data);
     try {
-      const response = JSON.parse(e.nativeEvent.data);
-      console.log("PREMBLY MESSAGE:", JSON.stringify(response, null, 2));
-      if (response.event === "verified") {
-        handleVerified({ status: "success", data: response });
-      } else if (response.event === "error") {
-        showToast({ variant: "error", message: response.message ?? "Verification failed." });
-        setShowWidget(false);
-      } else if (response.event === "closed") {
-        setShowWidget(false);
-      }
-    } catch (e) {}
-  }}
-  onLoadStart={() => console.log("Widget loading...")}
-  onLoadEnd={() => console.log("Widget loaded")}
-  onError={(e) => {
-    console.log("WebView error:", e.nativeEvent);
-    showToast({ variant: "error", message: "Could not load verification widget." });
-    setShowWidget(false);
-  }}
-/>
-    </View>
-  );
-}
+      setIsLoading(true);
 
-  // ── Intro screen ─────────────────────────────────────────────────────
+      const response = await API.post("/api/v1/kyc/prembly-initiate", {
+        id_type:   idType,
+        id_number: idNumber,
+      });
+
+      const sessionId = response.data?.data?.session_id;
+      if (!sessionId) {
+        showToast({ variant: "error", message: "Could not start verification. Please try again." });
+        return;
+      }
+
+      const url = `https://sdk-live.prembly.com/?session=${encodeURIComponent(sessionId)}`;
+
+      // WebBrowser (working — kept as fallback)
+       await WebBrowser.openBrowserAsync(url);
+       try {
+         await API.post("/api/v1/kyc/prembly-callback", { session_id: sessionId });
+       } catch (e) {}
+      await dispatch(authSliceActions.fetchUserProfile());
+       const sessionResult = await API.post("/api/v1/kyc/prembly-session-status", { session_id: sessionId });
+      const sessionStatus = sessionResult.data;
+       if (sessionStatus.face_verified && sessionStatus.id_verified) {
+         navigation.navigate(SCREENS.VERIFICATION_SUCCESS, { tier: 1 });
+       } else if (sessionStatus.face_verified && !sessionStatus.id_verified) {
+         showError("ID Verification Failed", "Your face scan passed but your ID could not be verified. Please ensure you entered the correct BVN or NIN and try again.");
+      } else if (!sessionStatus.face_verified) {
+         showError("Face Verification Failed", "We could not verify your face. Please ensure you are in a well-lit environment, remove glasses if any, and look directly at the camera.");
+      } else {
+         showError("Verification Incomplete", "Your verification could not be completed. Please try again.");
+       }
+
+      // WebView
+     // sessionIdRef.current = sessionId;
+      //setWebViewUrl(url);
+      //setIsLoading(false);
+
+    } catch (error: any) {
+      const msg = error?.response?.data?.message ?? "Failed to start verification.";
+      showError("Verification Error", msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <View style={[s.root]}>
+    <KeyboardAvoidingView
+      style={s.root}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScreenHeader
-      title="Identity Verification"
-      subtitle="Secure your account"
-      onBack={() => navigation.goBack()}
+        title="Identity Verification"
+        subtitle="Secure your account"
+        onBack={() => navigation.goBack()}
       />
 
-      <View style={s.body}>
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Illustration */}
         <View style={s.illustrationWrap}>
           <View style={s.illustration}>
-            <MaterialCommunityIcons name="shield-account-outline" size={72} color={BLUE} />
+            <MaterialCommunityIcons name="shield-account-outline" size={64} color={BLUE} />
           </View>
           <View style={s.ring} />
         </View>
 
         <Text style={s.title}>Verify Your Identity</Text>
         <Text style={s.subtitle}>
-          We'll guide you through selecting and verifying your ID. The process takes less than 2 minutes.
+          Enter your BVN or NIN below. We'll check it's valid before opening the verification screen.
         </Text>
 
-        <View style={s.steps}>
+        {/* ID Type toggle */}
+        <Text style={s.label}>Verification Type</Text>
+        <View style={s.toggle}>
+          {(["bvn", "nin"] as const).map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[s.toggleBtn, idType === type && s.toggleBtnActive]}
+              onPress={() => { setIdType(type); setIdNumber(""); }}
+              activeOpacity={0.8}
+            >
+              <Text style={[s.toggleText, idType === type && s.toggleTextActive]}>
+                {type.toUpperCase()}
+              </Text>
+              <Text style={[s.toggleSub, idType === type && s.toggleSubActive]}>
+                {type === "bvn" ? "Bank Verification" : "National Identity"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Number input */}
+        <Text style={s.label}>
+          {idType === "bvn" ? "BVN Number" : "NIN Number"}
+        </Text>
+        <View style={s.inputWrap}>
+          <MaterialCommunityIcons
+            name={idType === "bvn" ? "bank-outline" : "card-account-details-outline"}
+            size={20}
+            color={idNumber.length > 0 ? BLUE : "#9ca3af"}
+            style={s.inputIcon}
+          />
+          <TextInput
+            style={s.input}
+            placeholder={`Enter your 11-digit ${idType.toUpperCase()}`}
+            placeholderTextColor="#9ca3af"
+            keyboardType="numeric"
+            maxLength={11}
+            value={idNumber}
+            onChangeText={handleIdChange}
+            returnKeyType="done"
+            onSubmitEditing={Keyboard.dismiss}
+          />
+          {idNumber.length === 11 && (
+            <MaterialCommunityIcons
+              name={isValid ? "check-circle" : "close-circle"}
+              size={20}
+              color={isValid ? "#16a34a" : "#ef4444"}
+            />
+          )}
+        </View>
+        <Text style={s.hint}>
+          {idType === "bvn" ? "Dial *565*0# to get your BVN" : "Dial *346# to get your NIN"}
+        </Text>
+
+        {/* Steps */}
+        <View style={s.stepsCard}>
+          <Text style={s.stepsTitle}>What happens next</Text>
           {[
-            "Choose your ID type (BVN or NIN)",
-            "Enter your ID number",
-            "Take a quick selfie to confirm it's you",
+            { icon: "numeric-1-circle-outline", text: "We verify your number is unique and valid" },
+            { icon: "numeric-2-circle-outline", text: "Secure face scan opens automatically" },
+            { icon: "numeric-3-circle-outline", text: "Verification completes instantly" },
           ].map((step) => (
-            <View key={step} style={s.stepRow}>
-              <MaterialCommunityIcons name="check-circle-outline" size={18} color="#16a34a" />
-              <Text style={s.stepText}>{step}</Text>
+            <View key={step.text} style={s.stepRow}>
+              <MaterialCommunityIcons name={step.icon as any} size={20} color={BLUE} />
+              <Text style={s.stepText}>{step.text}</Text>
             </View>
           ))}
         </View>
-      </View>
 
+        {/* Security note */}
+        <View style={s.securityNote}>
+          <MaterialCommunityIcons name="lock-outline" size={16} color="#6b7280" />
+          <Text style={s.securityText}>
+            Your information is encrypted and never stored in plain text.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Footer button */}
       <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
         <TouchableOpacity
-          style={[s.btn, isLoading && s.btnDisabled]}
-          onPress={() => setShowWidget(true)}
-          disabled={isLoading}
+          style={[s.btn, (!isValid || isLoading) && s.btnDisabled]}
+          onPress={handleStartVerification}
+          disabled={!isValid || isLoading}
+          activeOpacity={0.85}
         >
-          <Text style={s.btnText}>{isLoading ? "Processing..." : "Start Verification"}</Text>
+          {isLoading ? (
+            <View style={s.btnInner}>
+              <MaterialCommunityIcons name="loading" size={20} color="#fff" />
+              <Text style={s.btnText}>Checking...</Text>
+            </View>
+          ) : (
+            <View style={s.btnInner}>
+              <MaterialCommunityIcons name="shield-check-outline" size={20} color="#fff" />
+              <Text style={s.btnText}>Continue to Face Scan</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
-    </View>
+
+      {/* WebView Modal */}
+      {webViewUrl && (
+        <Modal visible animationType="slide">
+          <View style={{ flex: 1, paddingTop: insets.top }}>
+            <TouchableOpacity
+              style={{ padding: 16 }}
+              onPress={() => { setWebViewUrl(null); setIsLoading(false); }}
+            >
+              <MaterialCommunityIcons name="close" size={24} color="#111" />
+            </TouchableOpacity>
+  
+          </View>
+        </Modal>
+      )}
+
+      {/* Error Modal */}
+      <Modal
+        visible={errorModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setErrorModal(e => ({ ...e, visible: false }))}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <View style={s.modalIconWrap}>
+              <MaterialCommunityIcons name="emoticon-sad-outline" size={36} color="#ef4444" />
+            </View>
+            <Text style={s.modalTitle}>{errorModal.title}</Text>
+            <Text style={s.modalMessage}>{errorModal.message}</Text>
+            <TouchableOpacity
+              style={s.modalBtn}
+              onPress={() => setErrorModal(e => ({ ...e, visible: false }))}
+            >
+              <Text style={s.modalBtnText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
   root:             { flex: 1, backgroundColor: "#fff" },
-  header:           { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
-  backBtn:          { width: 34, height: 34, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
-  headerTitle:      { fontSize: 16, fontWeight: "700", color: BRAND },
-  headerSub:        { fontSize: 12, color: "#6b7280" },
-  body:             { flex: 1, padding: 24, alignItems: "center" },
-  illustrationWrap: { position: "relative", marginTop: 20, marginBottom: 32 },
-  illustration:     { width: 160, height: 160, borderRadius: 80, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
-  ring:             { position: "absolute", width: 172, height: 172, borderRadius: 86, borderWidth: 3, borderColor: BLUE, borderStyle: "dashed", top: -6, left: -6 },
-  title:            { fontSize: 22, fontWeight: "800", color: BRAND, textAlign: "center", marginBottom: 8 },
-          subtitle:         { fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 28 },
-  steps:            { width: "100%", gap: 14 },
+  scroll:           { padding: 24, paddingBottom: 16 },
+
+  illustrationWrap: { position: "relative", alignSelf: "center", marginTop: 8, marginBottom: 24 },
+  illustration:     { width: 120, height: 120, borderRadius: 60, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+  ring:             { position: "absolute", width: 132, height: 132, borderRadius: 66, borderWidth: 2.5, borderColor: BLUE, borderStyle: "dashed", top: -6, left: -6 },
+
+  title:            { fontSize: 20, fontWeight: "800", color: BRAND, textAlign: "center", marginBottom: 8 },
+  subtitle:         { fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 24, lineHeight: 22 },
+
+  label:            { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
+
+  toggle:           { flexDirection: "row", backgroundColor: "#f3f4f6", borderRadius: 12, padding: 4, marginBottom: 20, gap: 4 },
+  toggleBtn:        { flex: 1, paddingVertical: 12, alignItems: "center", borderRadius: 10 },
+  toggleBtnActive:  { backgroundColor: "#fff", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
+  toggleText:       { fontSize: 15, fontWeight: "700", color: "#9ca3af" },
+  toggleTextActive: { color: BLUE },
+  toggleSub:        { fontSize: 11, color: "#d1d5db", marginTop: 2 },
+  toggleSubActive:  { color: "#93c5fd" },
+
+  inputWrap:        { flexDirection: "row", alignItems: "center", borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 12, paddingHorizontal: 14, backgroundColor: "#fff", marginBottom: 8 },
+  inputIcon:        { marginRight: 10 },
+  input:            { flex: 1, paddingVertical: 14, fontSize: 17, color: "#111827", letterSpacing: 3 },
+  hint:             { fontSize: 12, color: "#9ca3af", marginBottom: 20 },
+
+  stepsCard:        { backgroundColor: "#f8f9fb", borderRadius: 14, padding: 16, marginBottom: 16, gap: 12 },
+  stepsTitle:       { fontSize: 13, fontWeight: "700", color: BRAND, marginBottom: 4 },
   stepRow:          { flexDirection: "row", alignItems: "center", gap: 10 },
-  stepText:         { fontSize: 14, color: "#374151" },
+  stepText:         { fontSize: 13, color: "#374151", flex: 1 },
+
+  securityNote:     { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#f9fafb", borderRadius: 10, padding: 12 },
+  securityText:     { fontSize: 12, color: "#6b7280", flex: 1 },
+
   footer:           { paddingHorizontal: 16, paddingTop: 12, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
   btn:              { backgroundColor: BLUE, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  btnDisabled:      { opacity: 0.5 },
+  btnDisabled:      { opacity: 0.45 },
+  btnInner:         { flexDirection: "row", alignItems: "center", gap: 8 },
   btnText:          { fontSize: 16, fontWeight: "700", color: "#fff" },
+
+  modalOverlay:     { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+  modalCard:        { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, alignItems: "center", paddingBottom: 40 },
+  modalIconWrap:    { width: 72, height: 72, borderRadius: 36, backgroundColor: "#fef2f2", justifyContent: "center", alignItems: "center", marginBottom: 16 },
+  modalTitle:       { fontSize: 20, fontWeight: "800", color: "#111827", marginBottom: 10, textAlign: "center" },
+  modalMessage:     { fontSize: 14, color: "#6b7280", textAlign: "center", lineHeight: 22, marginBottom: 24 },
+  modalBtn:         { width: "100%", backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
+  modalBtnText:     { fontSize: 16, fontWeight: "700", color: "#fff" },
 });

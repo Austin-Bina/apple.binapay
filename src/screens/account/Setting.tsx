@@ -1,7 +1,7 @@
 import tw from "@lib/tailwind";
 import React, { useState, useEffect } from "react";
 import { Linking, View, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
+import { Text, ActivityIndicator, Appbar } from "react-native-paper";
 import ScrollableView from "@components/ui/shared/ScrollableView";
 import { AccountStackScreenProps } from "@navigators/types";
 import { authSliceActions } from "@store/slice/auth";
@@ -68,9 +68,21 @@ export default function SettingScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
 
-  const isVerified = (isBvnVerified || isNinVerified) && 
-                   !!user?.phone_verified_at && 
-                   !!user?.email_verified_at;
+const tier1Verified = (isBvnVerified || isNinVerified) &&
+                       !!user?.phone_verified_at &&
+                       !!user?.email_verified_at;
+
+const tier2Verified = tier1Verified && !!user?.is_address_verified;
+
+const currentTier = user?.kyc_tier ?? (tier2Verified ? 2 : tier1Verified ? 1 : 0);
+
+const isVerified = currentTier >= 1;
+const verificationLabel =
+  currentTier >= 2 ? "Tier 2 verified" :
+  currentTier === 1 ? "Tier 1 verified" :
+  "Complete your verification";
+
+
   const formattedVersion = `${currentVersion}${buildNumber ? ` (${buildNumber})` : ""}`;
 
   const handleLogout = () => dispatch(authSliceActions.doLogout());
@@ -92,6 +104,12 @@ export default function SettingScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={s.root}>
       
+       <Appbar.Header
+    statusBarHeight={0}
+    style={tw`bg-white`}
+>
+        <Appbar.Content title="Menu" titleStyle={tw`font-bold`} />
+      </Appbar.Header>
 
       <ScrollableView>
         {/* ── Profile row ── */}
@@ -125,9 +143,9 @@ export default function SettingScreen({ navigation }: Props) {
               color={isVerified ? BLUE : "#D97706"}
             />
           </View>
-          <View style={s.menuRowText}>
-            <Text style={s.menuRowTitle}>Verification</Text>
-            <Text style={s.menuRowSub}>{isVerified ? "Tier 1 verified" : "Complete your verification"}</Text>
+         <View style={s.menuRowText}>
+          <Text style={s.menuRowTitle}>Verification</Text>
+          <Text style={s.menuRowSub}>{verificationLabel}</Text>
           </View>
           <View style={[s.verifiedBadge, { backgroundColor: isVerified ? "#DCFCE7" : "#FEF3C7" }]}>
             <Text style={[s.verifiedBadgeText, { color: isVerified ? "#16A34A" : "#D97706" }]}>
@@ -167,7 +185,7 @@ export default function SettingScreen({ navigation }: Props) {
           />
           <MenuRow
             icon={<MaterialCommunityIcons name="bank-transfer" size={18} color={BLUE} />}
-            title="Auto Crypto Payout"
+            title="Crypto Deposit Settings"
             onPress={() => navigation.navigate(SCREENS.AUTO_CRYPTO_SETTLEMENT)}
           />
           <MenuRow

@@ -9,6 +9,8 @@ import {
   Switch,
  TouchableWithoutFeedback,
    Keyboard,
+   Platform,
+   KeyboardAvoidingView,
 } from "react-native";
 import { Text, TouchableRipple } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -227,6 +229,7 @@ setFollowupDelay(String(s.followup_delay_minutes ?? 5));     // ← also sync de
 <Modal visible={showFollowupDelayModal} transparent animationType="slide">
    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
   <View style={styles.modalOverlay}>
+     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }} >
     <TouchableWithoutFeedback onPress={() => {}}>
     <View style={styles.modalCard}>
       <Text style={styles.modalTitle}>Follow-up Delay</Text>
@@ -260,6 +263,7 @@ setFollowupDelay(String(s.followup_delay_minutes ?? 5));     // ← also sync de
       </View>
       </View>
      </TouchableWithoutFeedback>
+     </KeyboardAvoidingView>
     </View>
    </TouchableWithoutFeedback>
 </Modal>
@@ -325,6 +329,8 @@ setFollowupDelay(String(s.followup_delay_minutes ?? 5));     // ← also sync de
       <Modal visible={showMsgModal !== null} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
+         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }} >
+
            <TouchableWithoutFeedback onPress={() => {}}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{activeTemplate?.label}</Text>
@@ -382,6 +388,7 @@ setFollowupDelay(String(s.followup_delay_minutes ?? 5));     // ← also sync de
             </View>
            </View>
            </TouchableWithoutFeedback>
+           </KeyboardAvoidingView>
         </View>
          </TouchableWithoutFeedback>
       </Modal>
@@ -390,6 +397,7 @@ setFollowupDelay(String(s.followup_delay_minutes ?? 5));     // ← also sync de
       <Modal visible={showRepliesModal} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
+         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }} >
           <TouchableWithoutFeedback onPress={() => {}}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Confirmation Words</Text>
@@ -449,6 +457,7 @@ setFollowupDelay(String(s.followup_delay_minutes ?? 5));     // ← also sync de
             </View>
           </View>
           </TouchableWithoutFeedback>
+           </KeyboardAvoidingView>
         </View>
         </TouchableWithoutFeedback>
       </Modal>

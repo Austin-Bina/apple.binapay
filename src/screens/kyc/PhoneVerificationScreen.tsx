@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform,
+   KeyboardAvoidingView, ScrollView, Keyboard } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSendPhoneOtpMutation } from "@store/redux-api/kycApi";
@@ -34,15 +35,21 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={[s.root]}>
-      <ScreenHeader
-  title="Verify Phone Number"
-  
-  onBack={() => navigation.goBack()}
-/>
+  <View style={s.root}>
+    <ScreenHeader
+      title="Verify Phone Number"
+      onBack={() => navigation.goBack()}
+    />
 
-      <View style={s.body}>
-        {/* Illustration */}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={s.body}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={s.illustration}>
           <MaterialCommunityIcons name="cellphone-message" size={80} color={BLUE} />
         </View>
@@ -68,7 +75,9 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
           />
         </View>
         <Text style={s.hint}>We will send a 6-digit code to your number.</Text>
+      </ScrollView>
 
+      <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
         <TouchableOpacity
           style={[s.btn, (!phone || isLoading) && s.btnDisabled]}
           onPress={handleSend}
@@ -77,8 +86,10 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
           <Text style={s.btnText}>{isLoading ? "Sending..." : "Send OTP"}</Text>
         </TouchableOpacity>
       </View>
-    </View>
-  );
+    </KeyboardAvoidingView>
+  </View>
+);
+  
 }
 
 const s = StyleSheet.create({
@@ -86,7 +97,7 @@ const s = StyleSheet.create({
   header:      { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
   backBtn:     { width: 34, height: 34, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
   headerTitle: { fontSize: 17, fontWeight: "700", color: BRAND },
-  body:        { flex: 1, padding: 24, alignItems: "center" },
+   body: { padding: 24, alignItems: "center", flexGrow: 1 },
   illustration:{ width: 120, height: 120, borderRadius: 60, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center", marginBottom: 24, marginTop: 20 },
   title:       { fontSize: 22, fontWeight: "800", color: BRAND, textAlign: "center", marginBottom: 8 },
   subtitle:    { fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 32 },
@@ -99,4 +110,5 @@ const s = StyleSheet.create({
   btn:         { width: "100%", backgroundColor: BLUE, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
   btnDisabled: { opacity: 0.5 },
   btnText:     { fontSize: 16, fontWeight: "700", color: "#fff" },
+  footer: { paddingHorizontal: 24, paddingTop: 12, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
 });

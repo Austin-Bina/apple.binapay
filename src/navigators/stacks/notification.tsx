@@ -41,7 +41,7 @@ function NotificationStack() {
           </View>
         ),
       })}>
-      <Stack.Screen name="List Notifications" component={NotificationScreen} />
+      <Stack.Screen name="List Notifications" component={NotificationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="View Notification" component={ViewNotificationScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );

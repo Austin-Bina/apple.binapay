@@ -113,7 +113,7 @@ export default function WithdrawNairaScreen({ navigation }: any) {
   if (accountNumber.length === 10 && selectedBank) handleResolve();
   else setAccountName("");
 
-  if (looksLikePhoneNumber(accountNumber) && !selectedBank) {
+  if (accountNumber.length === 10 && !selectedBank) {
     setShowBankModal(true);
   }
 }, [accountNumber, selectedBank]);

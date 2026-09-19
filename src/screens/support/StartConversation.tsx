@@ -15,7 +15,7 @@ import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
 import { Chip, HelperText, Text, TouchableRipple } from "react-native-paper";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import { findFileSize, formatBytes, MAXIMUM_FILE_UPLOAD_SIZE, MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES } from "@utils/file";
 import { Image } from "react-native-element-image";
 import { vs } from "react-native-size-matters";

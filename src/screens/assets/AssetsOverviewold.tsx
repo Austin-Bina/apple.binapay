@@ -17,8 +17,6 @@ import { getNavigate } from "@utils/navigation";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTypedDispatch } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
-import { getCompactRateDisplay } from "@helpers/rate-display-compact";
-import { State } from "@store/main";
 
 const BRAND      = "#1E3A8A";
 const GRAD_START = "#4F46E5";
@@ -72,16 +70,13 @@ function Sparkline({ data, color = "#a5f3fc", width = 120, height = 40 }: {
 
 function AssetsContent() {
   const { assets, totalUsd } = useCrypto();
-  const ngnRate    = useSelector(selectNgnUsdtRateWithSpread); // { buy, sell, spreadType, spread }
+  const ngnRate    = useSelector(selectNgnUsdtRateWithSpread);
   const user       = useSelector(selectUser);
   const insets     = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const dispatch   = useTypedDispatch();
 
-  // Needed for the per-row rate calc (USDC/USDT skip spread).
-  const noSpreadSymbols = useSelector((s: State) => (s as any).auth.noSpreadSymbols ?? ["USDT"]);
-
-  const [showSellRate, setShowSellRate] = useState(false);
+  const [hideSmall,       setHideSmall]       = useState(false);
   const [balanceVisible,  setBalanceVisible]   = useState(true);
   const [currency,        setCurrency]         = useState<"NGN" | "USD">("NGN");
 
@@ -123,22 +118,17 @@ function AssetsContent() {
     return topAsset?.price_history_24h ?? MOCK_SPARKLINE;
   }, [assets]);
 
-  // ── Live prices map for the per-row rate calc — { SYMBOL: price_usd } ──
-  const livePrices = useMemo(() => {
-    const map: Record<string, number> = {};
-    assets.forEach(a => {
-      if (a.price_usd) map[a.symbol.toUpperCase()] = a.price_usd;
-    });
-    return map;
-  }, [assets]);
-
   useFocusEffect(
     useCallback(() => {
       dispatch(authSliceActions.fetchAppConfig());
     }, [])
   );
 
-  
+  // ── Filter small balances (<$1) ─────────────────────────────────────────
+  const visibleAssets = useMemo(() => {
+    if (!hideSmall) return assets;
+    return assets.filter(a => (a.balance ?? 0) * (a.price_usd ?? 0) >= 1);
+  }, [assets, hideSmall]);
 
   // ── Navigation handlers ─────────────────────────────────────────────────
   const handleBuy = async () => {
@@ -166,8 +156,6 @@ function AssetsContent() {
       params: { screen: SCREENS.WITHDRAW_MONEY, params: { screen: SCREENS.WITHDRAW_CRYPTO } },
     });
   };
-
- 
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -268,23 +256,23 @@ function AssetsContent() {
           <View style={s.listHeader}>
             <Text style={s.listTitle}>My Assets</Text>
             <View style={s.hideRow}>
-              <Text style={s.hideLabel}>Show Sell Rates</Text>
-           <Switch
-  value={showSellRate}
-  onValueChange={setShowSellRate}
-  trackColor={{ true: BRAND, false: "#e5e7eb" }}
-  thumbColor="#fff"
-/>
+              <Text style={s.hideLabel}>Hide small balances</Text>
+              <Switch
+                value={hideSmall}
+                onValueChange={setHideSmall}
+                trackColor={{ true: BRAND, false: "#e5e7eb" }}
+                thumbColor="#fff"
+              />
             </View>
           </View>
 
-          {assets.length === 0 ? (
+          {visibleAssets.length === 0 ? (
             <View style={s.emptyState}>
               <MaterialCommunityIcons name="wallet-outline" size={48} color="#d1d5db" />
               <Text style={s.emptyText}>No assets to show</Text>
             </View>
           ) : (
-            assets.map((item) => {
+            visibleAssets.map((item) => {
               const usdValue  = (item.balance ?? 0) * (item.price_usd ?? 0);
               const ngnValue  = usdValue * (ngnRate?.sell ?? 0);
               const change    = item.price_change_24h ?? null;
@@ -293,19 +281,6 @@ function AssetsContent() {
                 ? item.price_history_24h!
                 : [];
 
- const decimalPlaces = noSpreadSymbols.includes(item.symbol.toUpperCase())
-  ? 2
-  : item.decimal_places ?? 8;
-              // Sell Rate — what 1 unit of this asset converts to in NGN.
-              // Replaces the old redundant "symbol" line under the name.
-  const rateDisplay = getCompactRateDisplay({
-  fromSymbol:  showSellRate ? item.symbol : "NGN",
-  toSymbol:    showSellRate ? "NGN" : item.symbol,
-  livePrices,
-  liveNgnUsdt: ngnRate,
-  spreadConfig: { spreadType: ngnRate.spreadType, spread: ngnRate.spread },
-  noSpreadSymbols,
-});
               return (
                 <View key={item.id} style={s.assetRow}>
                   <View style={s.assetLeft}>
@@ -316,16 +291,16 @@ function AssetsContent() {
                     />
                     <View>
                       <Text style={s.assetName}>{item.name}</Text>
-                      <Text style={s.assetSymbol}>{rateDisplay || "—"}</Text>
+                      <Text style={s.assetSymbol}>{item.symbol}</Text>
                     </View>
                   </View>
 
                   <View style={s.assetRight}>
                     <Text style={s.assetBalance}>
-                    {balanceVisible
-                     ? formattedBalance(item.balance ?? 0, item.symbol, decimalPlaces)
-                   : "••••"}
-                      </Text>
+                      {balanceVisible
+                        ? formattedBalance(item.balance ?? 0, item.symbol, item.decimal_places ?? 8)
+                        : "••••"}
+                    </Text>
                     <Text style={s.assetValue}>
                       {balanceVisible
                         ? currency === "NGN"

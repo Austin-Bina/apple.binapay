@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Image, Platform, KeyboardAvoidingView,
@@ -7,7 +7,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
-import { selectUser } from "@store/selectors/auth";
+import { selectUser, selectNgnUsdtRateWithSpread } from "@store/selectors/auth";
 import { formattedBalance } from "@utils/transactionutils";
 import { showToast } from "@helpers/toast";
 import { authenticateWithBiometrics } from "@helpers/biometricshelper";
@@ -20,7 +20,7 @@ import {
 } from "@store/redux-api/fundsApi";
 import { useTypedDispatch } from "@store/common";
 import { authSliceActions } from "@store/slice/auth";
-import { resetNavigationToDashboard } from "@utils/navigation"; 
+import { resetNavigationToDashboard } from "@utils/navigation";
 import QrScannerModal from "@components/QrScannerModal";
 import { resolveIconUrl } from "@utils/resolveIconUrl";
 
@@ -47,10 +47,15 @@ function WithdrawCryptoContent() {
   const wallets      = user?.wallet_balances ?? {};
   const cryptoAssets = user?.crypto_assets   ?? [];
 
+  // ── NGN rate — we're not using the crypto wallet balance anymore, only
+  // the naira balance and its live crypto-equivalent. ─────────────────────
+  const ngnUsdtRate = useSelector(selectNgnUsdtRateWithSpread);
+  const nairaBalance = parseFloat(wallets["naira"]?.balance ?? "0");
+
   const idempotencyKey = useRef(Crypto.randomUUID());
 
   // ── State ──────────────────────────────────────────────────────────────────
-const [selectedSymbol, setSelectedSymbol]       = useState("USDT");
+  const [selectedSymbol, setSelectedSymbol]       = useState("USDT");
   const [selectedNetworkId, setSelectedNetworkId] = useState<number | null>(null);
   const [walletAddress, setWalletAddress]         = useState("");
   const [amount, setAmount]                       = useState("");
@@ -77,15 +82,30 @@ const [selectedSymbol, setSelectedSymbol]       = useState("USDT");
   // ── Derived ────────────────────────────────────────────────────────────────
   const selectedAsset   = cryptoAssets.find((a) => a.symbol === selectedSymbol);
   const contextAsset    = assets.find((a) => a.symbol === selectedSymbol);
-  const balance         = parseFloat(wallets[selectedSymbol?.toLowerCase()]?.balance ?? "0");
   const selectedNetwork = networks.find((n) => n.id === selectedNetworkId);
   const fee             = selectedNetwork?.fee ?? 0;
   const parsedAmount    = parseFloat(amount) || 0;
   const amountToReceive = parsedAmount > fee ? parsedAmount - fee : 0;
   const priceUsd = contextAsset?.price_usd ?? selectedAsset?.price_usd ?? 0;
 
+  // ── Naira → crypto conversion for the selected asset ──────────────────────
+  // USDT price in NGN = the sell rate directly; every other asset = its USD
+  // price times that same sell rate.
+  const cryptoPriceInNgn = useMemo(() => {
+    if (!ngnUsdtRate?.sell) return null;
+    if (!priceUsd) return null;
+    if (selectedSymbol.toUpperCase() === "USDT") return ngnUsdtRate.sell;
+    return priceUsd * ngnUsdtRate.sell;
+  }, [selectedSymbol, priceUsd, ngnUsdtRate]);
 
-  
+  // How much of the selected crypto the user's naira balance can cover.
+  // This — not the crypto wallet — is what gates the withdrawal now.
+  const maxWithdrawable = useMemo(() => {
+    if (!cryptoPriceInNgn || cryptoPriceInNgn <= 0) return 0;
+    return nairaBalance / cryptoPriceInNgn;
+  }, [nairaBalance, cryptoPriceInNgn]);
+
+  const ngnDeducted = cryptoPriceInNgn ? parsedAmount * cryptoPriceInNgn : null;
 
  // ── Load networks when asset changes ──────────────────────────────────────
   useEffect(() => {
@@ -147,8 +167,9 @@ const handleQrScanned = (data: string) => {
   };
 
   const handleMax = () => {
-    setAmount(String(balance));
-    if (priceUsd > 0) setUsdInput((balance * priceUsd).toFixed(2));
+    const maxAmount = parseFloat(maxWithdrawable.toFixed(8));
+    setAmount(String(maxAmount));
+    if (priceUsd > 0) setUsdInput((maxAmount * priceUsd).toFixed(2));
   };
 
   // ── OTP cooldown ──────────────────────────────────────────────────────────
@@ -166,7 +187,9 @@ const handleQrScanned = (data: string) => {
     if (!parsedAmount || parsedAmount <= 0) return "Enter a valid amount";
     if (selectedNetwork && parsedAmount < selectedNetwork.min_withdrawal)
        return `Minimum withdrawal is ${trimZeros(String(selectedNetwork.min_withdrawal))} ${selectedSymbol}`;
-    if (parsedAmount > balance)             return "Insufficient balance";
+    if (!cryptoPriceInNgn) return "Rate unavailable right now. Please try again shortly.";
+    // ← Validate against the naira-equivalent balance, not the crypto wallet
+    if (parsedAmount > maxWithdrawable) return "Insufficient naira balance";
     return null;
   };
 
@@ -202,6 +225,9 @@ const handleQrScanned = (data: string) => {
       network_slug:      selectedNetwork!.network_slug,
       amount,
       idempotency_key:   idempotencyKey.current,
+      // We're debiting naira and auto-converting, not the crypto wallet —
+      // this routes the request to the NGN-conversion path on the backend.
+      source:            "ngn_conversion",
     };
 
     if (authMethod === "otp") {
@@ -304,6 +330,13 @@ const handleQrScanned = (data: string) => {
               label="To Address"
               value={`${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}`}
             />
+            {/* Show the naira amount actually being deducted */}
+            {ngnDeducted != null && (
+              <SummaryRow
+                label="NGN Deducted"
+                value={`₦${formattedBalance(ngnDeducted, "", 2)}`}
+              />
+            )}
           </View>
 
           {/* OTP input */}
@@ -369,6 +402,7 @@ const handleQrScanned = (data: string) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+
           {/* Asset selector */}
           <TouchableOpacity
             style={s.assetSelector}
@@ -390,11 +424,13 @@ const handleQrScanned = (data: string) => {
                   ? `${selectedAsset.name} (${selectedSymbol.toUpperCase()})`
                   : "Select asset to withdraw"}
               </Text>
+              {/* ← Available is now the naira-equivalent, not the crypto wallet balance */} 
               {selectedSymbol ? (
                 <Text style={s.assetSelectorBalance}>
-                  Balance: {formattedBalance(balance, selectedSymbol.toUpperCase())}
+                  Available: {formattedBalance(maxWithdrawable, selectedSymbol.toUpperCase(), 6)}
+                  {cryptoPriceInNgn ? ` (₦${formattedBalance(nairaBalance, "", 2)})` : ""}
                 </Text>
-              ) : null}
+              ) : null} 
             </View>
             <MaterialCommunityIcons name={showAssetPicker ? "chevron-up" : "chevron-down"} size={18} color="#9ca3af" />
           </TouchableOpacity>
@@ -404,36 +440,42 @@ const handleQrScanned = (data: string) => {
             <View style={s.assetDropdown}>
               {cryptoAssets
                 .filter((a) => a.withdrawal_enabled)
-                .map((asset) => (
-                  <TouchableOpacity
-                    key={asset.id}
-                    style={s.assetDropdownItem}
-                    onPress={() => { setSelectedSymbol(asset.symbol); setShowAssetPicker(false); }}
-                  >
-                    {(asset.icon_url ?? assets.find((x) => x.symbol === asset.symbol)?.icon_url) ? (
-                      <Image
-                        source={{ uri: asset.icon_url ?? assets.find((x) => x.symbol === asset.symbol)?.icon_url }}
-                        style={s.assetDropdownIcon}
-                      />
-                    ) : (
-                      <View style={[s.assetDropdownIcon, s.assetIconFallback]}>
-                        <Text style={s.assetIconText}>{asset.symbol.slice(0, 2)}</Text>
+                .map((asset) => {
+                  const assetPriceUsd = assets.find(x => x.symbol === asset.symbol)?.price_usd ?? asset.price_usd ?? 0;
+                  const assetPriceNgn = asset.symbol.toUpperCase() === "USDT"
+                    ? (ngnUsdtRate?.sell ?? 0)
+                    : assetPriceUsd * (ngnUsdtRate?.sell ?? 0);
+                  const assetNgnEquivalent = assetPriceNgn > 0 ? nairaBalance / assetPriceNgn : 0;
+
+                  return (
+                    <TouchableOpacity
+                      key={asset.id}
+                      style={s.assetDropdownItem}
+                      onPress={() => { setSelectedSymbol(asset.symbol); setShowAssetPicker(false); }}
+                    >
+                      {(asset.icon_url ?? assets.find((x) => x.symbol === asset.symbol)?.icon_url) ? (
+                        <Image
+                          source={{ uri: asset.icon_url ?? assets.find((x) => x.symbol === asset.symbol)?.icon_url }}
+                          style={s.assetDropdownIcon}
+                        />
+                      ) : (
+                        <View style={[s.assetDropdownIcon, s.assetIconFallback]}>
+                          <Text style={s.assetIconText}>{asset.symbol.slice(0, 2)}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.assetDropdownName}>{asset.name}</Text>
+                        {/* ← Naira-equivalent per asset, not the crypto wallet balance */}
+                        <Text style={s.assetDropdownSub}>
+                          {formattedBalance(assetNgnEquivalent, asset.symbol.toUpperCase(), 6)} {asset.symbol.toUpperCase()}
+                        </Text>
                       </View>
-                    )}
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.assetDropdownName}>{asset.name}</Text>
-                      <Text style={s.assetDropdownSub}>
-                        {formattedBalance(
-                          parseFloat(wallets[asset.symbol.toLowerCase()]?.balance ?? "0"),
-                          asset.symbol.toUpperCase()
-                        )}
-                      </Text>
-                    </View>
-                    {selectedSymbol === asset.symbol && (
-                      <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
-                    )}
-                  </TouchableOpacity>
-                ))}
+                      {selectedSymbol === asset.symbol && (
+                        <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
             </View>
           )}
 
@@ -588,14 +630,24 @@ const handleQrScanned = (data: string) => {
               : "USD price unavailable"}
           </Text>
 
+          {/* ← Naira-equivalent balance row, replaces the crypto wallet balance */}
           <View style={s.balanceRow}>
             <Text style={s.balanceText}>
-              Available: {formattedBalance(balance, selectedSymbol.toUpperCase() || "")}
-              {priceUsd > 0 ? `  (≈ $${(balance * priceUsd).toFixed(2)})` : ""}
+              Available: {formattedBalance(maxWithdrawable, "", 6)} {selectedSymbol.toUpperCase()}
+              {cryptoPriceInNgn ? `  (≈ ₦${formattedBalance(nairaBalance, "", 2)})` : ""}
             </Text>
           </View>
 
-          {/* You will receive */}
+          {/* Naira equivalent of the entered amount — what actually gets deducted */}
+          {parsedAmount > 0 && cryptoPriceInNgn && (
+            <View style={s.ngnEquivRow}>
+              <MaterialCommunityIcons name="information-outline" size={13} color="#6b7280" />
+              <Text style={s.ngnEquivText}>
+                ≈ ₦{formattedBalance(parsedAmount * cryptoPriceInNgn, "", 2)} will be deducted from your naira balance
+              </Text>
+            </View>
+          )}
+
           {/* You will receive */}
           <View style={s.receiveRow}>
             <Text style={s.receiveLabel}>You will receive</Text>
@@ -731,4 +783,9 @@ const s = StyleSheet.create({
   successSub:        { fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 28 },
   doneBtn:           { width: "100%", backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
   doneBtnText:       { fontSize: 15, fontWeight: "700", color: "#fff" },
+
+  infoBanner:     { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#eff6ff", borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: "#bfdbfe" },
+  infoBannerText: { fontSize: 12, color: "#1d4ed8", flex: 1, lineHeight: 18 },
+  ngnEquivRow:    { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  ngnEquivText:   { fontSize: 11, color: "#6b7280", flex: 1 },
 });

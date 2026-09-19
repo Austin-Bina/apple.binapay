@@ -5,6 +5,7 @@ import { routes } from "@constants/routes";
 import { useSelector } from "react-redux";
 import { State } from "@store/main";
 import { selectCryptoAssets, selectUser } from "@store/selectors/auth";
+import { resolveIconUrl } from "@utils/resolveIconUrl";
 
 type Wallet = { name: string; balance: number; slug: string; decimal_places?: number };
 type CryptoAsset = {
@@ -90,12 +91,7 @@ const fetchTotalUsd = async () => {
         const priceAsset = pricesMap[asset.symbol.toLowerCase()];
         const wallet = user?.wallet_balances?.[asset.symbol.toLowerCase()];
 
-        const icon_url =
-          priceAsset?.icon_url?.startsWith("http")
-            ? priceAsset.icon_url
-            : priceAsset?.icon_url
-            ? `${BASE_URL}/storage/app/public/crypto-icons/${priceAsset.icon_url}`
-            : asset.icon_url;
+      const icon_url = resolveIconUrl(priceAsset?.icon_url) ?? asset.icon_url;
 
         return {
           ...asset,
@@ -109,10 +105,10 @@ const fetchTotalUsd = async () => {
       });
 
       // Sort by balance * price
-      merged.sort((a, b) => (b.balance * (b.price_usd ?? 0)) - (a.balance * (a.price_usd ?? 0)));
-  await fetchTotalUsd();
-
-      setAssets(merged);
+    
+merged.sort((a, b) => (b.balance * (b.price_usd ?? 0)) - (a.balance * (a.price_usd ?? 0)));
+setAssets(merged);      // balances render immediately
+fetchTotalUsd();        // no await — total USD updates separately, whenever ready
     } catch (err) {
       console.error("Error fetching crypto prices:", err);
     } finally {
@@ -130,7 +126,7 @@ const fetchTotalUsd = async () => {
     fetchPrices();
     const interval = setInterval(fetchPrices, 90000); // Refresh every 90s
     return () => clearInterval(interval);
-  }, [reduxAssets, user]);
+  }, [reduxAssets, user?.wallet_balances]);
 
 
 

@@ -102,8 +102,17 @@ const TransactionRow: React.FC<Props> = ({ transaction, onPress, compact = false
       {/* Amount + status */}
       <View style={s.right}>
         <Text style={[s.amount, { color: amountColor }]}>
-          {formatTransactionAmount(transaction)}
-        </Text>
+  {(() => {
+    const transferForms = ['p2p_auto_payment', 'naira_withdrawal', 'naira_deposit'];
+    const transferAmount = transaction.meta?.transfer_details?.transfer_amount 
+                        ?? transaction.meta?.transfer_amount;
+    if (transferForms.includes(transaction.meta?.form ?? "") && transferAmount) {
+      const prefix = transaction.type === "deposit" ? "+" : "-";
+      return `${prefix}₦${Number(transferAmount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+    }
+    return formatTransactionAmount(transaction);
+  })()}
+</Text>
         <View style={s.statusRow}>
           <View style={[s.dot, { backgroundColor: dotColor }]} />
           <Text style={[s.statusText, { color: dotColor }]}>{label}</Text>

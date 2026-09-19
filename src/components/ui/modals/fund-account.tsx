@@ -41,7 +41,7 @@ export default function FundAccountSheet({ show, hide, navigation }: Props) {
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      initialSnapPoints={["55%", "55%"]}
+      initialSnapPoints={["45%", "45%"]}
       onDismiss={hide}
     >
       <View style={s.container}>

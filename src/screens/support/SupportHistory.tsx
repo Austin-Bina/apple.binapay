@@ -8,6 +8,7 @@ import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -24,17 +25,13 @@ export default function SupportHistory({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={s.root}>
-      {/* Header */}
-      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={BRAND} />
-        </TouchableOpacity>
-        <View>
-          <Text style={s.headerTitle}>Support History</Text>
-          <Text style={s.headerSub}>All your previous support tickets</Text>
-        </View>
-      </View>
+ <View style={[s.root]}>      
+
+ <ScreenHeader
+        title="Support History"
+        subtitle="All your previous support tickets"
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollableView contentContainerStyle={s.scroll}>
         {isHistoryError && (
@@ -81,7 +78,7 @@ export default function SupportHistory({ navigation }: Props) {
           </View>
         )}
       </ScrollableView>
-    </SafeAreaView>
+    </View>
   );
 }
 

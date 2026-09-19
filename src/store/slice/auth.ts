@@ -40,6 +40,7 @@ interface AuthState extends EntityState<User, string> {
   newUser: boolean;
   adminNgnUsdtRate?: { buy: number; sell: number } | null;
    spreadConfig?: { spreadType: string; spread: number } | null;
+   noSpreadSymbols?: string[];
 }
 
 interface LoginResponse {
@@ -71,6 +72,7 @@ export const initialState: AuthState = authAdapter.getInitialState({
   hasProfileError: false,
   newUser: false,
   adminNgnUsdtRate: null,
+  noSpreadSymbols: ["USDT"],
 });
 
 export const authSlice = createSlice({
@@ -96,7 +98,9 @@ export const authSlice = createSlice({
     },
 
     
-
+updateNoSpreadSymbols(state, action: PayloadAction<string[]>) {
+  state.noSpreadSymbols = action.payload;
+},
 
 updateSpreadConfig(state, action: PayloadAction<{ spreadType: string; spread: number }>) {
   state.spreadConfig = action.payload;
@@ -315,7 +319,7 @@ const fetchAppConfig = createTypedAsyncThunk(
 
       // Rates and spread
       if (rateRes.status === "fulfilled" && rateRes.value.data.success) {
-        const { ngn_usdt_rate, spread } = rateRes.value.data.data;
+         const { ngn_usdt_rate, spread, no_spread_symbols } = rateRes.value.data.data;
         if (ngn_usdt_rate) {
           dispatch(authSliceActions.updateAdminNgnUsdtRate({
             buy: parseFloat(ngn_usdt_rate.buy_rate),
@@ -328,6 +332,9 @@ const fetchAppConfig = createTypedAsyncThunk(
             spread: parseFloat(spread.spread),
           }));
         }
+        if (Array.isArray(no_spread_symbols)) {
+    dispatch(authSliceActions.updateNoSpreadSymbols(no_spread_symbols));
+  }
       }
 
       // Bank accounts

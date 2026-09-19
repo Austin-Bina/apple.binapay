@@ -372,6 +372,9 @@ const [skipBadCounterparties, setSkipBadCounterparties] = useState(false);
       <Modal visible={showFeeModal} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ width: "100%" }} >
            <TouchableWithoutFeedback onPress={() => {}}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Fee Preference</Text>
@@ -436,6 +439,7 @@ const [skipBadCounterparties, setSkipBadCounterparties] = useState(false);
             </View>
           </View>
            </TouchableWithoutFeedback>
+           </KeyboardAvoidingView>
         </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -443,6 +447,9 @@ const [skipBadCounterparties, setSkipBadCounterparties] = useState(false);
       {/* ── Match preferences modal ── */}
       <Modal visible={showMatchModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+           behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ width: "100%" }} >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Match Sell Orders</Text>
             <Text style={styles.modalHint}>
@@ -485,6 +492,7 @@ const [skipBadCounterparties, setSkipBadCounterparties] = useState(false);
               </TouchableRipple>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -492,6 +500,9 @@ const [skipBadCounterparties, setSkipBadCounterparties] = useState(false);
 <Modal visible={showAutoUpdateModal} transparent animationType="slide">
   <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ width: "100%" }} >
       <TouchableWithoutFeedback onPress={() => {}}>
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Auto Update Config</Text>
@@ -546,7 +557,9 @@ const [skipBadCounterparties, setSkipBadCounterparties] = useState(false);
             </TouchableRipple>
           </View>
         </View>
+       
       </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </View>
   </TouchableWithoutFeedback>
 </Modal>

@@ -58,12 +58,14 @@ export type CryptoDepositPayload = {
   crypto_network_id: string;
   tx_hash: string;
   amount?: number | null;
+   source?: string;
 };
 
 export const fundsApi = createApi({
   reducerPath: "fundsApi",
   baseQuery: axiosBaseQuery(),
   tagTypes: ["BankList", "FeeSettings"],
+   refetchOnMountOrArgChange: 300,
   endpoints: (builder) => ({
 
     getBankList: builder.query<{ success: boolean; data: Bank[] }, void>({
