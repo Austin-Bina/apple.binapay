@@ -238,10 +238,28 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
       // ── Build transactionDetails (existing logic — only for non-transfer) ─
       const transactionDetails = match(walletView)
         .with(
-          { payment_transaction: { utilityTransaction: { details: {} } } },
-          ({ payment_transaction }) =>
-            getTransactionDetails({ details: payment_transaction.utilityTransaction.details })
-        )
+  { payment_transaction: { utilityTransaction: { details: {} } } },
+  ({ payment_transaction }) => {
+    const transactionDetails: Record<string, any> = {
+      ...payment_transaction.utilityTransaction.details,
+    };
+
+    if (walletView.payment_transaction?.id) {
+      transactionDetails["Transaction ID"] =
+        walletView.payment_transaction.id;
+    }
+
+    if (
+      (details.form === "crypto_withdrawal" ||
+        details.form === "crypto_deposit") &&
+      details.tx_hash
+    ) {
+      transactionDetails["Transaction Hash"] = details.tx_hash;
+    }
+
+    return getTransactionDetails({ details: transactionDetails });
+  }
+)
         .with(
           { payment_transaction: { utilityTransaction: P.nullish } },
           () => {

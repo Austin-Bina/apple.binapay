@@ -24,6 +24,7 @@ import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { truncateString } from "@utils/index";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -31,6 +32,8 @@ const BRAND = "#1E3A8A";
 const schema = z.object({
   description: z.string().min(10, "Please add more context to your message"),
   attachment:  z.string().optional(),
+  attachment_mime: z.string().optional(),
+  attachment_name: z.string().optional(),
 });
 
 const emptyReceiptInfo = { fileName: "", fileSize: "0 Bytes" };
@@ -51,37 +54,44 @@ export default function StartConversation({ navigation, route }: any) {
   const [initiateSupport]     = useInitiateSupportMutation();
 
   const { control, handleSubmit, setError, setValue, watch, reset } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { description: route.params?.initialMessage || "", attachment: "" },
-  });
+  resolver: zodResolver(schema),
+  defaultValues: {
+    description: route.params?.initialMessage || "",
+    attachment: "",
+    attachment_mime: "",
+    attachment_name: "",
+  },
+});
 
   const values = watch();
 
-  const handleSelectFile = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
-      if (!result.canceled) {
-        const { uri, size, name } = result.assets[0];
-        const formattedSize = formatBytes(size);
-        setReceiptInfo({ fileName: name, fileSize: formattedSize });
-        if (size && findFileSize(size) <= MAXIMUM_FILE_UPLOAD_SIZE) {
-          const receipt = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
-          setValue("attachment", receipt);
-        } else {
-          setError("attachment", {
-            message: `File is ${formattedSize}, exceeds limit of ${formatBytes(MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES)}`,
-          });
-        }
+const handleSelectFile = async () => {
+  try {
+    const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
+    if (!result.canceled) {
+      const { uri, size, name, mimeType } = result.assets[0];
+      const formattedSize = formatBytes(size);
+      setReceiptInfo({ fileName: name, fileSize: formattedSize });
+      if (size && findFileSize(size) <= MAXIMUM_FILE_UPLOAD_SIZE) {
+        const receipt = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+        setValue("attachment", receipt);
+        setValue("attachment_mime", mimeType);
+        setValue("attachment_name", name);
+      } else {
+        setError("attachment", {
+          message: `File is ${formattedSize}, exceeds limit of ${formatBytes(MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES)}`,
+        });
       }
-    } catch {
-      showToast({ message: "Something went wrong. Please try again." });
     }
-  };
+  } catch {
+    showToast({ message: "Something went wrong. Please try again." });
+  }
+};
 
   const handleRemoveFile = () => {
-    reset({ ...values, attachment: "" });
-    setReceiptInfo(emptyReceiptInfo);
-  };
+  reset({ ...values, attachment: "", attachment_mime: "", attachment_name: "" });
+  setReceiptInfo(emptyReceiptInfo);
+};
 
   const onSubmit = handleSubmit(async function (values) {
     if (!departmentId) {
@@ -121,15 +131,11 @@ export default function StartConversation({ navigation, route }: any) {
   return (
     <SafeAreaView style={s.root}>
       {/* Header */}
-      <View style={[s.header]}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={BRAND} />
-        </TouchableOpacity>
-        <View>
-          <Text style={s.headerTitle}>New Conversation</Text>
-          <Text style={s.headerSub}>{department?.name ? `${department.name} Team` : "Support Team"}</Text>
-        </View>
-      </View>
+      <ScreenHeader
+  title="New Conversation"
+  subtitle={department?.name ? `${department.name} Team` : "Support Team"}
+  onBack={() => navigation.goBack()}
+/>
 
       <ScrollableView contentContainerStyle={s.scroll}>
         {hasError && <Banner content="We had trouble starting a conversation. Please try again." />}

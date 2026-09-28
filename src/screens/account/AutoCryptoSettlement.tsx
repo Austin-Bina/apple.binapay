@@ -180,11 +180,19 @@ export default function AutoCryptoSettlement() {
                   ) : null}
                 </>
               ) : (
-                <View style={s.noBankWrap}>
-                  <MaterialCommunityIcons name="bank-off-outline" size={32} color="#9ca3af" />
-                  <Text style={s.noBankTitle}>No bank accounts added</Text>
-                  <Text style={s.noBankSub}>Go to Manage Bank Accounts to add one first.</Text>
-                </View>
+   <View style={s.noBankWrap}>
+  <MaterialCommunityIcons name="bank-off-outline" size={32} color="#9ca3af" />
+  <Text style={s.noBankTitle}>No bank accounts added</Text>
+  <Text style={s.noBankSub}>Add a bank account to use this option.</Text>
+  <TouchableOpacity
+    style={s.addBankBtn}
+    onPress={() => navigation.navigate("Bank Accounts" as never)}
+    activeOpacity={0.85}
+  >
+    <MaterialCommunityIcons name="plus-circle-outline" size={16} color="#fff" />
+    <Text style={s.addBankBtnText}>Set Up Bank Account</Text>
+  </TouchableOpacity>
+</View>
               )}
             </View>
           </>
@@ -239,4 +247,6 @@ const s = StyleSheet.create({
 
   saveBtn:          { backgroundColor: BLUE, borderRadius: 12, paddingVertical: 15, alignItems: "center", marginTop: 8 },
   saveBtnText:      { color: "#fff", fontSize: 15, fontWeight: "700" },
+  addBankBtn:     { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: BLUE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, marginTop: 12 },
+addBankBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 });

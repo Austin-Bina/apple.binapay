@@ -20,12 +20,12 @@ const BLUE  = "#2563EB";
 
 type Props = KYCStackScreenProps<typeof SCREENS.PREMBLY_VERIFICATION>;
 
-export default function PremblyVerificationScreen({ navigation }: Props) {
+export default function PremblyVerificationScreen({ navigation, route }: Props) {
   const insets   = useSafeAreaInsets();
   const dispatch = useTypedDispatch();
+  const idType = route.params.idType;
 
   const [isLoading, setIsLoading]   = React.useState(false);
-  const [idType, setIdType]         = React.useState<"bvn" | "nin">("bvn");
   const [idNumber, setIdNumber]     = React.useState("");
   const [webViewUrl, setWebViewUrl] = React.useState<string | null>(null);
   const sessionIdRef                = React.useRef<string | null>(null);
@@ -37,20 +37,37 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
     if (text.length === 11) Keyboard.dismiss();
   };
 
-  const [errorModal, setErrorModal] = React.useState<{ visible: boolean; title: string; message: string }>({
-    visible: false, title: "", message: "",
-  });
+ const [errorModal, setErrorModal] = React.useState<{
+  visible: boolean;
+  title: string;
+  message: string;
+  fallbackUrl: string | null;
+}>({
+  visible: false,
+  title: "",
+  message: "",
+  fallbackUrl: null,
+});
 
-  const showError = (title: string, message: string) => {
-    setErrorModal({ visible: true, title, message });
-  };
+  const showError = (
+  title: string,
+  message: string,
+  fallbackUrl?: string | null
+) => {
+  setErrorModal({
+    visible: true,
+    title,
+    message,
+    fallbackUrl: fallbackUrl ?? null,
+  });
+};
 
   const handleStartVerification = async () => {
     if (!isValid) {
       showToast({ variant: "error", message: "Please enter a valid 11-digit number." });
       return;
     }
-
+    let currentFallbackUrl: string | null = null;
     try {
       setIsLoading(true);
 
@@ -66,7 +83,7 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
       }
 
       const url = `https://sdk-live.prembly.com/?session=${encodeURIComponent(sessionId)}`;
-
+      currentFallbackUrl = url;
       // WebBrowser (working — kept as fallback)
        await WebBrowser.openBrowserAsync(url);
        try {
@@ -75,15 +92,39 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
       await dispatch(authSliceActions.fetchUserProfile());
        const sessionResult = await API.post("/api/v1/kyc/prembly-session-status", { session_id: sessionId });
       const sessionStatus = sessionResult.data;
-       if (sessionStatus.face_verified && sessionStatus.id_verified) {
-         navigation.navigate(SCREENS.VERIFICATION_SUCCESS, { tier: 1 });
-       } else if (sessionStatus.face_verified && !sessionStatus.id_verified) {
-         showError("ID Verification Failed", "Your face scan passed but your ID could not be verified. Please ensure you entered the correct BVN or NIN and try again.");
-      } else if (!sessionStatus.face_verified) {
-         showError("Face Verification Failed", "We could not verify your face. Please ensure you are in a well-lit environment, remove glasses if any, and look directly at the camera.");
-      } else {
-         showError("Verification Incomplete", "Your verification could not be completed. Please try again.");
-       }
+
+      if (idType === "nin") {
+  // NIN verification does NOT require face verification.
+  if (sessionStatus.id_verified) {
+    navigation.navigate(SCREENS.VERIFICATION_SUCCESS, {
+      tier: 2,
+    });
+  } else {
+    showError(
+      "NIN Verification Failed",
+      "Your NIN could not be verified. Please ensure you entered the correct NIN and try again."
+    );
+  }
+
+  return;
+}
+
+// BVN verification requires both ID verification and face verification.
+if (sessionStatus.face_verified && sessionStatus.id_verified) {
+  navigation.navigate(SCREENS.VERIFICATION_SUCCESS, {
+    tier: 1,
+  });
+} else if (sessionStatus.face_verified && !sessionStatus.id_verified) {
+  showError(
+    "BVN Verification Failed",
+    "Your face scan passed but your BVN could not be verified. Please ensure you entered the correct BVN and try again."
+  );
+} else {
+  showError(
+    "Face Verification Failed",
+    "We could not verify your face. Please ensure you are in a well-lit environment, remove glasses if any, and look directly at the camera."
+  );
+}
 
       // WebView
      // sessionIdRef.current = sessionId;
@@ -92,7 +133,7 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
 
     } catch (error: any) {
       const msg = error?.response?.data?.message ?? "Failed to start verification.";
-      showError("Verification Error", msg);
+      showError("Verification Error", msg,  currentFallbackUrl);
     } finally {
       setIsLoading(false);
     }
@@ -122,30 +163,18 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
           <View style={s.ring} />
         </View>
 
-        <Text style={s.title}>Verify Your Identity</Text>
-        <Text style={s.subtitle}>
-          Enter your BVN or NIN below. We'll check it's valid before opening the verification screen.
-        </Text>
+        <Text style={s.title}>
+          Verify Your {idType === "bvn" ? "BVN" : "NIN"}
+         </Text>
 
-        {/* ID Type toggle */}
-        <Text style={s.label}>Verification Type</Text>
-        <View style={s.toggle}>
-          {(["bvn", "nin"] as const).map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[s.toggleBtn, idType === type && s.toggleBtnActive]}
-              onPress={() => { setIdType(type); setIdNumber(""); }}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.toggleText, idType === type && s.toggleTextActive]}>
-                {type.toUpperCase()}
-              </Text>
-              <Text style={[s.toggleSub, idType === type && s.toggleSubActive]}>
-                {type === "bvn" ? "Bank Verification" : "National Identity"}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={s.subtitle}>
+         Enter your {idType === "bvn" ? "BVN" : "NIN"} below.{" "}
+          {idType === "bvn"
+          ? "We'll verify it before opening the secure face scan."
+          : "We'll verify your NIN securely."}
+         </Text>
+
+       
 
         {/* Number input */}
         <Text style={s.label}>
@@ -221,7 +250,9 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
           ) : (
             <View style={s.btnInner}>
               <MaterialCommunityIcons name="shield-check-outline" size={20} color="#fff" />
-              <Text style={s.btnText}>Continue to Face Scan</Text>
+              <Text style={s.btnText}>
+            {idType === "bvn" ? "Continue to Face Scan" : "Continue to Verification"}
+               </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -256,12 +287,52 @@ export default function PremblyVerificationScreen({ navigation }: Props) {
             </View>
             <Text style={s.modalTitle}>{errorModal.title}</Text>
             <Text style={s.modalMessage}>{errorModal.message}</Text>
-            <TouchableOpacity
-              style={s.modalBtn}
-              onPress={() => setErrorModal(e => ({ ...e, visible: false }))}
-            >
-              <Text style={s.modalBtnText}>Try Again</Text>
-            </TouchableOpacity>
+
+
+            {errorModal.fallbackUrl && (
+  <TouchableOpacity
+    style={s.modalBtn}
+    onPress={async () => {
+      try {
+        await WebBrowser.openBrowserAsync(
+          errorModal.fallbackUrl!
+        );
+      } catch {
+        showToast({
+          variant: "error",
+          message: "Could not open the verification link.",
+        });
+      }
+    }}
+    activeOpacity={0.85}
+  >
+    <MaterialCommunityIcons
+      name="open-in-new"
+      size={19}
+      color="#fff"
+    />
+
+    <Text style={s.modalBtnText}>
+      Open Verification in Browser
+    </Text>
+  </TouchableOpacity>
+)}
+
+<TouchableOpacity
+  style={s.modalSecondaryBtn}
+  onPress={() =>
+    setErrorModal(e => ({
+      ...e,
+      visible: false,
+    }))
+  }
+  activeOpacity={0.85}
+>
+  <Text style={s.modalSecondaryBtnText}>
+    Try Again
+  </Text>
+</TouchableOpacity>
+
           </View>
         </View>
       </Modal>
@@ -282,13 +353,6 @@ const s = StyleSheet.create({
 
   label:            { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
 
-  toggle:           { flexDirection: "row", backgroundColor: "#f3f4f6", borderRadius: 12, padding: 4, marginBottom: 20, gap: 4 },
-  toggleBtn:        { flex: 1, paddingVertical: 12, alignItems: "center", borderRadius: 10 },
-  toggleBtnActive:  { backgroundColor: "#fff", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
-  toggleText:       { fontSize: 15, fontWeight: "700", color: "#9ca3af" },
-  toggleTextActive: { color: BLUE },
-  toggleSub:        { fontSize: 11, color: "#d1d5db", marginTop: 2 },
-  toggleSubActive:  { color: "#93c5fd" },
 
   inputWrap:        { flexDirection: "row", alignItems: "center", borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 12, paddingHorizontal: 14, backgroundColor: "#fff", marginBottom: 8 },
   inputIcon:        { marginRight: 10 },
@@ -314,6 +378,31 @@ const s = StyleSheet.create({
   modalIconWrap:    { width: 72, height: 72, borderRadius: 36, backgroundColor: "#fef2f2", justifyContent: "center", alignItems: "center", marginBottom: 16 },
   modalTitle:       { fontSize: 20, fontWeight: "800", color: "#111827", marginBottom: 10, textAlign: "center" },
   modalMessage:     { fontSize: 14, color: "#6b7280", textAlign: "center", lineHeight: 22, marginBottom: 24 },
-  modalBtn:         { width: "100%", backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
+  //modalBtn:         { width: "100%", backgroundColor: BLUE, paddingVertical: 15, borderRadius: 14, alignItems: "center" },
   modalBtnText:     { fontSize: 16, fontWeight: "700", color: "#fff" },
+  modalBtn: {
+  width: "100%",
+  backgroundColor: BLUE,
+  paddingVertical: 15,
+  borderRadius: 14,
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "row",
+  gap: 8,
+},
+
+modalSecondaryBtn: {
+  width: "100%",
+  paddingVertical: 14,
+  borderRadius: 14,
+  alignItems: "center",
+  marginTop: 10,
+  backgroundColor: "#f3f4f6",
+},
+
+modalSecondaryBtnText: {
+  fontSize: 15,
+  fontWeight: "700",
+  color: "#374151",
+},
 });

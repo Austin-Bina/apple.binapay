@@ -30,7 +30,7 @@ export const getPairRateDisplay = ({
   livePrices,
   liveNgnUsdt,
   spreadConfig,
-  noSpreadSymbols = ["USDT"],
+  noSpreadSymbols = ["USDT", "USDC"],
 }: GetPairRateDisplayParams) => {
   const from = fromSymbol.toUpperCase();
   const to = toSymbol.toUpperCase();

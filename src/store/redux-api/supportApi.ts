@@ -13,6 +13,8 @@ type CreateTicketBody = {
   subject: string;
   description: string;
   attachment?: string;
+  attachment_mime?: string;
+  attachment_name?: string;
 };
 
 type CreateTicketResponse = {

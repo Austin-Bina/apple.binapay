@@ -234,12 +234,9 @@ export type KYCParamList = {
   [SCREENS.FACE_VERIFICATION]: undefined;
   [SCREENS.ADDRESS_VERIFICATION]: undefined;
   [SCREENS.VERIFICATION_LIMITS]: undefined;
-   [SCREENS.PREMBLY_VERIFICATION]:
-    | {
-        verification_type?: "bvn" | "nin";
-        document_number?: string;
-      }
-    | undefined;
+   [SCREENS.PREMBLY_VERIFICATION]: {
+  idType: "bvn" | "nin";
+};
 };
 
 

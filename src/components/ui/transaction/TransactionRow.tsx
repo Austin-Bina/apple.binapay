@@ -80,7 +80,8 @@ const TransactionRow: React.FC<Props> = ({ transaction, onPress, compact = false
       style={[s.row, compact && s.rowCompact]}
     >
       {/* Icon */}
-      <Avatar.Image
+     {/* Icon */}
+<Avatar.Image
   size={44}
   source={imageSource as any}
   style={{ backgroundColor: "#EEF3FF" }}

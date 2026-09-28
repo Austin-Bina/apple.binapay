@@ -2,9 +2,9 @@
   "expo": {
     "name": "BinaPay",
     "slug": "BinaPay",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
-    "runtimeVersion": "1.0.3",
+    "runtimeVersion": "1.0.4",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -19,7 +19,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.binapay",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "googleServicesFile": "./GoogleService-Info.plist",
       "entitlements": {
         "aps-environment": "production"

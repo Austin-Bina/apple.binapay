@@ -615,14 +615,13 @@ const handleQrScanned = (data: string) => {
       </KeyboardAvoidingView>
 
       <View style={[s.footer, { paddingBottom: insets.bottom + 10 }]}>
-        <TouchableOpacity
-          style={[s.confirmBtn, !!formError() && s.disabledBtn]}
-          onPress={handleContinue}
-          disabled={!!formError()}
-        >
-          <Text style={s.confirmBtnText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
+  <TouchableOpacity
+    style={s.confirmBtn}
+    onPress={handleContinue}
+  >
+    <Text style={s.confirmBtnText}>Continue</Text>
+  </TouchableOpacity>
+</View>
 
       <QrScannerModal
   visible={showQrScanner}

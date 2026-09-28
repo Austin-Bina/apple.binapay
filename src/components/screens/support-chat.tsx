@@ -51,29 +51,33 @@ const renderBubble = ({ currentMessage, position, ...rest }: BubbleProps<IMessag
   return (
     <Bubble
       {...{
-        currentMessage: decodedCurrentMessage,
-        position,
-        renderTicks: renderMessageSentIcon,
-        bottomContainerStyle: {
-          right: styles.bottomContainerStyle,
-          left: styles.bottomContainerStyle,
+         currentMessage: decodedCurrentMessage,
+      position,
+      renderTicks: renderMessageSentIcon,
+      bottomContainerStyle: {
+        right: styles.bottomContainerStyle,
+        left: styles.bottomContainerStyle,
+      },
+      containerStyle: {
+        left: styles.bubbleSpacing,
+        right: styles.bubbleSpacing,
+      },
+      wrapperStyle: {
+        left: {
+          backgroundColor: "#ffffff",
         },
-        wrapperStyle: {
-          left: {
-            backgroundColor: "#ffffff",
-          },
-          right: {
-            backgroundColor: "#CADFD0",
-          },
+        right: {
+          backgroundColor: "#CADFD0",
         },
-        textStyle: {
-          left: styles.messageText,
-          right: styles.messageText,
-        },
-        renderTime,
-        containerToPreviousStyle: {
-          left: tw`-ml-4`,
-        },
+      },
+      textStyle: {
+        left: styles.messageText,
+        right: styles.messageText,
+      },
+      renderTime,
+      containerToPreviousStyle: {
+        left: tw`-ml-4`,
+      },
         ...rest,
       }}
     />
@@ -129,4 +133,7 @@ const styles = StyleSheet.create({
     color: "#191919",
     fontWeight: "400",
   },
+  bubbleSpacing: {
+  marginVertical: 6,
+},
 });

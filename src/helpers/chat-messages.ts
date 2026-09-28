@@ -4,6 +4,18 @@ import { AddResponseBody, SupportChat, SystemUser } from "@type/support";
 import { User } from "@type/user";
 import type { IMessage } from "react-native-gifted-chat";
 
+export function linkifyText(text: string): string {
+  if (!text) return text;
+  if (/<a\s/i.test(text)) return text; // already has real links, don't double-wrap
+
+  const urlRegex = /(\bhttps?:\/\/[^\s<]+|\bwww\.[^\s<]+)/gi;
+
+  return text.replace(urlRegex, (match) => {
+    const href = match.startsWith("http") ? match : `https://${match}`;
+    return `<a href="${href}">${match}</a>`;
+  });
+}
+
 export function getGiftedChatMessages(messages: SupportChat[], currentUser: User, toUser: SystemUser): IMessage[] {
   if (!messages) {
     return [];
@@ -23,7 +35,6 @@ export function getGiftedChatMessages(messages: SupportChat[], currentUser: User
       avatar: isFromCurrentUser ? currentUser.avatar : toUser.avatar,
     };
 
-    // Define statuses with fallback values if clientStatuses are undefined
     const statuses = {
       sent: clientStatuses && typeof clientStatuses.sent === "boolean" ? clientStatuses.sent : true,
       received: clientStatuses && typeof clientStatuses.received === "boolean" ? clientStatuses.received : true,
@@ -32,7 +43,7 @@ export function getGiftedChatMessages(messages: SupportChat[], currentUser: User
 
     return {
       _id: message_id,
-      text: message,
+      text: linkifyText(message),
       user,
       createdAt: msgCreatedAt,
       ...statuses,
@@ -59,7 +70,7 @@ export const createPendingMessage = (data: AddResponseBody, patches?: Partial<Su
 
   const pendingMessage = {
     id: tempMessageId,
-    date: (Date.now() / 1000).toString(), // Convert to seconds
+    date: (Date.now() / 1000).toString(),
     customer: ChatOwner.Yes,
     staff_id: ChatOwner.No,
     message: messageToShow,

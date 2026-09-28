@@ -208,9 +208,16 @@ const detailRows = useMemo(() => {
 
   // Identify which rows are copyable (reference, session id, account)
   const isCopyableRow = (label: string) => {
-    const l = label.toLowerCase();
-    return l.includes("reference") || l.includes("session") || l.includes("account");
-  };
+  const l = label.toLowerCase();
+
+  return (
+    l.includes("reference") ||
+    l.includes("session") ||
+    l.includes("account") ||
+    l.includes("transaction hash") ||
+     l.includes("transaction id")
+  );
+};
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -350,7 +357,7 @@ const detailRows = useMemo(() => {
 
       {/* ── Bottom action buttons ── */}
       <View style={[s.bottomActions, { paddingBottom: insets.bottom + 12 }]}>
-     {/*}   {showReceipt && (
+       {/*} {showReceipt && (
   <TouchableOpacity
     style={s.shareBtn}
     onPress={() => pageData.epins?.length

@@ -540,9 +540,14 @@ export default function WithdrawNairaScreen({ navigation }: any) {
       </KeyboardAvoidingView>
 
       <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <TouchableOpacity style={[s.confirmBtn, !!formError() && s.disabledBtn]} onPress={handleContinue} disabled={!!formError()}>
-          <Text style={s.confirmBtnText}>Continue</Text>
-        </TouchableOpacity>
+
+        <TouchableOpacity
+  style={s.confirmBtn}
+  onPress={handleContinue}
+>
+  <Text style={s.confirmBtnText}>Continue</Text>
+</TouchableOpacity>
+
       </View>
 
       {/* Bank modal */}

@@ -4,9 +4,16 @@ import { axiosBaseQuery } from "@lib/api";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { DVA } from "@type/user";
 
+
+export type FundingAccount = DVA & {
+    funding_reference?: string | null;
+    display_funding_reference?: boolean;
+};
+
 type ListAccountResponse = {
-    accounts: DVA[];
+    accounts: FundingAccount[];
     canCreateMore: boolean;
+    how_it_works?: string[];
 };
 
 export const accountsApi = createApi({

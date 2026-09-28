@@ -47,4 +47,6 @@ export type AddResponseBody = {
   ticketId: string;
   message: string;
   attachment?: string;
+  attachment_name?: string;
+  attachment_mime?: string;
 };

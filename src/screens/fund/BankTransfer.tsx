@@ -46,7 +46,7 @@ export default function BankTransferScreen() {
 
   const canCreateMoreAccounts = useTypedSelector(selectCanCreateMoreAccounts());
   const bankSettings = systemSettings?.bank;
-  const minAmount = bankSettings?.min_transaction_amount;
+  //const minAmount = bankSettings?.min_transaction_amount;
 
   const prefetchSettings = useSystemSettingsPrefetch("getSystemSettings", {
     ifOlderThan: MAX_CACHE_AGE_SEC,
@@ -82,15 +82,6 @@ export default function BankTransferScreen() {
 
       <ScrollableView contentContainerStyle={s.scroll}>
 
-        {/* Info banner 
-        <View style={s.infoBanner}>
-          <MaterialCommunityIcons name="information-outline" size={18} color={BLUE} />
-          <Text style={s.infoText}>
-            Transfer to the account below and your BinaPay wallet will be credited automatically.
-            {minAmount ? ` Minimum transfer: ${formatToNaira(minAmount)}.` : ""}
-          </Text>
-        </View>
-*/}
         {/* Loading */}
         {isLoading && (
           <View style={s.loadingWrap}>
@@ -130,6 +121,8 @@ export default function BankTransferScreen() {
                     accountName={account.account_name}
                     bankName={account.bank_name}
                     accountNumber={account.account_number}
+                    fundingReference={account.funding_reference}
+                    displayFundingReference={account.display_funding_reference}
                     feeType={account.fee_type}
                     chargePercentage={account.charge_percentage}
                     flatFee={account.flat_fee}
@@ -166,24 +159,31 @@ export default function BankTransferScreen() {
           </TouchableOpacity>
         )}
 
-        {/* How it works */}
-        <Text style={s.sectionLabel}>How It Works</Text>
-        <View style={s.stepsCard}>
-         {[
-  { text: "Transfer only from a bank account registered in your name. Deposits from a third-party account will not be credited." },
-  { text: "Copy your dedicated account number above and transfer any amount from your own bank app." },
-  { text: minAmount
-      ? `Deposits below ${formatToNaira(minAmount)} attract attract ${formatToNaira(bankSettings?.manual_funding_fee)} processing fee, deducted from the amount credited to your wallet.`
-      : "Deposits below the minimum transfer amount attract a small processing fee, deducted from the amount credited to your wallet." },
-].map((step, i) => (
-  <View key={i} style={[s.stepRow, i < 2 && s.stepRowBorder]}>
-    <View style={s.stepNum}>
-      <Text style={s.stepNumText}>{i + 1}</Text>
-    </View>
-    <Text style={s.stepText}>{step.text}</Text>
-  </View>
-))}
+       {/* How it works */}
+{(accountsQuery?.how_it_works?.length ?? 0) > 0 && (
+  <View>
+    <Text style={s.sectionLabel}>How It Works</Text>
+
+    <View style={s.stepsCard}>
+      {accountsQuery?.how_it_works?.map((text, i, steps) => (
+        <View
+          key={i}
+          style={[
+            s.stepRow,
+            i < steps.length - 1 && s.stepRowBorder,
+          ]}
+        >
+          <View style={s.stepNum}>
+            <Text style={s.stepNumText}>{i + 1}</Text>
+          </View>
+
+          <Text style={s.stepText}>{text}</Text>
         </View>
+      ))}
+    </View>
+  </View>
+)}
+      
 
       </ScrollableView>
 
@@ -196,6 +196,8 @@ interface BankCardProps {
   accountName: string;
   bankName: string;
   accountNumber: string;
+   fundingReference?: string | null;
+   displayFundingReference?: boolean;
   feeType: "percentage" | "flat";
   chargePercentage?: number;
   flatFee?: number;
@@ -205,6 +207,8 @@ export const BankCard: React.FC<BankCardProps> = ({
   accountName,
   bankName,
   accountNumber,
+  fundingReference,
+  displayFundingReference,
   feeType,
   chargePercentage,
   flatFee,
@@ -222,6 +226,11 @@ export const BankCard: React.FC<BankCardProps> = ({
       <DetailRow label="Account Name" value={accountName} />
       <DetailRow label="Account Number" value={accountNumber} copyable />
 
+
+      {displayFundingReference && fundingReference && (
+     <FundingReferenceRow reference={fundingReference} />
+)}
+
       <View style={s.feeDivider} />
       <View style={s.feeRow}>
         <MaterialCommunityIcons name="information-outline" size={13} color="rgba(255,255,255,0.7)" />
@@ -235,6 +244,61 @@ export const BankCard: React.FC<BankCardProps> = ({
     </View>
   );
 };
+
+
+interface FundingReferenceRowProps {
+  reference: string;
+}
+
+const FundingReferenceRow = ({ reference }: FundingReferenceRowProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyReference = async () => {
+    await Clipboard.setStringAsync(reference);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
+  return (
+    <View style={s.referenceWrap}>
+      <View style={s.referenceHeader}>
+        <View>
+          <Text style={s.referenceLabel}>Funding Reference</Text>
+          <Text style={s.referenceHint}>
+            Include this reference with your transfer
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={[s.referenceCopyBtn, copied && s.referenceCopyBtnDone]}
+          onPress={copyReference}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons
+            name={copied ? "check" : "content-copy"}
+            size={13}
+            color={copied ? "#16a34a" : "#fff"}
+          />
+
+          <Text
+            style={[
+              s.referenceCopyText,
+              copied && s.referenceCopyTextDone,
+            ]}
+          >
+            {copied ? "Copied!" : "Copy"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={s.referenceValue}>{reference}</Text>
+    </View>
+  );
+};
+
 
 interface DetailRowProps {
   label: string;
@@ -335,4 +399,66 @@ const s = StyleSheet.create({
   stepNumText:    { fontSize: 11, fontWeight: "800", color: "#fff" },
   stepIconWrap:   { width: 36, height: 36, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
   stepText:       { flex: 1, fontSize: 13, color: "#374151", lineHeight: 18 },
+
+  referenceWrap: {
+  backgroundColor: "rgba(255,255,255,0.10)",
+  borderRadius: 12,
+  padding: 14,
+  marginTop: 4,
+  marginBottom: 14,
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.22)",
+},
+
+referenceHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 10,
+},
+
+referenceLabel: {
+  fontSize: 11,
+  fontWeight: "800",
+  color: "rgba(255,255,255,0.75)",
+  textTransform: "uppercase",
+  letterSpacing: 0.7,
+},
+
+referenceHint: {
+  fontSize: 10,
+  color: "rgba(255,255,255,0.55)",
+  marginTop: 2,
+},
+
+referenceValue: {
+  fontSize: 13,
+  fontWeight: "800",
+  color: "#fff",
+  letterSpacing: 1.5,
+},
+
+referenceCopyBtn: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 5,
+  backgroundColor: "rgba(255,255,255,0.18)",
+  borderRadius: 20,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+},
+
+referenceCopyBtnDone: {
+  backgroundColor: "#dcfce7",
+},
+
+referenceCopyText: {
+  fontSize: 11,
+  fontWeight: "700",
+  color: "#fff",
+},
+
+referenceCopyTextDone: {
+  color: "#16a34a",
+},
 });

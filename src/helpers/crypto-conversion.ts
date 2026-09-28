@@ -16,7 +16,7 @@ export const calculateConversion = (
   livePrices: Record<string, number>,
   liveNgnUsdt: { buy: number; sell: number } | null,
   spreadConfig?: { spreadType: "percent" | "flat"; spread: number },
-  noSpreadSymbols: string[] = ["USDT"] 
+  noSpreadSymbols: string[] = ["USDT", "USDC"]
 ): ConversionResult => {
   const from = fromSymbol.toUpperCase();
   const to = toSymbol.toUpperCase();

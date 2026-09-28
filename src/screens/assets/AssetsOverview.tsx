@@ -83,8 +83,7 @@ function AssetsContent() {
 
   const [showSellRate, setShowSellRate] = useState(false);
   const [balanceVisible,  setBalanceVisible]   = useState(true);
-  const [currency,        setCurrency]         = useState<"NGN" | "USD">("NGN");
-
+const [currency, setCurrency] = useState<"NGN" | "USD">("USD");
   // ── Totals ─────────────────────────────────────────────────────────────
   const totalNgn = useMemo(() => {
     if (!ngnRate?.sell) return 0;

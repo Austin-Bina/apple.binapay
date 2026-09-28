@@ -26,53 +26,104 @@ export default function VerificationHubScreen({ navigation }: Props) {
 
   const isEmailVerified = !!user?.email_verified_at;
   const isPhoneVerified = !!user?.phone_verified_at || !!limits?.is_phone_verified;
-  const isBvnOrNin      = !!user?.is_bvn_verified || !!user?.is_nin_verified || !!limits?.is_bvn_verified || !!limits?.is_nin_verified;
-  const kycTier         = limits?.kyc_tier ?? user?.kyc_tier ?? 0;
+  const isBvnVerified =
+  !!user?.is_bvn_verified ||
+  !!limits?.is_bvn_verified;
 
-  // Tier 1: email + phone + bvn/nin
-  const tier1Steps = [
-  { label: "Email Verified", subtitle: user?.email ?? "", done: isEmailVerified, icon: "email-check-outline" },
-  { label: "Phone Number", subtitle: isPhoneVerified ? user?.phone ?? "Verified" : "Not verified", done: isPhoneVerified, icon: "phone-check-outline",
-    onPress: isPhoneVerified ? undefined : () => navigation.navigate(SCREENS.PHONE_VERIFICATION) },
- // { label: "BVN or NIN", subtitle: isBvnOrNin ? "Verified" : "Not verified", done: isBvnOrNin, icon: "card-account-details-outline",
-  //  onPress: isBvnOrNin ? undefined : () => navigation.navigate(SCREENS.BVN_NIN_CHOICE) },
-//];
-  
-    { label: "BVN or NIN", subtitle: isBvnOrNin ? "Verified" : "Not verified", done: isBvnOrNin, icon: "card-account-details-outline",
-   onPress: isBvnOrNin ? undefined : () => {
-  navigation.dispatch(CommonActions.navigate(SCREENS.PREMBLY_VERIFICATION));
-}  }
+const isNinVerified =
+  !!user?.is_nin_verified ||
+  !!limits?.is_nin_verified;
 
+const kycTier = limits?.kyc_tier ?? user?.kyc_tier ?? 0;
+// Tier 1: email + phone + BVN + face  
+ const tier1Steps = [
+  {
+    label: "Email Verified",
+    subtitle: user?.email ?? "",
+    done: isEmailVerified,
+    icon: "email-check-outline",
+  },
+  {
+    label: "Phone Number",
+    subtitle: isPhoneVerified ? user?.phone ?? "Verified" : "Not verified",
+    done: isPhoneVerified,
+    icon: "phone-check-outline",
+    onPress: isPhoneVerified
+      ? undefined
+      : () => navigation.navigate(SCREENS.PHONE_VERIFICATION),
+  },
+  {
+    label: "BVN Verification",
+    subtitle: isBvnVerified ? "Verified" : "Not verified",
+    done: isBvnVerified,
+    icon: "card-account-details-outline",
+    onPress: isBvnVerified
+  ? undefined
+  : () =>
+      navigation.navigate(SCREENS.PREMBLY_VERIFICATION, {
+        idType: "bvn",
+      }),
+  },
 ];
 
-const addressProofSubmitted = !!user?.address_proof_url;
-const isAddressVerified = kycTier >= 2;
+const isTier1Complete =
+  isEmailVerified && isPhoneVerified && isBvnVerified;
+ 
 
-const isTier1Complete = isEmailVerified && isPhoneVerified && isBvnOrNin;
+const addressProofSubmitted = !!user?.address_proof_url;
+const isAddressVerified =
+  !!user?.is_address_verified ||
+  !!limits?.is_address_verified;
 
 const tier2Steps = [
-  { 
-    label: "Address Verification", 
+  {
+    label: "Address Verification",
     subtitle: !isTier1Complete
       ? "Complete Tier 1 first"
-      : isAddressVerified 
-        ? "Verified" 
-        : addressProofSubmitted 
+      : isAddressVerified
+        ? "Verified"
+        : addressProofSubmitted
           ? "Under review — we'll notify you"
-          : "Verify your residential address",  
-    done: isAddressVerified, 
+          : "Verify your residential address",
+    done: isAddressVerified,
     icon: "home-outline",
     locked: !isTier1Complete,
     pending: isTier1Complete && addressProofSubmitted && !isAddressVerified,
-    onPress: !isTier1Complete || isAddressVerified || addressProofSubmitted 
-      ? undefined 
-      : () => navigation.navigate(SCREENS.ADDRESS_VERIFICATION),
+    onPress:
+      !isTier1Complete || isAddressVerified || addressProofSubmitted
+        ? undefined
+        : () => navigation.navigate(SCREENS.ADDRESS_VERIFICATION),
+  },
+  {
+    label: "NIN Verification",
+    subtitle: !isTier1Complete
+      ? "Complete Tier 1 first"
+      : isNinVerified
+        ? "Verified"
+        : "Verify your NIN",
+    done: isNinVerified,
+    icon: "card-account-details-outline",
+    locked: !isTier1Complete,
+    onPress:
+  !isTier1Complete || isNinVerified
+    ? undefined
+    : () =>
+        navigation.navigate(SCREENS.PREMBLY_VERIFICATION, {
+          idType: "nin",
+        }),
   },
 ];
 
   // Progress: email(1) + phone(1) + bvnNin(1) + face(1) + address(1) = 5 total
-  const completedCount = [isEmailVerified, isPhoneVerified, isBvnOrNin, kycTier >= 2, kycTier >= 2].filter(Boolean).length;
-  const progressPct    = Math.round((completedCount / 5) * 100);
+  const completedCount = [
+  isEmailVerified,
+  isPhoneVerified,
+  isBvnVerified,
+  isAddressVerified,
+  isNinVerified,
+].filter(Boolean).length;
+
+const progressPct = Math.round((completedCount / 5) * 100);
 
   return (
     <View style={[s.root ]}>

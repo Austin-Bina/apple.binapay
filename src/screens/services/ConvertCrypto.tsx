@@ -216,7 +216,7 @@ export default function ConvertCrypto({ cryptoAssets, adminNgnUsdtRate, spreadCo
   const confirmSheetRef = useRef<BottomSheetModalMethods>(null);
   const authSheetRef    = useRef<BottomSheetModalMethods>(null);
   const idempotencyKeyRef = useRef<string>(Crypto.randomUUID());
-  const noSpreadSymbols = useSelector((s: State) => s.auth.noSpreadSymbols ?? ["USDT"]);
+  const noSpreadSymbols = useSelector((s: State) => s.auth.noSpreadSymbols ?? ["USDT", "USDC"]);
 
   const RATE_TTL = 300;
   const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;

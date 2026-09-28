@@ -6,7 +6,7 @@ import { useTypedSelector } from "@store/common";
 import { useAddResponseMutation, useListConversationsQuery } from "@store/redux-api/supportApi";
 import { selectUser } from "@store/selectors/auth";
 import React, { useMemo, useState, useRef } from "react";
-import { Platform, useWindowDimensions, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, TextInput, TouchableWithoutFeedback, Keyboard } from "react-native";
+import { Platform, useWindowDimensions, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, TextInput, TouchableWithoutFeedback, Keyboard, Linking  } from "react-native";
 import { GiftedChat, IMessage, InputToolbar, Composer } from "react-native-gifted-chat";
 import { ActivityIndicator, Avatar, IconButton, Text } from "react-native-paper";
 import GiftedChatComponents from "@components/screens/support-chat";
@@ -71,7 +71,7 @@ export default function ChatSupport({ navigation, route }: Props) {
        attachment: "" };
     if (attachmentDetails) {
       const attachment = await FileSystem.readAsStringAsync(attachmentDetails.uri, { encoding: "base64" });
-      data = { ...data, attachment };
+      data = { ...data, attachment, attachment_mime: attachmentDetails.mimeType, attachment_name: attachmentDetails.name,};
       onRemoveAttachment();
     }
     await addTicketResponse(data).unwrap();
@@ -140,7 +140,17 @@ export default function ChatSupport({ navigation, route }: Props) {
                 <RenderHTML
                   source={{ html: currentMessage.text }}
                   contentWidth={scale(width)}
-                  tagsStyles={{ p: tw`my-2` }}
+                   tagsStyles={{
+                    p: tw`my-2`,
+                    a: { color: "#2563EB", textDecorationLine: "underline" },
+                       }}
+                    renderersProps={{
+                           a: {
+                 onPress: (_event, href) => {
+            Linking.openURL(href).catch(() => {});
+          },
+        },
+      }}
                 />
               </View>
             )}

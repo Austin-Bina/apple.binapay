@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, TextInput, } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
@@ -20,15 +20,15 @@ export default function AddressVerificationScreen({ navigation }: Props) {
   const dispatch = useTypedDispatch();
 
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
+  const [residentialAddress, setResidentialAddress] = useState("");
   const [pickedFile, setPickedFile]   = useState<{
     uri: string; name: string; type: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const docs = [
-    { label: "Utility Bill",        subtitle: "Electricity, Water, or Internet Bill",  icon: "flash",                        color: "#f59e0b" },
-    { label: "Bank Statement",      subtitle: "Issued within the last 3 months",        icon: "bank-outline",                 color: "#3b82f6" },
-    { label: "Government Document", subtitle: "Driver's License, Voter's Card, etc.",   icon: "card-account-details-outline", color: "#f97316" },
+     { label: "Bank Statement",      subtitle: "Issued within the last 3 months",        icon: "bank-outline",                 color: "#3b82f6" },
+    { label: "Utility Bill",        subtitle: "Electricity or Internet Bill",  icon: "flash",                        color: "#f59e0b" },
   ];
 
   const handlePickDocument = async () => {
@@ -48,47 +48,82 @@ export default function AddressVerificationScreen({ navigation }: Props) {
   };
 
   const handleContinue = async () => {
-    if (!selectedDoc) {
-      showToast({ variant: "warning", message: "Please select a document type." });
-      return;
-    }
-    if (!pickedFile) {
-      showToast({ variant: "warning", message: "Please upload a document." });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
-      const formData = new FormData();
-      formData.append("document_type", selectedDoc);
-      formData.append("proof", {
-        uri: pickedFile.uri,
-        name: pickedFile.name,
-        type: pickedFile.type,
-      } as any);
-
-      const response = await API.post("/api/v1/kyc/address-verification", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-     dispatch(authSliceActions.updateUser(response.data.user));
-      await dispatch(authSliceActions.fetchUserProfile());
-     showToast({ 
-  variant: "success", 
-  message: "Document submitted! We'll review and verify within 24 hours." 
+  if (!residentialAddress.trim()) {
+    showToast({
+      variant: "warning",
+      message: "Please enter your residential address.",
     });
-navigation.navigate(SCREENS.VERIFICATION_HUB);
+    return;
+  }
 
-    } catch (error: any) {
-      showToast({
-        variant: "error",
-        message: error?.response?.data?.message ?? "Submission failed. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (residentialAddress.trim().length < 10) {
+    showToast({
+      variant: "warning",
+      message: "Please enter your complete residential address.",
+    });
+    return;
+  }
+
+  if (!selectedDoc) {
+    showToast({
+      variant: "warning",
+      message: "Please select a document type.",
+    });
+    return;
+  }
+
+  if (!pickedFile) {
+    showToast({
+      variant: "warning",
+      message: "Please upload a document.",
+    });
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+
+    const formData = new FormData();
+
+    formData.append("residential_address", residentialAddress.trim());
+    formData.append("document_type", selectedDoc);
+
+    formData.append("proof", {
+      uri: pickedFile.uri,
+      name: pickedFile.name,
+      type: pickedFile.type,
+    } as any);
+
+    const response = await API.post(
+      "/api/v1/kyc/address-verification",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    dispatch(authSliceActions.updateUser(response.data.user));
+    await dispatch(authSliceActions.fetchUserProfile());
+
+    showToast({
+      variant: "success",
+      message: "Document submitted! We'll review and verify within 24 hours.",
+    });
+
+    navigation.navigate(SCREENS.VERIFICATION_HUB);
+  } catch (error: any) {
+    showToast({
+      variant: "error",
+      message:
+        error?.response?.data?.message ??
+        "Submission failed. Please try again.",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <View style={s.root}>
@@ -103,9 +138,29 @@ navigation.navigate(SCREENS.VERIFICATION_HUB);
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        <Text style={s.title}>Upload a document that shows your current residential address.</Text>
+        <Text style={s.title}>
+  Enter your residential address and upload a document that shows the same address.
+</Text>
 
-        <Text style={s.sectionLabel}>Document Type</Text>
+<Text style={s.sectionLabel}>Residential Address</Text>
+
+<TextInput
+  style={s.addressInput}
+  value={residentialAddress}
+  onChangeText={setResidentialAddress}
+  placeholder="Enter your current residential address"
+  placeholderTextColor="#9ca3af"
+  multiline
+  numberOfLines={2}
+  textAlignVertical="top"
+  autoCapitalize="words"
+/>
+
+<Text style={s.addressHint}>
+  Enter the address where you currently live.
+</Text>
+
+<Text style={s.sectionLabel}>Document Type</Text>
         {docs.map((doc) => (
           <TouchableOpacity
             key={doc.label}
@@ -151,9 +206,22 @@ navigation.navigate(SCREENS.VERIFICATION_HUB);
 
       <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
         <TouchableOpacity
-          style={[s.btn, (!selectedDoc || !pickedFile || isLoading) && s.btnDisabled]}
-          onPress={handleContinue}
-          disabled={!selectedDoc || !pickedFile || isLoading}
+          style={[
+       s.btn,
+  (
+    !residentialAddress.trim() ||
+    !selectedDoc ||
+    !pickedFile ||
+    isLoading
+  ) && s.btnDisabled,
+]}
+onPress={handleContinue}
+disabled={
+  !residentialAddress.trim() ||
+  !selectedDoc ||
+  !pickedFile ||
+  isLoading
+}
         >
           <Text style={s.btnText}>{isLoading ? "Submitting..." : "Submit for Review"}</Text>
         </TouchableOpacity>
@@ -184,4 +252,23 @@ const s = StyleSheet.create({
   btn:              { backgroundColor: BLUE, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
   btnDisabled:      { opacity: 0.5 },
   btnText:          { fontSize: 16, fontWeight: "700", color: "#fff" },
+  addressInput: {
+  backgroundColor: "#fff",
+  borderWidth: 1,
+  borderColor: "#e5e7eb",
+  borderRadius: 14,
+  paddingHorizontal: 14,
+  paddingVertical: 14,
+  minHeight: 90,
+  fontSize: 14,
+  color: "#111827",
+  marginBottom: 6,
+},
+
+addressHint: {
+  fontSize: 12,
+  color: "#6b7280",
+  lineHeight: 18,
+  marginBottom: 18,
+},
 });
