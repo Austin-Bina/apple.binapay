@@ -11,7 +11,7 @@ import ManualFundStack from "./manual-fund";
 import BankTransferScreen from "@screens/fund/BankTransfer";
 import FundWithCardScreen from "@screens/fund/FundWithCard";
 import FundWithPaystackScreen from "@screens/fund/FundWithPaystack";
-import DepositCryptoScreen from "@screens/fund/DepositCrypto";
+import DepositCryptoScreen from "@screens/fund/AutoDepositCrypto";
 
 const Stack = createNativeStackNavigator<AddMoneyParamList>();
 

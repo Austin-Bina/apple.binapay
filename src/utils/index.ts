@@ -59,15 +59,16 @@ export const getTransactionIcon = (
     const type: string = tx.type ?? "deposit";
 
     // Bank / P2P
-    if (
-      form === 'naira_withdrawal' ||
-       form === 'funding' ||
-      form === 'naira_deposit'    ||
-      form === 'virtual_account'  || 
-      form === 'p2p_auto_payment'
-    ) {
-      return CARD_ICON as number;
-    }
+if (
+  form === 'naira_withdrawal' ||
+   form === 'funding' ||
+  form === 'naira_deposit'    ||
+  form === 'virtual_account'  || 
+  form === 'p2p_auto_payment'
+) {
+  const bankLogo = tx?.meta?.transfer_details?.bank_logo;
+  return bankLogo ? (bankLogo as string) : (CARD_ICON as number);
+}
 
     // Crypto
     if (

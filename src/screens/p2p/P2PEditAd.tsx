@@ -41,6 +41,7 @@ export default function P2PEditAdScreen({ navigation, route }: Props) {
 
   const { data: pmData, isLoading: isLoadingPM } = useGetP2PPaymentMethodsQuery();
   const [updateAd, { isLoading: isUpdating }] = useUpdateP2PAdMutation();
+  const parsed = parseInt(prefMinOrders, 10);
 
   const paymentMethods = pmData?.payment_methods ?? [];
 
@@ -74,7 +75,7 @@ export default function P2PEditAdScreen({ navigation, route }: Props) {
         remark:      remark,
           payment_period:              paymentPeriod,
          trading_pref_kyc:            prefKyc,
-        trading_pref_min_orders:     parseInt(prefMinOrders) || 5,
+        trading_pref_min_orders: Number.isFinite(parsed) ? parsed : 5,
         trading_pref_no_unposted_ad: prefNoUnposted,
       }).unwrap();
 

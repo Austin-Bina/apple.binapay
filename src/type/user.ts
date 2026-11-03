@@ -95,6 +95,8 @@ daily_transfer_limit?: number;
   is_face_verified?: boolean;
   is_address_verified?: boolean;
   address_proof_url?: boolean;
+crypto_deposit_fee_type?: "percent" | "flat" | string;
+crypto_deposit_fee?: number;
 }
 
 export interface ReferralReward {

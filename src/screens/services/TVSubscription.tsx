@@ -18,9 +18,9 @@ import { selectUser } from "@store/selectors/auth";
 import { addPendingTransaction } from "@store/slice/transactionSlice";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View, TouchableOpacity, Keyboard, RefreshControl } from "react-native";
+import { View, TouchableOpacity, Keyboard, RefreshControl, Text, StyleSheet } from "react-native";
 import { Image } from "react-native-element-image";
-import { ActivityIndicator, Button, Text } from "react-native-paper";
+import { ActivityIndicator } from "react-native-paper";
 import { z } from "zod";
 import VerifiedBadge from "@assets/icons/verified-badge.svg";
 import Fuse from "fuse.js";
@@ -34,9 +34,13 @@ import { useSystemSettingsPrefetch } from "@store/redux-api/systemSettingsApi";
 import { MAX_CACHE_AGE_SEC } from "@constants/app";
 import { selectSystemSettings } from "@store/selectors/settings";
 import BottomSheetModal from "@components/ui/modals/preview-transaction";
-import { Colors } from "@constants/theme/colors";
 import Banner from "@components/ui/banner";
 import { zodPhoneValidation } from "@utils/phone";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import ScreenHeader from "@components/ui/shared/ScreenHeader";
+
+const BRAND = "#1E3A8A";
+const BLUE  = "#2563EB";
 
 type Props = ServicesStackScreenProps<"TV Subscription">;
 
@@ -84,7 +88,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
     refetchOnMountOrArgChange: true,
     refetchOnReconnect: true,
   });
-  
+
   const prefetchSystemSettings = useSystemSettingsPrefetch("getSystemSettings", {
     ifOlderThan: MAX_CACHE_AGE_SEC,
   });
@@ -115,7 +119,7 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
 
   useEffect(() => {
     setValue("vendor", queryData?.vendor);
-}, [queryData?.vendor]);
+  }, [queryData?.vendor]);
 
   useEffect(() => {
     prefetchSystemSettings();
@@ -305,41 +309,48 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
   ];
 
   return (
-    <Screen>
+<View style={s.root}>
+      <ScreenHeader
+        title="Pay TV Subscription"
+        subtitle="Quick and easy subscription payment"
+        onBack={() => navigation.goBack()}
+        rightIcon="lightning-bolt"
+      />
+
+      
       <ScrollableView
-        contentContainerStyle={tw`justify-between px-4 py-5`}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}>
+        contentContainerStyle={tw`px-4 py-5`}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}
+      >
         <View>
-          <Text variant="titleLarge" style={tw`text-gray-800 mb-2 font-bold`}>
-            TV Subscription
-          </Text>
-          <Text variant="bodySmall" style={tw`text-gray-500`}>
-            Easily purchase subscriptions for your favorite TV channels. Enter the details below to proceed.
-          </Text>
-          <View style={tw`flex-row items-center justify-around my-5`}>
-            {Object.values(serviceProvidersMap.entertainment).map((provider) => (
+          {/* Provider selector */}
+          <View style={s.providerRow}>
+            {Object.values(serviceProvidersMap.entertainment).map((providerOption) => (
               <TouchableOpacity
-                key={provider.serviceId}
-                onPress={() => onSelectProvider(provider.serviceId)}
+                key={providerOption.serviceId}
+                onPress={() => onSelectProvider(providerOption.serviceId)}
                 style={[
-                  tw`p-3 mb-2 border border-primary-100 rounded-xl justify-center items-center`,
-                  values.provider === provider.serviceId && tw`border-blue-500 border-2`,
-                ]}>
-                <Image source={provider.logo} width={60} height={60} />
+                  s.providerCard,
+                  values.provider === providerOption.serviceId && s.providerCardActive,
+                ]}
+                activeOpacity={0.8}
+              >
+                <Image source={providerOption.logo} width={48} height={48} />
               </TouchableOpacity>
             ))}
           </View>
 
           {isError && !isFetching && (
-            <View style={tw`bg-red-50 p-4 rounded-lg items-start`}>
-              <Text variant="bodySmall">We had trouble loading your data plans. Please try again.</Text>
-              <Button onPress={onRefresh} textColor={Colors.primary[500]}>
-                Try again
-              </Button>
+            <View style={s.errorBanner}>
+              <Text style={s.errorBannerText}>We had trouble loading your data plans. Please try again.</Text>
+              <TouchableOpacity onPress={onRefresh} style={s.errorBannerBtn}>
+                <Text style={s.errorBannerBtnText}>Try again</Text>
+              </TouchableOpacity>
             </View>
           )}
 
-          <View>
+          {/* Form card */}
+          <View style={s.card}>
             <Controller
               control={control}
               name="smart_card_number"
@@ -358,62 +369,66 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
             />
 
             {showProgress && (
-              <View style={tw`flex-row items-center gap-2`}>
-                <ActivityIndicator animating size="small" aria-label="Reading card number" />
-                <Text variant="labelSmall" style={tw`text-xs text-gray-500`}>
-                  Verifying card number
-                </Text>
+              <View style={s.progressRow}>
+                <ActivityIndicator animating size="small" color={BLUE} aria-label="Reading card number" />
+                <Text style={s.progressText}>Verifying card number</Text>
               </View>
             )}
 
             {values.customer_name && (
-              <View style={tw`flex-row items-center gap-1.5`}>
+              <View style={s.verifiedRow}>
                 <VerifiedBadge />
-                <Text variant="titleSmall" style={tw`text-primary-600`}>
-                  {values.customer_name}
-                </Text>
+                <Text style={s.verifiedText}>{values.customer_name}</Text>
               </View>
             )}
-          </View>
 
-          <DropdownMenuField
-            label="Period"
-            placeholder="Select your period"
-            name="period"
-            control={control}
-            data={cableSubPeriods}
-          />
-          <DropdownMenuField
-            label="Package"
-            placeholder={cablePackages.length === 0 ? "No packages available" : "Select your package"}
-            name="package"
-            control={control}
-            data={cablePackages}
-            onDataSelect={(plan) => {
-              reset({
-                ...values,
-                ...plan,
-              });
-            }}
-          />
-          <View style={tw`mb-5`}>
-            <NairaInput name="plan_amount" control={control} isDisabled />
-            <WalletBalanceHelper {...walletValidation} />
-          </View>
-        </View>
+            <DropdownMenuField
+              label="Period"
+              placeholder="Select your period"
+              name="period"
+              control={control}
+              data={cableSubPeriods}
+            />
+            <DropdownMenuField
+              label="Package"
+              placeholder={cablePackages.length === 0 ? "No packages available" : "Select your package"}
+              name="package"
+              control={control}
+              data={cablePackages}
+              onDataSelect={(plan) => {
+                reset({
+                  ...values,
+                  ...plan,
+                });
+              }}
+            />
 
-        <View style={tw`pb-4 pt-1`}>
-          <Button
-            style={tw`w-full rounded-full`}
-            contentStyle={tw`py-2`}
-            labelStyle={tw`text-white text-center text-base font-bold`}
-            disabled={isProcessing || !walletValidation.canPay}
-            onPress={openBottomSheet}
-            mode="contained">
-            {!readyToPay ? "Verify" : "Proceed"}
-          </Button>
+            <View style={s.amountWrap}>
+              <NairaInput name="plan_amount" control={control} isDisabled />
+              <WalletBalanceHelper {...walletValidation} />
+            </View>
+          </View>
         </View>
       </ScrollableView>
+
+      {/* Footer button */}
+      <View style={s.footer}>
+        <TouchableOpacity
+          style={[s.btn, (isProcessing || !walletValidation.canPay) && s.btnDisabled]}
+          onPress={openBottomSheet}
+          disabled={isProcessing || !walletValidation.canPay}
+          activeOpacity={0.85}
+        >
+          <View style={s.btnInner}>
+            <MaterialCommunityIcons
+              name={!readyToPay ? "shield-check-outline" : "arrow-right-circle-outline"}
+              size={20}
+              color="#fff"
+            />
+            <Text style={s.btnText}>{!readyToPay ? "Verify" : "Proceed"}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <BottomSheetModal
         ref={bottomSheet}
@@ -427,6 +442,43 @@ export default function TVSubscriptionScreen({ navigation }: Props) {
       />
       <PleaseWaitModal visible={isFetching} />
       <TransactionErrorSheet />
-    </Screen>
+    </View>
+   
+  
+
   );
 }
+
+const s = StyleSheet.create({
+   root:   { flex: 1, backgroundColor: "#f8f9fb" },
+  header:          { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  backBtn:         { width: 36, height: 36, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
+  headerText:      { flex: 1 },
+  headerTitle:     { fontSize: 17, fontWeight: "800", color: BRAND },
+  headerSub:       { fontSize: 12, color: "#6b7280", marginTop: 2 },
+
+  providerRow:     { flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginBottom: 16 },
+  providerCard:    { padding: 12, borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 14, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
+  providerCardActive: { borderColor: BLUE, borderWidth: 2, backgroundColor: "#EEF3FF" },
+
+  errorBanner:     { backgroundColor: "#fef2f2", padding: 14, borderRadius: 12, marginBottom: 16 },
+  errorBannerText: { fontSize: 13, color: "#374151" },
+  errorBannerBtn:  { marginTop: 6, alignSelf: "flex-start" },
+  errorBannerBtnText: { fontSize: 13, fontWeight: "700", color: BLUE },
+
+  card:            { backgroundColor: "#fff", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#f0f0f0", gap: 4 },
+
+  progressRow:     { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  progressText:    { fontSize: 12, color: "#6b7280" },
+
+  verifiedRow:     { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  verifiedText:    { fontSize: 14, fontWeight: "700", color: BLUE },
+
+  amountWrap:      { marginTop: 8 },
+
+  footer:          { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
+  btn:             { backgroundColor: BLUE, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+  btnDisabled:     { opacity: 0.45 },
+  btnInner:        { flexDirection: "row", alignItems: "center", gap: 8 },
+  btnText:         { fontSize: 16, fontWeight: "700", color: "#fff" },
+});

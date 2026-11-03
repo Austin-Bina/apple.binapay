@@ -247,11 +247,11 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
         {/* USD wallet + Account Details row */}
         <View style={s.cardMidRow}>
           <View>
-            <Text style={s.usdLabel}>USD Wallet</Text>
+            <Text style={s.usdLabel}>USD</Text>
             <Text style={s.usdValue}>
 
              {/*} {balanceVisible ? `$${formattedBalance(nairaInUsd, "", 2)}` : "$ ••••"}*/}
-              {balanceVisible ? `$${formattedBalance(cryptoUsdBalance, "", 2)}` : "$ ••••"}
+              {balanceVisible ? `$${formattedBalance(nairaInUsd, "", 2)}` : "$ ••••"}
 
             </Text>
           </View>
@@ -270,8 +270,8 @@ dispatch(authSliceActions.fetchUserProfileSilent()); // fire immediately
         <View style={s.cardActions}>
           <TouchableOpacity
   style={s.cardActionBtn}
-  onPress={() => //setShowWithdrawSheet(true)
- navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_NAIRA })
+  onPress={() => setShowWithdrawSheet(true)
+// navigation.navigate(SCREENS.WITHDRAW_MONEY, { screen: SCREENS.WITHDRAW_NAIRA })
   }>
   <MaterialCommunityIcons name="send" size={18} color={GRADIENT_START} />
   <Text style={s.cardActionText}>Send Money</Text>

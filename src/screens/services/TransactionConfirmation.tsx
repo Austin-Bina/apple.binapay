@@ -79,6 +79,13 @@ export default function TransactionConfirmationScreen({ navigation, route }: Pro
     setPin(prev => prev.slice(0, -1));
   };
 
+  const handleForgotPin = async () => {
+  const { navigate } = await getNavigate();
+  navigate(SCREENS.MAIN, {
+    screen: "Menu",
+    params: { screen: SCREENS.CHANGE_PIN },
+  });
+};
   // ── Auto-submit when 4 digits entered ────────────────────────────────────
   useEffect(() => {
     if (pin.length === MAX_LENGTH) {
@@ -339,9 +346,9 @@ const txnData = pendingTransaction?.data as any;
 )}
 
         {/* Forgot PIN */}
-        <TouchableOpacity style={s.forgotBtn} activeOpacity={0.7}>
-          <Text style={s.forgotText}>Forgot PIN?</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={s.forgotBtn} activeOpacity={0.7} onPress={handleForgotPin}>
+  <Text style={s.forgotText}>Forgot PIN?</Text>
+</TouchableOpacity>
       </View>
 
       {/* Numpad */}

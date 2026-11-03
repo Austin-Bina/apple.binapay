@@ -53,7 +53,7 @@ export default function ServicesStack() {
       <Stack.Screen name="Confirm Transaction" component={TransactionConfirmationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Electricity Bill" component={ElectricityPurchaseScreen}options={{ headerShown: false }} />
       <Stack.Screen name="Education" options={{ headerShown: false }} component={EducationStack} />
-      <Stack.Screen name="TV Subscription" component={TVSubscriptionScreen} />
+      <Stack.Screen name="TV Subscription" component={TVSubscriptionScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Convert Crypto" component={ConvertCryptoWrapper} options={{ headerShown: false }} />   
  </Stack.Navigator>
   );

@@ -4,6 +4,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 export type Bank = {
   name: string;
   code: string;
+  logo_url?: string | null;
 };
 
 export type ResolveAccountResponse = {
@@ -15,6 +16,7 @@ export type ResolveAccountResponse = {
 export type WithdrawalFeeSettings = {
   fee_type: "flat" | "percent";
   fee_amount: number;
+  stamp_duty: number;
   min_withdrawal: number;
   max_withdrawal: number;
 };
@@ -83,6 +85,7 @@ export const fundsApi = createApi({
       transformResponse: (res: any) => ({
         fee_type:       res.fee_type,
         fee_amount:     res.fee_amount,
+        stamp_duty:     res.stamp_duty,
         min_withdrawal: res.min_withdrawal,
         max_withdrawal: res.max_withdrawal,
       }),

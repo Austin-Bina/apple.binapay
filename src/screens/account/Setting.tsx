@@ -196,7 +196,7 @@ const verificationLabel =
           <MenuRow
             icon={<MaterialCommunityIcons name="headset" size={18} color={BLUE} />}
             title="Help & Support"
-            onPress={() => navigation.navigate(SCREENS.SUPPORT_STACK, { screen: SCREENS.DEPARTMENT_AND_HISTORY_TAB })}
+            onPress={() => navigation.navigate(SCREENS.SUPPORT_STACK, { screen: SCREENS.SUPPORT_HUB  })}
           />
           <MenuRow
             icon={<MaterialCommunityIcons name="shield-lock-outline" size={18} color={BLUE} />}

@@ -4,7 +4,7 @@ import { Text } from "react-native-paper";
 import BottomSheetModal from "./BottomSheet/BottomSheet";
 import { BottomSheetModalMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { scale, vs } from "react-native-size-matters";
-import { Phone, MessageCircle, ChevronRight, Headset } from "lucide-react-native";
+import { Phone, MessageCircle, ChevronRight, Send,  Headset } from "lucide-react-native";
 import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
 import { SCREENS } from "@constants/screens";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -92,7 +92,7 @@ export default function ContactSupportModal({ show, hide, contact }: Props) {
         screen: SCREENS.HOME,
         params: {
           screen: SCREENS.SUPPORT_STACK,
-          params: { screen: SCREENS.DEPARTMENT_AND_HISTORY_TAB },
+          params: { screen: SCREENS.SUPPORT_HUB  },
         },
       });
     }, 150);
@@ -134,17 +134,17 @@ export default function ContactSupportModal({ show, hide, contact }: Props) {
 
           <View style={s.divider} />
 
-         {/* WhatsApp */}
-        <TouchableOpacity style={s.optionRow} onPress={handleWhatsApp} activeOpacity={0.7}>
-          <View style={[s.iconWrap, { backgroundColor: "#E7F9EF" }]}>
-            <MessageCircle width={22} height={22} color="#25D366" />
-          </View>
-          <View style={s.optionText}>
-            <Text style={s.optionTitle}>WhatsApp</Text>
-            <Text style={s.optionSub}>Join BinaPay WhatsApp Channel</Text>
-          </View>
-          <ChevronRight width={20} height={20} color="#9ca3af" />
-        </TouchableOpacity>
+       {/* Telegram (still using the whatsapp field under the hood) */}
+<TouchableOpacity style={s.optionRow} onPress={handleWhatsApp} activeOpacity={0.7}>
+  <View style={[s.iconWrap, { backgroundColor: "#E8F4FD" }]}>
+    <Send width={22} height={22} color="#229ED9" />
+  </View>
+  <View style={s.optionText}>
+    <Text style={s.optionTitle}>Telegram</Text>
+    <Text style={s.optionSub}>Join BinaPay's Telegram Community</Text>
+  </View>
+  <ChevronRight width={20} height={20} color="#9ca3af" />
+</TouchableOpacity>
 
       </View>
     </BottomSheetModal>

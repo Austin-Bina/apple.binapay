@@ -41,6 +41,7 @@ interface AuthState extends EntityState<User, string> {
   adminNgnUsdtRate?: { buy: number; sell: number } | null;
    spreadConfig?: { spreadType: string; spread: number } | null;
    noSpreadSymbols?: string[];
+   cryptoDepositFee?: { type: string; value: number } | null;
 }
 
 interface LoginResponse {
@@ -109,6 +110,11 @@ updateSpreadConfig(state, action: PayloadAction<{ spreadType: string; spread: nu
     updateAdminNgnUsdtRate(state, action: PayloadAction<{ buy: number; sell: number }>) {
   state.adminNgnUsdtRate = action.payload;
 },
+
+updateCryptoDepositFee(state, action: PayloadAction<{ type: string; value: number }>) {
+  state.cryptoDepositFee = action.payload;
+},
+
  updateContact(state, action: PayloadAction<{ phone?: string; whatsapp?: string; support_url?: string }>) {
       state.contact = action.payload;
     },
@@ -234,57 +240,6 @@ const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
   },
 );
 
-
-/**
- * Justice code thats working
- */
-/*
-const fetchUserProfile = createTypedAsyncThunk<Pick<UserProfile, "user">>(
-  "auth/fetchUserProfile",
-  async (_, { rejectWithValue, dispatch }) => {
-    try {
-      const response = await API.get(route("account.getProfile"));
-      const { profile, account_summary } = response.data as AccountSummary;
-
-      const { recent_transactions } = account_summary;
-
-      dispatch(
-        accountTransactionsApi.util.updateQueryData("fetchRecentTransactions", undefined, (draft) => {
-          draft.transactions = recent_transactions;
-        }),
-      );
-
-      return {
-        user: profile,
-      };
-    } catch (error: any) {
-      const axiosError = error as AxiosError<any>;
-      const { response } = axiosError;
-
-      if (response?.status === 401) {
-        dispatch(authSliceActions.logout());
-
-        return rejectWithValue(response.data);
-      }
-
-      if (response) {
-        const { message } = response.data;
-
-        if (message && typeof message === "string") {
-          showToast({ message });
-        } else {
-          showToast({ message: "We had issues processing your request. Please try again." });
-        }
-
-        return rejectWithValue(response.data);
-      }
-
-      return rejectWithValue(error.response?.data);
-    }
-  },
-);
-
-*/
 const fetchAppConfig = createTypedAsyncThunk(
   "auth/fetchAppConfig",
   async (_, { dispatch, getState }) => {
@@ -319,7 +274,7 @@ const fetchAppConfig = createTypedAsyncThunk(
 
       // Rates and spread
       if (rateRes.status === "fulfilled" && rateRes.value.data.success) {
-         const { ngn_usdt_rate, spread, no_spread_symbols } = rateRes.value.data.data;
+        const { ngn_usdt_rate, spread, no_spread_symbols, crypto_deposit_fee_type, crypto_deposit_fee } = rateRes.value.data.data;
         if (ngn_usdt_rate) {
           dispatch(authSliceActions.updateAdminNgnUsdtRate({
             buy: parseFloat(ngn_usdt_rate.buy_rate),
@@ -332,9 +287,16 @@ const fetchAppConfig = createTypedAsyncThunk(
             spread: parseFloat(spread.spread),
           }));
         }
+        if (crypto_deposit_fee_type !== undefined && crypto_deposit_fee !== undefined) {
+  dispatch(authSliceActions.updateCryptoDepositFee({
+    type: crypto_deposit_fee_type,
+    value: parseFloat(crypto_deposit_fee),
+  }));
+}
         if (Array.isArray(no_spread_symbols)) {
     dispatch(authSliceActions.updateNoSpreadSymbols(no_spread_symbols));
   }
+  
       }
 
       // Bank accounts

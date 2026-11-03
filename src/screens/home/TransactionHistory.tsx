@@ -32,7 +32,6 @@ const BLUE      = "#2563EB";
 const CATEGORY_TABS = [
   { label: "All",           value: "",                  icon: "view-grid-outline" },
   { label: "Money Transfer",value: "naira_withdrawal",  icon: "bank-transfer" },
-  { label: "Crypto",        value: "crypto_withdrawal", icon: "bitcoin" },
   { label: "Bills",         value: "electricity_bill",  icon: "lightning-bolt-outline" },
   { label: "Data",          value: "data_purchase",     icon: "wifi" },
   { label: "Airtime",       value: "airtime_purchase",  icon: "phone-outline" },

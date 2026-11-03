@@ -30,11 +30,10 @@ function Router() {
 
   const isAuthenticated = isLoggedIn && !isNewUser;
 
-  console.log("Router mounted. isLoggedIn:", isLoggedIn, "| isNewUser:", isNewUser, "| isAuthenticated:", isAuthenticated);
 
   return (
     <KeyboardAvoidingView style={tw`flex-1`} behavior={Platform.OS === "ios" ? "padding" : undefined} enabled>
-      <NavigationContainer ref={navigationRef}>
+      
         <BottomSheetModalProvider>
           <Stack.Navigator
              initialRouteName={isAuthenticated ? SCREENS.MAIN : SCREENS.ONBOARDING}
@@ -80,7 +79,7 @@ function Router() {
             />
           </Stack.Navigator>
         </BottomSheetModalProvider>
-      </NavigationContainer>
+     
       <PleaseWaitModal visible={isFetchingProfile} />
     </KeyboardAvoidingView>
   );

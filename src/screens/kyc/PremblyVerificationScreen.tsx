@@ -93,27 +93,21 @@ export default function PremblyVerificationScreen({ navigation, route }: Props) 
        const sessionResult = await API.post("/api/v1/kyc/prembly-session-status", { session_id: sessionId });
       const sessionStatus = sessionResult.data;
 
-      if (idType === "nin") {
-  // NIN verification does NOT require face verification.
+    if (idType === "nin") {
   if (sessionStatus.id_verified) {
-    navigation.navigate(SCREENS.VERIFICATION_SUCCESS, {
-      tier: 2,
-    });
+    navigation.replace(SCREENS.VERIFICATION_SUCCESS, { kind: "nin" });
+
   } else {
     showError(
       "NIN Verification Failed",
       "Your NIN could not be verified. Please ensure you entered the correct NIN and try again."
     );
   }
-
   return;
 }
 
-// BVN verification requires both ID verification and face verification.
 if (sessionStatus.face_verified && sessionStatus.id_verified) {
-  navigation.navigate(SCREENS.VERIFICATION_SUCCESS, {
-    tier: 1,
-  });
+ navigation.replace(SCREENS.VERIFICATION_SUCCESS, { kind: "bvn" });
 } else if (sessionStatus.face_verified && !sessionStatus.id_verified) {
   showError(
     "BVN Verification Failed",
@@ -213,16 +207,23 @@ if (sessionStatus.face_verified && sessionStatus.id_verified) {
         {/* Steps */}
         <View style={s.stepsCard}>
           <Text style={s.stepsTitle}>What happens next</Text>
-          {[
-            { icon: "numeric-1-circle-outline", text: "We verify your number is unique and valid" },
-            { icon: "numeric-2-circle-outline", text: "Secure face scan opens automatically" },
-            { icon: "numeric-3-circle-outline", text: "Verification completes instantly" },
-          ].map((step) => (
-            <View key={step.text} style={s.stepRow}>
-              <MaterialCommunityIcons name={step.icon as any} size={20} color={BLUE} />
-              <Text style={s.stepText}>{step.text}</Text>
-            </View>
-          ))}
+          {(idType === "bvn"
+  ? [
+      { icon: "numeric-1-circle-outline", text: "We verify your BVN is unique and valid" },
+      { icon: "numeric-2-circle-outline", text: "Secure face scan opens automatically" },
+      { icon: "numeric-3-circle-outline", text: "Verification completes instantly" },
+    ]
+  : [
+      { icon: "numeric-1-circle-outline", text: "We verify your NIN is unique and valid" },
+      { icon: "numeric-2-circle-outline", text: "Secure verification page opens" },
+      { icon: "numeric-3-circle-outline", text: "Verification completes instantly" },
+    ]
+).map((step) => (
+  <View key={step.text} style={s.stepRow}>
+    <MaterialCommunityIcons name={step.icon as any} size={20} color={BLUE} />
+    <Text style={s.stepText}>{step.text}</Text>
+  </View>
+))}
         </View>
 
         {/* Security note */}

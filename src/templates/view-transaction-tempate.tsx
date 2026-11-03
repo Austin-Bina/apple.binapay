@@ -138,8 +138,7 @@ export default function generateHTMLContent(pageData: PrintProps): string {
           <span class="fee-total-value">${fmt(totalCharged)}</span>
         </div>
       </div>`;
-
-  } else {
+} else {
     // Non-transfer: electricity token highlight or generic details
     const rows = pageData.receiptType === "electricity" && pageData.hasHighlighted
       ? [...(pageData.transactionDetails ?? []), { label: "Token", value: pageData.hasHighlighted.value, highlight: true, copyable: true }]

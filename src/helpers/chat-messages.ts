@@ -16,18 +16,24 @@ export function linkifyText(text: string): string {
   });
 }
 
-export function getGiftedChatMessages(messages: SupportChat[], currentUser: User, toUser: SystemUser): IMessage[] {
+export function getGiftedChatMessages(
+  messages: SupportChat[],
+  currentUser: User,
+  toUser: SystemUser,
+  aiStaffId?: string,
+): IMessage[] {
   if (!messages) {
     return [];
   }
 
   return messages.map((item) => {
-    const { id, date, customer, message, clientStatuses } = item;
+    const { id, date, customer, message, clientStatuses, staff_id } = item as any;
 
     const msgCreatedAt = new Date(parseInt(date, 10) * 1000);
     const message_id = id;
 
     const isFromCurrentUser = customer === ChatOwner.Yes;
+    const isAiReply = !isFromCurrentUser && !!aiStaffId && String(staff_id) === String(aiStaffId);
 
     const user = {
       _id: isFromCurrentUser ? currentUser.id : toUser.id,
@@ -47,6 +53,7 @@ export function getGiftedChatMessages(messages: SupportChat[], currentUser: User
       user,
       createdAt: msgCreatedAt,
       ...statuses,
+      isAiReply, // custom field — not part of GiftedChat's IMessage type, but harmless; read via `currentMessage as any` on the receiving end
     };
   });
 }

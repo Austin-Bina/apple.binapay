@@ -23,12 +23,7 @@ const BRAND = "#1E3A8A";
 type PayoutMode = "crypto" | "wallet" | "bank";
 
 const OPTIONS: { mode: PayoutMode; icon: string; title: string; sub: string }[] = [
-  {
-    mode: "crypto",
-    icon: "wallet-outline",
-    title: "Keep as Crypto",
-    sub: "Deposits stay as crypto — nothing happens automatically",
-  },
+ 
   {
     mode: "wallet",
     icon: "autorenew",

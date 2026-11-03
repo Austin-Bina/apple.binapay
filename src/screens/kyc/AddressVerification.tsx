@@ -112,7 +112,7 @@ export default function AddressVerificationScreen({ navigation }: Props) {
       message: "Document submitted! We'll review and verify within 24 hours.",
     });
 
-    navigation.navigate(SCREENS.VERIFICATION_HUB);
+    navigation.replace(SCREENS.VERIFICATION_SUCCESS, { kind: "address" });
   } catch (error: any) {
     showToast({
       variant: "error",

@@ -54,6 +54,25 @@ type HistoryResponse = {
   };
 };
 
+type SupportHubChip = {
+  id: string;
+  emoji: string;
+  label: string;
+  department_id: string;
+  prompt: string;
+  answer: string
+};
+
+type SupportHubResponse = {
+  notice: { icon: string; text: string } | null;
+  chips: SupportHubChip[];
+  links: { blog: string; website: string; x: string; videos: string };
+  review: { ios: string; android: string };
+};
+
+type SupportFaq = { question: string; answer: string };
+type FaqResponse = { faqs: SupportFaq[] };
+type AiConfigResponse = { staff_id: string };
 export const supportApi = createApi({
   reducerPath: "supportApi",
   baseQuery: axiosBaseQuery(),
@@ -160,6 +179,54 @@ export const supportApi = createApi({
           : { total_tickets: 0, pages: 0, tickets: [] },
       }),
     }),
+
+        getSupportHub: builder.query<SupportHubResponse, void>({
+      query: () => ({
+        url: route("support.hub"),
+        method: "GET",
+      }),
+    }),
+
+        getSupportFaqs: builder.query<FaqResponse, void>({
+      query: () => ({
+        url: route("support.faqs"),
+        method: "GET",
+      }),
+    }),
+
+
+        getAiConfig: builder.query<AiConfigResponse, void>({
+      query: () => ({
+        url: route("support.aiConfig"),
+        method: "GET",
+      }),
+    }),
+    markAiResolution: builder.mutation<{ ai_enabled: boolean }, { ticketId: string; resolved: boolean }>({
+      query: ({ ticketId, resolved }) => ({
+        url: route("support.aiResolution", { params: { ticket_id: ticketId } }),
+        method: "POST",
+        data: { resolved },
+      }),
+      invalidatesTags: ["Support Chat"],
+    }),
+
+    aiAutoReply: builder.mutation<{ responded: boolean; answer?: string }, { ticketId: string; message: string }>({
+      query: ({ ticketId, message }) => ({
+        url: route("support.aiReply", { params: { ticket_id: ticketId } }),
+        method: "POST",
+        data: { message },
+      }),
+      invalidatesTags: ["Support Chat"],
+    }),
+
+    getAiState: builder.query<{ ai_enabled: boolean }, { ticketId: string }>({
+  query: ({ ticketId }) => ({
+    url: route("support.aiState", { params: { ticket_id: ticketId } }),
+    method: "GET",
+  }),
+}),
+
+
   }),
 });
 
@@ -170,6 +237,12 @@ export const {
   useAddResponseMutation,
   useListConversationsQuery,
   useGetSupportHistoryQuery,
+  useGetSupportHubQuery,
   useInitiateSupportMutation,
   usePrefetch: useSupportPrefetch,
+  useGetSupportFaqsQuery,
+  useGetAiConfigQuery,
+  useMarkAiResolutionMutation,
+  useAiAutoReplyMutation,
+  useGetAiStateQuery,
 } = supportApi;

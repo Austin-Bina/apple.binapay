@@ -2,9 +2,9 @@
   "expo": {
     "name": "BinaPay",
     "slug": "BinaPay",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
-    "runtimeVersion": "1.0.4",
+    "runtimeVersion": "1.0.5",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -19,7 +19,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.binapay",
-      "buildNumber": "11",
+      "buildNumber": "12",
       "googleServicesFile": "./GoogleService-Info.plist",
       "entitlements": {
         "aps-environment": "production"
@@ -34,11 +34,12 @@
         "NSContactsUsageDescription": "Allow access to your contacts so you can conveniently choose a recipient's phone number. Your contact list is not uploaded or stored on our servers."      }
     },
     "android": {
-      "versionCode": 25,
-      
+      "versionCode": 37,
+       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+        
       },
       "package": "com.binapay",
       "permissions": [
@@ -87,6 +88,11 @@
       "@react-native-community/datetimepicker",
       "expo-web-browser"
     ],
+
+    "updates": {
+      "url": "https://u.expo.dev/04587ef0-aa8f-4c87-bcde-e89b00d969a3"
+    },
+
     "owner": "binapay_app",
     "extra": {
       "router": {},

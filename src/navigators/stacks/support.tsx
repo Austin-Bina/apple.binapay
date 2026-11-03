@@ -13,7 +13,9 @@ import SupportHistory from "@screens/support/SupportHistory";
 import { resetNavigationToDashboard } from "@utils/navigation";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { SupportTabsParamList } from "@navigators/types";
-import { options } from "node_modules/axios/index.cjs";
+import SupportHub from "@screens/support/SupportHub";
+import SupportFaq from "@screens/support/SupportFaq";
+import SupportAssistant from "@screens/support/SupportAssistant";
 
 const Stack = createNativeStackNavigator<SupportParamList>();
 const Tabs = createMaterialTopTabNavigator<SupportTabsParamList>();
@@ -21,7 +23,7 @@ const Tabs = createMaterialTopTabNavigator<SupportTabsParamList>();
 export default function SupportStack() {
   return (
     <Stack.Navigator
-      initialRouteName={SCREENS.DEPARTMENT_AND_HISTORY_TAB}
+      initialRouteName={SCREENS.SUPPORT_HUB}
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -42,23 +44,30 @@ export default function SupportStack() {
           </View>
         ),
       })}>
+
+      {/* Department-only tab — kept purely as the fallback StartConversation
+          redirects to when no department was supplied. No longer anyone's
+          main entry point. */}
       <Stack.Screen name={SCREENS.DEPARTMENT_AND_HISTORY_TAB} options={{ headerShown: false }}>
         {() => (
           <Tabs.Navigator initialRouteName={SCREENS.SUPPORT_DEPARTMENT} screenOptions={{}}>
             <Tabs.Screen
               name={SCREENS.SUPPORT_DEPARTMENT}
-              options={{
-                title: "Department",
-                
-              }}
+              options={{ title: "Department" }}
               component={SupportDepartment}
             />
-            <Tabs.Screen name={SCREENS.SUPPORT_HISTORY} component={SupportHistory} />
           </Tabs.Navigator>
         )}
       </Stack.Screen>
+
       <Stack.Screen name={SCREENS.SUPPORT_START_CONVERSATION} component={StartConversation} options={{ headerShown: false }} />
       <Stack.Screen name={SCREENS.SUPPORT_CHAT} options={{ headerShown: false }} component={ChatSupport} />
+      <Stack.Screen name={SCREENS.SUPPORT_HUB} component={SupportHub} options={{ headerShown: false }} />
+      <Stack.Screen name={SCREENS.SUPPORT_FAQ} component={SupportFaq} options={{ headerShown: false }} />
+      <Stack.Screen name={SCREENS.SUPPORT_ASSISTANT} component={SupportAssistant} options={{ headerShown: false }} />
+
+      {/* Now a plain stack screen — no tab bar, no swipe, normal back behavior */}
+      <Stack.Screen name={SCREENS.SUPPORT_HISTORY} component={SupportHistory} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

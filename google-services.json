@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "706138083450",
+    "project_id": "binapay-b6486",
+    "storage_bucket": "binapay-b6486.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706138083450:android:132fa2c712d27add30abc3",
+        "android_client_info": {
+          "package_name": "com.binapay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRS5LbnhgVuFeWgG8IQVNvEGl6413jzoE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

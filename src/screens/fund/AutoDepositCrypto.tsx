@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Image, Platform, KeyboardAvoidingView,
@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
-import { selectUser } from "@store/selectors/auth";
+import { selectUser, selectNgnUsdtRateWithSpread } from "@store/selectors/auth";
 import { formattedBalance } from "@utils/transactionutils";
 import { showToast } from "@helpers/toast";
 import API from "@lib/api";
@@ -18,13 +18,25 @@ import { CryptoAsset as UserCryptoAsset, Network as UserNetwork } from "@type/us
 import { useSubmitCryptoDepositMutation } from "@store/redux-api/fundsApi";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
 import { resetNavigationToDashboard } from "@utils/navigation";
+import { resolveIconUrl } from "@utils/resolveIconUrl";
+import { getCompactRateDisplay } from "@helpers/rate-display-compact";
+import { State } from "@store/main";
+
+// Same default the Convert screen uses when the store has none.
+const DEFAULT_NO_SPREAD_SYMBOLS = ["USDT", "USDC"];
 
 const BRAND = "#1E3A8A";
 const BLUE  = "#2563EB";
 
+// The search icon only appears when the asset list is longer than this.
+const ASSET_SEARCH_THRESHOLD = 6;
+
 export default function DepositCryptoScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const user   = useSelector(selectUser);
+
+  // ── NGN rate from Redux ────────────────────────────────────────────────────
+  const ngnUsdtRate = useSelector(selectNgnUsdtRateWithSpread);
 
   const [cryptoAssets, setCryptoAssets]         = useState<UserCryptoAsset[]>(user?.crypto_assets ?? []);
   const [networks, setNetworks]                 = useState<UserNetwork[]>([]);
@@ -34,6 +46,8 @@ export default function DepositCryptoScreen({ navigation }: any) {
   const [txHash, setTxHash]                     = useState("");
   const [amount, setAmount]                     = useState("");
   const [showAssetPicker, setShowAssetPicker]   = useState(false);
+  const [showAssetSearch, setShowAssetSearch]   = useState(false);
+  const [assetSearch, setAssetSearch]           = useState("");
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [dynamicDepositNetworks, setDynamicDepositNetworks] = useState<Record<string, Record<string, boolean>>>({});
@@ -41,17 +55,59 @@ export default function DepositCryptoScreen({ navigation }: any) {
 
   const [submitDeposit, { isLoading }] = useSubmitCryptoDepositMutation();
   const BASE_URL = process.env.EXPO_PUBLIC_BINAPAY_BASE_URL;
+  const [isDynamicNetwork, setIsDynamicNetwork] = useState(false);
 
   const selectedAsset    = cryptoAssets.find(a => a.symbol === selectedSymbol);
   const selectedNetwork  = networks.find(n => n.id === selectedNetworkId);
   const networkKey       = selectedNetwork?.name?.toUpperCase() ?? "";
-  const isDynamicNetwork = selectedSymbol && networkKey
-    ? !!dynamicDepositNetworks[selectedSymbol]?.[networkKey]
-    : false;
   const canShowTxHash = !!selectedSymbol && !!selectedNetworkId && !!walletAddress && !isDynamicNetwork;
   const balance = parseFloat(
     (user?.wallet_balances as any)?.[selectedSymbol?.toLowerCase()]?.balance ?? "0"
   );
+
+  // ── Naira rate the user is credited at (same logic as the Convert screen) ──
+  // A deposit is crypto → NGN. The shared helper handles buy/sell rates,
+  // the spread, and the no-spread symbols (USDT/USDC by default).
+  const noSpreadSymbols = useSelector(
+    (st: State) => st.auth.noSpreadSymbols ?? DEFAULT_NO_SPREAD_SYMBOLS
+  );
+
+  const livePrices = useMemo(() => {
+    const map: Record<string, number> = {};
+    cryptoAssets.forEach((a) => {
+      if (a.price_usd) map[a.symbol.toUpperCase()] = a.price_usd;
+    });
+    return map;
+  }, [cryptoAssets]);
+
+  const depositRateText = useMemo(() => {
+    if (!selectedSymbol || !ngnUsdtRate?.buy) return "";
+    return getCompactRateDisplay({
+      fromSymbol: selectedSymbol,
+      toSymbol: "ngn",
+      livePrices,
+      liveNgnUsdt: ngnUsdtRate,
+      spreadConfig: { spreadType: ngnUsdtRate.spreadType, spread: ngnUsdtRate.spread },
+      noSpreadSymbols,
+    });
+  }, [selectedSymbol, livePrices, ngnUsdtRate, noSpreadSymbols]);
+
+  // ── Asset search ──────────────────────────────────────────────────────────
+  const showSearchIcon = cryptoAssets.length > ASSET_SEARCH_THRESHOLD;
+
+  const filteredAssets = useMemo(() => {
+    const q = assetSearch.trim().toLowerCase();
+    if (!q) return cryptoAssets;
+    return cryptoAssets.filter(
+      (a) => a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
+    );
+  }, [cryptoAssets, assetSearch]);
+
+  const closeAssetPicker = () => {
+    setShowAssetPicker(false);
+    setShowAssetSearch(false);
+    setAssetSearch("");
+  };
 
   // ── Fetch app config ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -96,24 +152,39 @@ export default function DepositCryptoScreen({ navigation }: any) {
   }, [selectedSymbol]);
 
   // ── Wallet address when network changes ───────────────────────────────────
+  const [loadingAddress, setLoadingAddress] = useState(false);
+
   useEffect(() => {
-    if (!selectedAsset || !selectedNetwork) { setWalletAddress(""); return; }
-    if (isDynamicNetwork) {
-      API.defaults.baseURL = BASE_URL;
-      API.post("/api/v1/crypto-deposit-address", {
-        currency:          selectedAsset.symbol,
-        crypto_network_id: selectedNetwork.id,
-        network:
-          selectedNetwork.nowpayments_network_slug ??
-          selectedNetwork.network_slug ??
-          selectedNetwork.name.toLowerCase(),
-      })
-        .then(res => setWalletAddress(res.data.address))
-        .catch(() => setWalletAddress(""));
+    if (!selectedAsset || !selectedNetwork) {
+      setWalletAddress("");
+      setIsDynamicNetwork(false);
       return;
     }
-    setWalletAddress(selectedNetwork.deposit_address);
-  }, [selectedSymbol, selectedNetworkId, networks]);
+
+    let cancelled = false;
+    setWalletAddress("");     // clear immediately — never show a stale/previous address
+    setLoadingAddress(true);
+
+    API.defaults.baseURL = BASE_URL;
+    API.post("/api/v1/crypto-deposit-address", {
+      currency: selectedAsset.symbol,
+      crypto_network_id: selectedNetwork.id,
+    })
+      .then(res => {
+        if (cancelled) return;
+        setWalletAddress(res.data.address);
+        setIsDynamicNetwork(!!res.data.is_dynamic);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWalletAddress("");
+          setIsDynamicNetwork(false);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingAddress(false); });
+
+    return () => { cancelled = true; };
+  }, [selectedNetworkId]);
 
   const copyAddress = async () => {
     if (!walletAddress) return;
@@ -133,7 +204,7 @@ export default function DepositCryptoScreen({ navigation }: any) {
         crypto_network_id: String(selectedNetworkId),
         tx_hash:           txHash,
         amount:            amount ? parseFloat(amount) : null,
-         source:            Platform.OS === "ios" ? "ios" : "android",
+        source:            Platform.OS === "ios" ? "ios" : "android",
       }).unwrap();
       setSuccessModalVisible(true);
     } catch (err: any) {
@@ -146,10 +217,10 @@ export default function DepositCryptoScreen({ navigation }: any) {
     <View style={[s.root]}>
 
       {/* ── Header ── */}
-        <ScreenHeader
+      <ScreenHeader
         title="Deposit Crypto"
         subtitle="Receive cryptocurrency into your BinaPay wallet"
-       onBack={() => resetNavigationToDashboard()}
+        onBack={() => resetNavigationToDashboard()}
         rightIcon="help-circle-outline"
       />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
@@ -164,7 +235,7 @@ export default function DepositCryptoScreen({ navigation }: any) {
 
           <TouchableOpacity
             style={s.selectorCard}
-            onPress={() => setShowAssetPicker(v => !v)}
+            onPress={() => (showAssetPicker ? closeAssetPicker() : setShowAssetPicker(true))}
             activeOpacity={0.8}
           >
             {selectedAsset?.icon_url ? (
@@ -189,31 +260,69 @@ export default function DepositCryptoScreen({ navigation }: any) {
           {/* Asset dropdown */}
           {showAssetPicker && (
             <View style={s.dropdown}>
-              {cryptoAssets.map(asset => (
-                <TouchableOpacity
-                  key={asset.id}
-                  style={s.dropdownItem}
-                  onPress={() => { setSelectedSymbol(asset.deposit_enabled ? asset.symbol : ""); setShowAssetPicker(false); }}
-                  disabled={!asset.deposit_enabled}
-                >
-                  {asset.icon_url ? (
-                    <Image source={{ uri: asset.icon_url }} style={s.assetIcon} />
+              {/* Search row — only when the list is long */}
+              {showSearchIcon && (
+                <View style={s.assetSearchRow}>
+                  {showAssetSearch ? (
+                    <TextInput
+                      style={s.assetSearchInput}
+                      placeholder="Search by name or symbol"
+                      placeholderTextColor="#9ca3af"
+                      value={assetSearch}
+                      onChangeText={setAssetSearch}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoFocus
+                    />
                   ) : (
-                    <View style={[s.assetIcon, { backgroundColor: "#e5e7eb", justifyContent: "center", alignItems: "center" }]}>
-                      <Text style={s.assetIconText}>{asset.symbol.slice(0, 2).toUpperCase()}</Text>
+                    <Text style={s.assetSearchHint}>Select asset</Text>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (showAssetSearch) setAssetSearch("");
+                      setShowAssetSearch((v) => !v);
+                    }}
+                    style={s.assetSearchBtn}
+                  >
+                    <MaterialCommunityIcons
+                      name={showAssetSearch ? "close" : "magnify"}
+                      size={18}
+                      color="#6b7280"
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <ScrollView style={{ maxHeight: 420 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                {filteredAssets.length === 0 && (
+                  <Text style={s.assetEmpty}>No assets found</Text>
+                )}
+                {filteredAssets.map(asset => (
+                  <TouchableOpacity
+                    key={asset.id}
+                    style={s.dropdownItem}
+                    onPress={() => { setSelectedSymbol(asset.deposit_enabled ? asset.symbol : ""); closeAssetPicker(); }}
+                    disabled={!asset.deposit_enabled}
+                  >
+                    {asset.icon_url ? (
+                      <Image source={{ uri: asset.icon_url }} style={s.assetIcon} />
+                    ) : (
+                      <View style={[s.assetIcon, { backgroundColor: "#e5e7eb", justifyContent: "center", alignItems: "center" }]}>
+                        <Text style={s.assetIconText}>{asset.symbol.slice(0, 2).toUpperCase()}</Text>
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.dropdownName, !asset.deposit_enabled && { color: "#9ca3af" }]}>
+                        {asset.symbol.toUpperCase()}{!asset.deposit_enabled ? "  (Disabled)" : ""}
+                      </Text>
+                      <Text style={s.dropdownSub}>{asset.name}</Text>
                     </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.dropdownName, !asset.deposit_enabled && { color: "#9ca3af" }]}>
-                      {asset.symbol.toUpperCase()}{!asset.deposit_enabled ? "  (Disabled)" : ""}
-                    </Text>
-                    <Text style={s.dropdownSub}>{asset.name}</Text>
-                  </View>
-                  {selectedSymbol === asset.symbol && (
-                    <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
-                  )}
-                </TouchableOpacity>
-              ))}
+                    {selectedSymbol === asset.symbol && (
+                      <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           )}
 
@@ -228,12 +337,17 @@ export default function DepositCryptoScreen({ navigation }: any) {
                 activeOpacity={0.8}
               >
                 <View style={[s.networkIconWrap, { backgroundColor: selectedNetworkId !== null ? "#EEF3FF" : "#f3f4f6" }]}>
-                  <MaterialCommunityIcons name="swap-horizontal" size={18} color={selectedNetworkId !== null ? BLUE : "#9ca3af"} />
+                  {selectedNetwork && resolveIconUrl(selectedNetwork.icon_url) ? (
+                    <Image source={{ uri: resolveIconUrl(selectedNetwork.icon_url) }} style={{ width: 22, height: 22, borderRadius: 11 }} />
+                  ) : (
+                    <MaterialCommunityIcons name="swap-horizontal" size={18} color={selectedNetworkId !== null ? BLUE : "#376fd1"} />
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   {selectedNetwork ? (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                       <Text style={[s.networkName, { color: BRAND }]}>{selectedNetwork.name}</Text>
+                      <Text style={s.networkSlug}>{selectedNetwork.network_slug}</Text>
                       {!!dynamicDepositNetworks[selectedSymbol]?.[selectedNetwork.name.toUpperCase()] && (
                         <View style={s.recommendedBadge}>
                           <Text style={s.recommendedText}>Recommended</Text>
@@ -259,18 +373,22 @@ export default function DepositCryptoScreen({ navigation }: any) {
                         onPress={() => { setSelectedNetworkId(network.id); setShowNetworkPicker(false); }}
                       >
                         <View style={[s.networkIconWrap, { backgroundColor: "#f3f4f6" }]}>
-                          <MaterialCommunityIcons name="swap-horizontal" size={16} color="#9ca3af" />
+                          {resolveIconUrl(network.icon_url) ? (
+                            <Image source={{ uri: resolveIconUrl(network.icon_url) }} style={{ width: 20, height: 20, borderRadius: 10 }} />
+                          ) : (
+                            <MaterialCommunityIcons name="swap-horizontal" size={16} color="#9ca3af" />
+                          )}
                         </View>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                             <Text style={s.dropdownName}>{network.name}</Text>
+                            <Text style={s.networkSlug}>{network.network_slug}</Text>
                             {isDynamic && (
                               <View style={s.recommendedBadge}>
                                 <Text style={s.recommendedText}>Recommended</Text>
                               </View>
                             )}
                           </View>
-            
                         </View>
                         {selectedNetworkId === network.id && (
                           <MaterialCommunityIcons name="check-circle" size={16} color={BLUE} />
@@ -306,29 +424,29 @@ export default function DepositCryptoScreen({ navigation }: any) {
                 <Text style={s.qrCaption}>Send only {selectedSymbol.toUpperCase()} · {selectedNetwork?.name ?? ""} network</Text>
               </View>
 
-            {/* ── Step 3: Transaction Hash (manual only) ── */}
-          {canShowTxHash && (
-            <>
-              <Text style={[s.stepLabel, { marginTop: 12 }]}>3. Transaction Hash (TxID)</Text>
-              <Text style={s.txHashSub}>After sending, paste your transaction hash below.</Text>
-              <View style={s.inputCard}>
-                <TextInput
-                  style={s.txInput}
-                  placeholder="Paste transaction hash here"
-                  placeholderTextColor="#9ca3af"
-                  value={txHash}
-                  onChangeText={t => setTxHash(t.replace(/\s+/g, ""))}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <MaterialCommunityIcons name="line-scan" size={18} color="#9ca3af" />
-              </View>
-              <Text style={s.explorerHint}>
-                Find your transaction hash on the blockchain explorer.
-              </Text>
-            </>
-          )}
-          
+              {/* ── Step 3: Transaction Hash (manual only) ── */}
+              {canShowTxHash && (
+                <>
+                  <Text style={[s.stepLabel, { marginTop: 12 }]}>3. Transaction Hash (TxID)</Text>
+                  <Text style={s.txHashSub}>After sending, paste your transaction hash below.</Text>
+                  <View style={s.inputCard}>
+                    <TextInput
+                      style={s.txInput}
+                      placeholder="Paste transaction hash here"
+                      placeholderTextColor="#9ca3af"
+                      value={txHash}
+                      onChangeText={t => setTxHash(t.replace(/\s+/g, ""))}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <MaterialCommunityIcons name="line-scan" size={18} color="#9ca3af" />
+                  </View>
+                  <Text style={s.explorerHint}>
+                    Find your transaction hash on the blockchain explorer.
+                  </Text>
+                </>
+              )}
+
               {/* Minimum deposit */}
               {!canShowTxHash && minimumDeposit[selectedSymbol]?.[networkKey] != null && (
                 <View style={s.minDepositCard}>
@@ -344,15 +462,16 @@ export default function DepositCryptoScreen({ navigation }: any) {
                 </View>
               )}
 
-              {/* Instructions — collapsed to essentials */}
+              {/* Instructions */}
               <View style={s.instructionsCard}>
                 <View style={s.instructionsHeader}>
                   <MaterialCommunityIcons name="information-outline" size={15} color={BLUE} />
                   <Text style={s.instructionsTitle}>Deposit Instructions</Text>
                 </View>
                 {[
-                  `Send only ${selectedSymbol.toUpperCase()} to this address.`,
-                  `Ensure the network is ${selectedNetwork?.name ?? ""}.`,
+                  depositRateText
+                    ? `You'll receive the naira equivalent of your ${selectedSymbol.toUpperCase()} deposit at ${depositRateText} per ${selectedSymbol.toUpperCase()}.`
+                    : `You'll receive the naira equivalent of your ${selectedSymbol.toUpperCase()} deposit at the current rate.`,
                   isDynamicNetwork
                     ? "Deposits are credited automatically after confirmation."
                     : "Submit your transaction hash after sending.",
@@ -366,8 +485,6 @@ export default function DepositCryptoScreen({ navigation }: any) {
               </View>
             </>
           ) : null}
-
-         
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -429,6 +546,13 @@ const s = StyleSheet.create({
   dropdownName:      { fontSize: 13, fontWeight: "600", color: "#111827" },
   dropdownSub:       { fontSize: 11, color: "#6b7280", marginTop: 1 },
 
+  // Asset search
+  assetSearchRow:    { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  assetSearchHint:   { flex: 1, fontSize: 11, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5 },
+  assetSearchInput:  { flex: 1, fontSize: 13, color: "#111827", paddingVertical: 6 },
+  assetSearchBtn:    { padding: 6 },
+  assetEmpty:        { fontSize: 12, color: "#9ca3af", textAlign: "center", padding: 16 },
+
   // Network card
   networkCard:       { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#fff", borderRadius: 12, padding: 10, borderWidth: 1.5, borderColor: "#f0f0f0", marginBottom: 6 },
   networkCardActive: { borderColor: BLUE, backgroundColor: "#f0f7ff" },
@@ -437,6 +561,7 @@ const s = StyleSheet.create({
   networkFee:        { fontSize: 11, color: "#6b7280", marginTop: 1 },
   recommendedBadge:  { backgroundColor: "#dcfce7", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8 },
   recommendedText:   { fontSize: 10, fontWeight: "600", color: "#16a34a" },
+  networkSlug:       { fontSize: 10, fontWeight: "600", color: "#6b7280", backgroundColor: "#f3f4f6", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 },
 
   autoCreditBanner:  { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 10, padding: 10, marginBottom: 8 },
   autoCreditTitle:   { fontSize: 12, fontWeight: "700", color: "#15803d", marginBottom: 1 },

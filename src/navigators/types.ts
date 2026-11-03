@@ -123,6 +123,7 @@ export type HomeStackScreenProps<T extends keyof HomeParamList> = NativeStackScr
 
 // Add these new param lists:
 export type AssetsParamList = {
+    [SCREENS.RATES]: undefined;       
   [SCREENS.ASSETS_OVERVIEW]: undefined;
   [SCREENS.CRYPTO_ASSETS]: undefined;
 };
@@ -229,7 +230,10 @@ export type KYCParamList = {
   [SCREENS.PHONE_VERIFICATION]: undefined;
   [SCREENS.VERIFICATION_OTP]: { phone: string };
   [SCREENS.BVN_NIN_CHOICE]: undefined;
-  [SCREENS.VERIFICATION_SUCCESS]: { tier: 1 | 2 };
+  [SCREENS.VERIFICATION_SUCCESS]: {
+  kind: "bvn" | "nin" | "address";
+  tier?: 1 | 2; // optional, kept so old navigate calls don't break
+};
   [SCREENS.UPGRADE_TIER2]: undefined;
   [SCREENS.FACE_VERIFICATION]: undefined;
   [SCREENS.ADDRESS_VERIFICATION]: undefined;
@@ -262,11 +266,16 @@ export type SupportParamList = {
     departmentId: string;
     initialMessage?: string;
   };
+  
   [SCREENS.SUPPORT_CHAT]: {
     ticketId: string;
     departmentId: string;
   };
   // [SCREENS.SUPPORT_HISTORY]: undefined;
+  [SCREENS.SUPPORT_HUB]: undefined;
+  [SCREENS.SUPPORT_FAQ]: undefined;
+  [SCREENS.SUPPORT_ASSISTANT]: undefined;
+  [SCREENS.SUPPORT_HISTORY]: undefined;
 };
 export type SupportTabsParamList = {
   [SCREENS.SUPPORT_DEPARTMENT]: { 

@@ -122,6 +122,12 @@ kyc: {
         conversations: "/api/v1/support/conversations/:conversationId",
         history: "/api/v1/support/tickets",
         contact: "/api/v1/contact-settings",
+         hub: "/api/v1/support/hub",
+  aiConfig: "/api/v1/support/ai-config",
+  aiReply: "/api/v1/support/ticket/:ticket_id/ai-reply",
+  aiResolution: "/api/v1/support/ticket/:ticket_id/ai-resolution",
+  faqs: "/api/v1/support/faqs",
+  aiState: "/api/v1/support/ticket/:ticket_id/ai-state",
       },
       resources: {
         checkAppVersion: "/api/v1/resources/check-app-version",

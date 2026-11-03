@@ -31,6 +31,8 @@ import BottomSheetModal from "@components/ui/modals/preview-transaction";
 import { zodPhoneValidation } from "@utils/phone";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getSavedMeter, saveMeter } from "@utils/savedMeter";
+
 
 const BRAND = "#1E3A8A";
 const BLUE  = "#2563EB";
@@ -69,7 +71,7 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
     ifOlderThan: MAX_CACHE_AGE_SEC,
   });
 
-  const { control, watch, trigger, setValue, setError, clearErrors, handleSubmit } = useForm<FormValues>({
+const { control, watch, trigger, setValue, getValues, setError, clearErrors, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
     defaultValues: {
@@ -87,6 +89,18 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
   const isPrepaid   = values.meter_type === METER_TYPE.PREPAID;
 
   useEffect(() => { prefetchSystemSettings(); }, []);
+
+  useEffect(() => {
+  let active = true;
+  getSavedMeter(user?.id).then((saved) => {
+    // don't overwrite if the user already started typing
+    if (!active || !saved || getValues("meter_number")) return;
+    setValue("provider", saved.provider);
+    setValue("meter_type", saved.meter_type);
+    setValue("meter_number", saved.meter_number);
+  });
+  return () => { active = false; };
+}, [user?.id]);
 
   const walletValidation = useWalletBalanceValidation({
     amount: parseFloat(values.amount) || 0,
@@ -128,6 +142,12 @@ export default function ElectricityPurchaseScreen({ navigation }: Props) {
           setValue("customer_name", payload.name);
           setValue("customer_address", payload.address);
           setReadyToPay(true);
+
+          saveMeter(user?.id, {
+    provider: values.provider,
+    meter_type: values.meter_type,
+    meter_number: values.meter_number,
+  });
         }
       } catch (error) {
         const axiosError = error as AxiosError<any>;

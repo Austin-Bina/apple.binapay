@@ -26,9 +26,13 @@ import { Dialog, Button, Portal, Text } from "react-native-paper";
 import { getNavigate } from "@utils/navigation";
 import PushTokenBootstrap from "@helpers/PushTokenBootstrap";
 import PushNotificationManager from "@helpers/pushnotificationmanager";
-
-
-
+import { useInactivityLock } from "@hooks/useInactivityLock";
+import AppLockScreen from "@screens/AppLockScreen";
+import { useTypedSelector } from "@store/common";
+import { selectUser } from "@store/selectors/auth";
+import { NavigationContainer } from "@react-navigation/native";
+import { navigationRef } from "@utils/navigation";
+import LockStack from "@navigators/stacks/LockStack";
 /*SplashScreen.preventAutoHideAsync();  */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -40,6 +44,12 @@ Notifications.setNotificationHandler({
   }),
 });
 
+function AppGate() {
+  const { isLocked, unlock } = useInactivityLock();
+  const user = useTypedSelector(selectUser);
+  if (isLocked && user) return <LockStack onUnlock={unlock} />;
+  return <Router />;
+}
 
 function BinaPay() {
 
@@ -79,46 +89,6 @@ function BinaPay() {
   return () => sub.remove();
 }, []);
 
-/**
- * justice version
- */
-  /*
-  useEffect(() => {
-    const handleBackButtonClick = () => {
-      setExitDialogVisible(true);
-      return true;
-    };
-
-    BackHandler.addEventListener("hardwareBackPress", handleBackButtonClick);
-
-    async function prepare() {
-      try {
-        // Make any API calls you need to do here
-        // Bootstrap app
-        // Artificially delay for two seconds to simulate a slow loading
-        // experience. Please remove this if you copy and paste the code!
-        // await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        setAppIsReady(true);
-      }
-    }
-
-    prepare();
-
-    return () => {
-      BackHandler.removeEventListener(
-        "hardwareBackPress",
-        handleBackButtonClick
-      );
-    };
-  }, []);
-*/
-
-/**
- * my version
- */
 useEffect(() => {
   const handleBackButtonClick = () => {
     setExitDialogVisible(true);
@@ -185,7 +155,9 @@ useEffect(() => {
               <AppVersionProvider>
                  <PushNotificationManager>
                 <NoNetworkBar/>
-                <Router/>
+                 <NavigationContainer ref={navigationRef}>
+                <AppGate/>
+                </NavigationContainer>
                 <Portal>
                   <Dialog
                     visible={exitDialogVisible}

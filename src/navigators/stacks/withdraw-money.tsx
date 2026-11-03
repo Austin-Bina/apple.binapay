@@ -5,7 +5,7 @@ import { TouchableRipple } from "react-native-paper";
 import { View } from "react-native"; 
 import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import { SCREENS } from "@constants/screens";
-import WithdrawCryptoScreen from "@screens/withdraw/WithdrawCrypto";
+import WithdrawCryptoScreen from "@screens/withdraw/AutoWithdrawCrypto";
 import WithdrawNairaScreen from "@screens/withdraw/WithdrawNaira";
 import BankAccountsScreen from "@screens/account/BankAccounts";
 import { CryptoProvider } from "../../screens/home/CryptoContext";

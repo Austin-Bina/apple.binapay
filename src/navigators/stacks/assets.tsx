@@ -7,13 +7,13 @@ import LeftArrowIcon from "@assets/icons/arrow-left.svg";
 import { SCREENS } from "@constants/screens";
 import AssetsOverviewScreen from "@screens/assets/AssetsOverview";
 import CryptoAssets from "@screens/home/CryptoAssets";
-
+import RatesScreen from "@screens/assets/RatesScreen";   // new import
 const Stack = createNativeStackNavigator<AssetsParamList>();
 
 export default function AssetsStack() {
   return (
     <Stack.Navigator
-      initialRouteName={SCREENS.ASSETS_OVERVIEW}
+       initialRouteName={SCREENS.RATES}      // was SCREENS.ASSETS_OVERVIEW
       screenOptions={({ navigation }) => ({
         headerStyle: tw`bg-white`,
         headerShadowVisible: false,
@@ -27,6 +27,7 @@ export default function AssetsStack() {
           </TouchableRipple>
         ),
       })}>
+        <Stack.Screen name={SCREENS.RATES} component={RatesScreen} />
       <Stack.Screen name={SCREENS.ASSETS_OVERVIEW} component={AssetsOverviewScreen} />
       <Stack.Screen name={SCREENS.CRYPTO_ASSETS} component={CryptoAssets} />
     </Stack.Navigator>

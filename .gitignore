@@ -148,3 +148,6 @@ yarn-error.*
 *.keystore
 @austinbina__BinaPay-keystore-backup.zip
 BinaPay-keystore-credentials.md
+
+# Firebase Admin key - server secret, never commit
+*firebase-adminsdk*.json

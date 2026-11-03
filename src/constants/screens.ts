@@ -112,6 +112,7 @@ P2P_EDIT_AD: "P2P Edit Ad",
  
 
 ASSETS_OVERVIEW: "Assets Overview",
+RATES: "Rates",
 ACTIVITY: "Activity",
 
   // Support
@@ -119,6 +120,9 @@ ACTIVITY: "Activity",
   SUPPORT_DEPARTMENT: "Support Department",
   SUPPORT_START_CONVERSATION: "Start Conversation",
   SUPPORT_CHAT: "Support Chat",
+  SUPPORT_HUB: "Support Hub",
+  SUPPORT_FAQ: "Support FAQ",
+  SUPPORT_ASSISTANT: "Support Assistant",
   SUPPORT_HISTORY: "Support History",
   DEPARTMENT_AND_HISTORY_TAB: "Department and History Tab",
 

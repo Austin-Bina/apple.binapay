@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, FlatList, Modal, KeyboardAvoidingView, Platform,
+  ScrollView, FlatList, Modal, KeyboardAvoidingView, Platform, Vibration, Image,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +23,9 @@ import {
 } from "@store/redux-api/fundsApi";
 import { saveRecentRecipient, getRecentRecipients, RecentRecipient } from "@helpers/recentRecipients";
 import ScreenHeader from "@components/ui/shared/ScreenHeader";
+import { getNavigate } from "@utils/navigation";
+import { SCREENS } from "@constants/screens";
+import { Image as RNImage } from "react-native";
 
 const BRAND = "#1E3A8A";
 const BLUE  = "#2563EB";
@@ -49,6 +52,19 @@ function looksLikePhoneNumber(accountNumber: string): boolean {
   return PHONE_PREFIXES_10.includes(prefix);
 }
 
+function bankInitials(name: string): string {
+  const letters = name
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-zA-Z]/g, ""))
+    .filter(Boolean);
+
+  return letters
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 type Step = "form" | "review";
 
 export default function WithdrawNairaScreen({ navigation }: any) {
@@ -67,10 +83,12 @@ export default function WithdrawNairaScreen({ navigation }: any) {
   const [showBankModal, setShowBankModal] = useState(false);
   const [isResolvingName, setIsResolvingName] = useState(false);
 
-  const [showOtpSheet, setShowOtpSheet] = useState(false);
-  const [otp, setOtp]                   = useState("");
-  const [otpSent, setOtpSent]           = useState(false);
-  const [otpCooldown, setOtpCooldown]   = useState(0);
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
+const [pin, setPin]           = useState("");
+const [pinError, setPinError] = useState("");
+const [shake, setShake]       = useState(false);
+const [failCount, setFailCount] = useState(0);
+const [cooldown, setCooldown]   = useState(0);
   const [showSuccess, setShowSuccess]   = useState(false);
 
   const { data: bankListData, isLoading: loadingBanks } = useGetBankListQuery();
@@ -95,6 +113,7 @@ export default function WithdrawNairaScreen({ navigation }: any) {
   const parsedAmount  = parseFloat(amount) || 0;
   const fee           = feeType === "percent" ? (parsedAmount * feeAmount) / 100 : feeAmount;
   const amountToReceive = parsedAmount - fee;
+  const stampDuty = parsedAmount >= 10000 ? (feeSettings?.stamp_duty ?? 0) : 0;
 
   const [recentRecipients, setRecentRecipients] = useState<RecentRecipient[]>([]);
   const [showRecent, setShowRecent]             = useState(false);
@@ -102,12 +121,6 @@ export default function WithdrawNairaScreen({ navigation }: any) {
   useEffect(() => {
   getRecentRecipients().then(setRecentRecipients);
 }, []);
-
-  useEffect(() => {
-    if (otpCooldown <= 0) return;
-    const t = setInterval(() => setOtpCooldown(c => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(t);
-  }, [otpCooldown]);
 
   useEffect(() => {
   if (accountNumber.length === 10 && selectedBank) handleResolve();
@@ -138,6 +151,7 @@ export default function WithdrawNairaScreen({ navigation }: any) {
     if (parsedAmount < minAmount) return `Minimum is ₦${minAmount.toLocaleString()}`;
     if (maxAmount && parsedAmount > maxAmount) return `Maximum is ₦${maxAmount.toLocaleString()}`;
     if (parsedAmount + fee > parseFloat(nairaBalance)) return "Insufficient balance (including fee)";
+    if (parsedAmount + fee + stampDuty > parseFloat(nairaBalance)) return "Insufficient balance (including fees)";
     return null;
   };
 
@@ -147,14 +161,38 @@ export default function WithdrawNairaScreen({ navigation }: any) {
     setStep("review");
   };
 
-  const handleSendOtp = async () => {
-    try {
-      await sendOtp().unwrap();
-      setOtpSent(true); setOtpCooldown(30);
-      showToast({ variant: "success", message: "OTP sent to your email." });
-    } catch { showToast({ variant: "error", message: "Failed to send OTP." }); }
-  };
+  useEffect(() => {
+  if (cooldown <= 0) return;
+  const t = setInterval(() => {
+    setCooldown(c => {
+      const next = Math.max(0, c - 1);
+      if (next === 0) setPinError("");
+      return next;
+    });
+  }, 1000);
+  return () => clearInterval(t);
+}, [cooldown]);
 
+const triggerPinError = (message: string) => {
+  const next = failCount + 1;
+  setFailCount(next);
+  setPinError(message);
+  setShake(true);
+  Vibration.vibrate(200);
+  if (next >= 3) setCooldown(30);
+  setTimeout(() => { setShake(false); setPin(""); }, 500);
+};
+
+const handleForgotPin = async () => {
+  setShowConfirmSheet(false);
+  setPin("");
+  setPinError("");
+  const { navigate } = await getNavigate();
+  navigate(SCREENS.MAIN, {
+    screen: "Menu",
+    params: { screen: SCREENS.CHANGE_PIN },
+  });
+};
 
   const matchedRecipient = useMemo(() =>
   accountNumber.length >= 4
@@ -163,61 +201,57 @@ export default function WithdrawNairaScreen({ navigation }: any) {
   [accountNumber, recentRecipients]
 );
 
-  const handleSubmit = async (authMethod: "otp" | "biometric") => {
-    let payload: any = {
-      amount: parsedAmount,
-      account_number: accountNumber,
-      bank_code: selectedBank!.code,
-      account_name: accountName,
-      bank_name: selectedBank!.name,
-      narration: narration || undefined,
-      idempotency_key: idempotencyKey.current,
-    };
-    if (authMethod === "otp") {
-      if (!otp) { showToast({ variant: "warning", message: "Enter your OTP." }); return; }
-      payload.otp = otp;
-    } else {
-      try {
-        await authenticateWithBiometrics();
-        payload.biometric = true;
-        payload.biometric_token = Crypto.randomUUID();
-      } catch { showToast({ variant: "error", message: "Biometric failed." }); return; }
-    }
-    try {
-      const result = await submitWithdrawal(payload).unwrap();
-      if (result.success) { setShowSuccess(true); await dispatch(authSliceActions.fetchUserProfile()); 
-      await saveRecentRecipient({
+ const handleSubmit = async (authMethod: "pin" | "biometric", enteredPin?: string) => {
+  let payload: any = {
+    amount: parsedAmount,
     account_number: accountNumber,
-    account_name:   accountName,
-    bank_name:      selectedBank!.name,
-    bank_code:      selectedBank!.code,
-      });
-
-      }
-
-    } catch (e: any) {
-  const status  = e?.status;
-  const data    = e?.data;
-
-  // Extract the most descriptive message available
-  const message = data?.error ?? data?.message ?? data?.errors?.[0] ?? "Transfer failed. Please try again.";
-
-  if (status === 403) {
-    showToast({ variant: "warning", message: "Your account is blocked. Contact support." });
-  } else if (status === 422) {
-    // Covers: OTP invalid, verification required, KYC per-transaction limit
-    showToast({ variant: "warning", message });
-    if (message.toLowerCase().includes("otp")) setOtp("");
-  } else if (status === 400) {
-    // Covers: minimum withdrawal, maximum withdrawal, insufficient balance
-    showToast({ variant: "warning", message });
-  } else if (status === 429) {
-    showToast({ variant: "warning", message: "Too many attempts. Please wait and try again." });
-  } else {
-    showToast({ variant: "error", message });
-  }
-}
+    bank_code: selectedBank!.code,
+    account_name: accountName,
+    bank_name: selectedBank!.name,
+    narration: narration || undefined,
+    idempotency_key: idempotencyKey.current,
   };
+  if (authMethod === "pin") {
+    payload.pin = enteredPin;
+  } else {
+    try {
+      await authenticateWithBiometrics();
+      payload.biometric = true;
+      payload.biometric_token = Crypto.randomUUID();
+    } catch { showToast({ variant: "error", message: "Biometric failed." }); return; }
+  }
+  try {
+    const result = await submitWithdrawal(payload).unwrap();
+    if (result.success) {
+      setShowSuccess(true);
+      await dispatch(authSliceActions.fetchUserProfile());
+      await saveRecentRecipient({
+        account_number: accountNumber,
+        account_name: accountName,
+        bank_name: selectedBank!.name,
+        bank_code: selectedBank!.code,
+      });
+    }
+  } catch (e: any) {
+    const status = e?.status;
+    const data = e?.data;
+    const message = data?.error ?? data?.message ?? data?.errors?.pin?.[0] ?? data?.errors?.[0] ?? "Transfer failed. Please try again.";
+
+    if (authMethod === "pin" && status === 422) {
+      triggerPinError(message);
+      return;
+    }
+    if (status === 403) {
+      showToast({ variant: "warning", message: "Your account is blocked. Contact support." });
+    } else if (status === 422 || status === 400) {
+      showToast({ variant: "warning", message });
+    } else if (status === 429) {
+      showToast({ variant: "warning", message: "Too many attempts. Please wait and try again." });
+    } else {
+      showToast({ variant: "error", message });
+    }
+  }
+};
 
   const quickAmounts = [1000, 5000, 10000];
 
@@ -236,8 +270,12 @@ export default function WithdrawNairaScreen({ navigation }: any) {
             <ReciptRow label="Recipient">
               <View style={s.recipientRow}>
                 <View style={s.recipientAvatar}>
-                  <Text style={s.recipientInitials}>{accountName.split(" ").map(w => w[0]).slice(0, 2).join("")}</Text>
-                </View>
+  {selectedBank?.logo_url ? (
+    <RNImage source={{ uri: selectedBank.logo_url }} style={{ width: 36, height: 36 }} resizeMode="cover" />
+  ) : (
+    <Text style={s.recipientInitials}>{accountName.split(" ").map(w => w[0]).slice(0, 2).join("")}</Text>
+  )}
+</View>
                 <View>
                   <Text style={s.recipientName}>{accountName}</Text>
                   <Text style={s.recipientMeta}>{accountNumber} • {selectedBank?.name}</Text>
@@ -271,8 +309,12 @@ export default function WithdrawNairaScreen({ navigation }: any) {
           <View style={s.reviewCard}>
             <View style={s.recipientRow}>
               <View style={s.recipientAvatar}>
-                <Text style={s.recipientInitials}>{accountName.split(" ").map(w => w[0]).slice(0, 2).join("")}</Text>
-              </View>
+  {selectedBank?.logo_url ? (
+    <RNImage source={{ uri: selectedBank.logo_url }} style={{ width: 36, height: 36 }} resizeMode="cover" />
+  ) : (
+    <Text style={s.recipientInitials}>{accountName.split(" ").map(w => w[0]).slice(0, 2).join("")}</Text>
+  )}
+</View>
               <View>
                 <Text style={s.recipientName}>{accountName}</Text>
                 <Text style={s.recipientMeta}>{accountNumber}</Text>
@@ -282,13 +324,29 @@ export default function WithdrawNairaScreen({ navigation }: any) {
           </View>
 
           <Text style={s.sectionLabel}>Transfer Details</Text>
-          <View style={s.reviewCard}>
-           <ReviewRow label="Amount Sent"         value={`₦${parsedAmount.toLocaleString()}`} />
-            <ReviewRow label="Transaction Fee"     value={fee === 0 ? "Free 🎉" : `₦${fee.toLocaleString()}`} />
-            <View style={s.reviewRowDivider} />
-            <ReviewRow label="Total Deducted"      value={`₦${(parsedAmount + fee).toLocaleString()}`} bold />
-          </View>
+<View style={s.reviewCard}>
+  <View style={[s.reviewRow, s.reviewRowBorder]}>
+    <Text style={s.reviewLabel}>Amount Sent</Text>
+    <Text style={s.reviewValue}>₦{parsedAmount.toLocaleString()}</Text>
+  </View>
 
+  <View style={[s.reviewRow, s.reviewRowBorder]}>
+    <Text style={s.reviewLabel}>Transaction Fee</Text>
+    <Text style={s.reviewValue}>{fee === 0 ? "Free 🎉" : `₦${fee.toLocaleString()}`}</Text>
+  </View>
+
+  {stampDuty > 0 && (
+    <View style={[s.reviewRow, s.reviewRowBorder]}>
+      <Text style={s.reviewLabel}>Stamp Duty</Text>
+      <Text style={s.reviewValue}>₦{stampDuty.toLocaleString()}</Text>
+    </View>
+  )}
+
+  <View style={[s.reviewRow, s.reviewHighlightRow]}>
+    <Text style={s.reviewLabel}>Total Deducted</Text>
+    <Text style={s.reviewValueHighlight}>₦{(parsedAmount + fee + stampDuty).toLocaleString()}</Text>
+  </View>
+</View>
           {narration ? (
             <>
               <Text style={s.sectionLabel}>Narration</Text>
@@ -305,34 +363,81 @@ export default function WithdrawNairaScreen({ navigation }: any) {
           </View>
         </ScrollView>
 
-        {showOtpSheet ? (
-          <View style={[s.otpSheet, { paddingBottom: insets.bottom + 16 }]}>
-            <Text style={s.otpTitle}>Confirm Transfer</Text>
-            <Text style={s.otpSub}>Enter the OTP sent to your email.</Text>
-            <View style={s.otpRow}>
-              <TextInput style={s.otpInput} placeholder="Enter OTP" value={otp} onChangeText={setOtp} keyboardType="number-pad" maxLength={6} />
-              <TouchableOpacity style={[s.sendOtpBtn, (sendingOtp || otpCooldown > 0) && s.disabledBtn]} onPress={handleSendOtp} disabled={sendingOtp || otpCooldown > 0}>
-                <Text style={s.sendOtpText}>{otpCooldown > 0 ? `Resend (${otpCooldown}s)` : otpSent ? "Resend" : "Send OTP"}</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={[s.confirmBtn, (!otp || submitting) && s.disabledBtn]} onPress={() => handleSubmit("otp")} disabled={!otp || submitting} activeOpacity={1} >
-              <Text style={s.confirmBtnText}>{submitting ? "Processing..." : "Confirm & Send"}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.biometricRow} onPress={() => handleSubmit("biometric")}>
-              <MaterialCommunityIcons name="fingerprint" size={36} color={BLUE} />
-              <Text style={s.biometricLabel}>Use Biometric Instead</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.cancelLink} onPress={() => setShowOtpSheet(false)}>
-              <Text style={s.cancelLinkText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
-            <TouchableOpacity style={s.confirmBtn} onPress={() => setShowOtpSheet(true)}>
-              <Text style={s.confirmBtnText}>Confirm & Send</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+      {showConfirmSheet ? (
+  <View style={[s.confirmSheetFull, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={s.confirmLockWrap}>
+      <MaterialCommunityIcons name="shield-lock-outline" size={40} color={BLUE} />
+    </View>
+    <Text style={s.confirmTitle}>Enter PIN</Text>
+    <Text style={s.confirmSubtitle}>Enter your 4-digit transaction PIN{"\n"}to complete this withdrawal</Text>
+
+    <View style={[s.dotsRow, shake && s.dotsShake]}>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <View key={i} style={[s.dot, i < pin.length && s.dotFilled, pinError && s.dotError]} />
+      ))}
+    </View>
+
+    {!!pinError && <Text style={s.errorText}>{pinError}</Text>}
+    {cooldown > 0 && (
+      <Text style={s.cooldownText}>Too many failed attempts. Please wait {cooldown}s before retrying.</Text>
+    )}
+
+    <TouchableOpacity style={s.forgotBtn} activeOpacity={0.7} onPress={handleForgotPin}>
+      <Text style={s.forgotText}>Forgot PIN?</Text>
+    </TouchableOpacity>
+
+    <View style={s.numpad}>
+      {[["1","2","3"],["4","5","6"],["7","8","9"],["bio","0","del"]].map((row, ri) => (
+        <View key={ri} style={s.numpadRow}>
+       {row.map((key, ki) => {
+  if (key === "") return <View key={ki} style={s.numpadKey} />;
+  if (key === "bio") return (
+    <TouchableOpacity key={ki} style={s.numpadKey} onPress={() => handleSubmit("biometric")} disabled={submitting}>
+      <MaterialCommunityIcons name="fingerprint" size={30} color={BLUE} />
+    </TouchableOpacity>
+  );
+  if (key === "del") return (
+    <TouchableOpacity key={ki} style={s.numpadKey} onPress={() => { if (pinError) setPinError(""); setPin(p => p.slice(0, -1)); }} disabled={submitting || cooldown > 0}>
+      <MaterialCommunityIcons name="backspace-outline" size={22} color="#111827" />
+    </TouchableOpacity>
+  );
+  return (
+  <TouchableOpacity
+    key={ki}
+    style={s.numpadKey}
+    disabled={submitting || cooldown > 0}
+    onPress={() => {
+      if (pin.length >= 4 || cooldown > 0) return;
+      setPinError("");
+      const next = pin + key;
+      setPin(next);
+      if (next.length === 4) handleSubmit("pin", next);
+    }}
+  >
+    <Text style={s.numpadDigit}>{key}</Text>
+    <Text style={s.numpadHint}>
+      {["", "ABC", "DEF", "GHI", "JKL", "MNO", "PQRS", "TUV", "WXYZ", "", ""][parseInt(key)] ?? ""}
+    </Text>
+  </TouchableOpacity>
+);
+})}
+
+
+        </View>
+      ))}
+    </View>
+
+    <TouchableOpacity style={s.cancelLink} onPress={() => { setShowConfirmSheet(false); setPin(""); setPinError(""); }}>
+  <Text style={s.cancelLinkText}>Cancel Transaction</Text>
+</TouchableOpacity>
+  </View>
+) : (
+  <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
+    <TouchableOpacity style={s.confirmBtn} onPress={() => setShowConfirmSheet(true)}>
+      <Text style={s.confirmBtnText}>Confirm & Send</Text>
+    </TouchableOpacity>
+  </View>
+)}
       </View>
     );
   }
@@ -462,16 +567,15 @@ export default function WithdrawNairaScreen({ navigation }: any) {
               </View>
             </TouchableOpacity>
 
-            <View style={s.fieldDivider} />
-
-            {/* Account Name */}
-            <View style={s.fieldWrap}>
-              <Text style={s.fieldLabel}>Account Name</Text>
-              {isResolvingName
-                ? <Text style={s.resolving}>Verifying...</Text>
-                : <Text style={[s.fieldInput, !accountName && { color: "#9ca3af" }]}>{accountName || "—"}</Text>
-              }
-            </View>
+            {!!accountName && (
+  <>
+    <View style={s.fieldDivider} />
+    <View style={s.fieldWrap}>
+      <Text style={s.fieldLabel}>Account Name</Text>
+      <Text style={s.fieldInput}>{accountName}</Text>
+    </View>
+  </>
+)}
           </View>
 
             {/* Balance display — above amount card */}
@@ -515,7 +619,7 @@ export default function WithdrawNairaScreen({ navigation }: any) {
                   color={fee === 0 ? "#16a34a" : BRAND}
                     />
                    <Text style={[s.feePreviewText, fee === 0 && { color: "#16a34a" }]}>
-                   {fee === 0 ? "🎉 Free transfer — no fees!" : `Transaction fee: ₦${fee.toLocaleString()}`}
+                   {fee === 0 ? "🎉 Free transfer — no fees!" : `Fee: ₦${fee.toLocaleString()}`}
                    </Text>
                     </View>
                      )}
@@ -551,59 +655,59 @@ export default function WithdrawNairaScreen({ navigation }: any) {
       </View>
 
       {/* Bank modal */}
-      <Modal visible={showBankModal} animationType="slide" transparent>
-        <View style={s.modalOverlay}>
-          <View style={[s.bankModal, { paddingBottom: insets.bottom + 16 }]}>
-            <View style={s.modalHandle} />
-            <Text style={s.modalTitle}>Select Bank</Text>
-            <View style={s.searchWrap}>
-              <MaterialCommunityIcons name="magnify" size={16} color="#9ca3af" />
-              <TextInput style={s.searchInput} placeholder="Search bank..." placeholderTextColor="#9ca3af" value={bankSearch} onChangeText={setBankSearch} />
-            </View>
-            {loadingBanks ? <Text style={s.loadingText}>Loading banks...</Text> : (
-              <FlatList
-                data={filteredBanks}
-                keyExtractor={item => item.code}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item, index }) => {
-  const isPinned = PINNED_BANK_CODES.includes(item.code);
-  const prevWasPinned = index > 0 && PINNED_BANK_CODES.includes(filteredBanks[index - 1].code);
-  const showDivider = !isPinned && prevWasPinned && !bankSearch;
-
-  return (
-    <>
-      {showDivider && (
-        <View style={{ paddingHorizontal: 4, paddingVertical: 6 }}>
-         
-        </View>
-      )}
-      <TouchableOpacity
-        style={[s.bankItem, selectedBank?.code === item.code && s.bankItemActive,
-          isPinned && !bankSearch && { backgroundColor: "#EEF3FF" }
-        ]}
-        onPress={() => { setSelectedBank(item); setBankSearch(""); setShowBankModal(false); }}
-      >
-        <Text style={[s.bankItemText, selectedBank?.code === item.code && s.bankItemTextActive]}>
-          {item.name}
-        </Text>
-        {selectedBank?.code === item.code
-          ? <MaterialCommunityIcons name="check" size={16} color={BLUE} />
-          : isPinned && !bankSearch
-            ? <MaterialCommunityIcons name="star" size={13} color={BLUE} />
-            : null
-        }
+     <Modal visible={showBankModal} animationType="slide">
+  <View style={[s.bankScreen, { paddingTop: insets.top }]}>
+    <View style={s.bankScreenHeader}>
+      <Text style={s.modalTitle}>Select bank</Text>
+      <TouchableOpacity onPress={() => setShowBankModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <MaterialCommunityIcons name="close" size={22} color="#111827" />
       </TouchableOpacity>
-    </>
-  );
-}}
-              />
-            )}
-            <TouchableOpacity style={s.modalClose} onPress={() => setShowBankModal(false)}>
-              <Text style={s.modalCloseText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+    </View>
+    <View style={s.searchWrap}>
+      <MaterialCommunityIcons name="magnify" size={16} color="#9ca3af" />
+      <TextInput style={s.searchInput} placeholder="Search by bank name" placeholderTextColor="#9ca3af" value={bankSearch} onChangeText={setBankSearch} />
+    </View>
+    {loadingBanks ? <Text style={s.loadingText}>Loading banks...</Text> : (
+      <FlatList
+        data={filteredBanks}
+        keyExtractor={item => item.code}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 4 }}
+        renderItem={({ item, index }) => {
+          const isPinned = PINNED_BANK_CODES.includes(item.code);
+          const prevWasPinned = index > 0 && PINNED_BANK_CODES.includes(filteredBanks[index - 1].code);
+          const showDivider = !isPinned && prevWasPinned && !bankSearch;
+          return (
+            <>
+              {showDivider && <View style={{ paddingHorizontal: 4, paddingVertical: 6 }} />}
+              <TouchableOpacity
+  style={[s.bankItem, selectedBank?.code === item.code && s.bankItemActive, isPinned && !bankSearch && { backgroundColor: "#EEF3FF" }]}
+  onPress={() => { setSelectedBank(item); setBankSearch(""); setShowBankModal(false); }}
+>
+  <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 10 }}>
+   {item.logo_url ? (
+  <Image source={{ uri: item.logo_url }} style={s.bankItemLogo} />
+) : (
+  <View style={s.bankItemLogoFallback}>
+    <Text style={s.bankItemLogoFallbackText}>{bankInitials(item.name)}</Text>
+  </View>
+)}
+    <Text style={[s.bankItemText, selectedBank?.code === item.code && s.bankItemTextActive]}>{item.name}</Text>
+  </View>
+  {selectedBank?.code === item.code
+    ? <MaterialCommunityIcons name="check" size={16} color={BLUE} />
+    : isPinned && !bankSearch
+      ? <MaterialCommunityIcons name="star" size={13} color={BLUE} />
+      : null}
+</TouchableOpacity>
+            </>
+          );
+        }}
+      />
+    )}
+  </View>
+</Modal>
+
     </View>
   );
 }
@@ -678,17 +782,26 @@ const s = StyleSheet.create({
   secureTitle:       { fontSize: 12, fontWeight: "700", color: BRAND },
   secureSub:         { fontSize: 11, color: "#6b7280", marginTop: 2 },
 
-  otpSheet:          { backgroundColor: "#fff", borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 10 },
-  otpTitle:          { fontSize: 16, fontWeight: "700", color: BRAND, textAlign: "center", marginBottom: 4 },
-  otpSub:            { fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 14 },
-  otpRow:            { flexDirection: "row", gap: 8, marginBottom: 12 },
-  otpInput:          { flex: 1, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, textAlign: "center", letterSpacing: 4 },
-  sendOtpBtn:        { backgroundColor: BLUE, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, justifyContent: "center" },
-  sendOtpText:       { color: "#fff", fontWeight: "600", fontSize: 12 },
+  confirmSheet:      { backgroundColor: "#fff", borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 10 },
+confirmLockWrap:   { width: 64, height: 64, borderRadius: 32, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center", marginBottom: 12 },
+confirmTitle:      { fontSize: 18, fontWeight: "800", color: "#111827", marginBottom: 4 },
+confirmSubtitle:   { fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 16 },
+dotsRow:           { flexDirection: "row", gap: 14, marginBottom: 12 },
+dotsShake:         { transform: [{ translateX: 6 }] },
+dot:               { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: "#e5e7eb" },
+dotFilled:         { backgroundColor: BLUE, borderColor: BLUE },
+dotError:          { borderColor: "#DC2626", backgroundColor: "#DC2626" },
+errorText:         { fontSize: 12, color: "#DC2626", fontWeight: "500", marginBottom: 6 },
+cooldownText:      { fontSize: 11, color: "#6b7280", textAlign: "center", marginBottom: 6 },
+numpad: { width: "100%", marginTop: 4, borderTopWidth: 1, borderTopColor: "#E5E7EB", paddingTop: 16 },
+numpadHint: { fontSize: 9, color: "#6B7280", letterSpacing: 1, marginTop: 1 },
+numpadRow:         { flexDirection: "row", justifyContent: "space-around", marginBottom: 4 },
+numpadKey:         { width: 64, height: 64, borderRadius: 32, justifyContent: "center", alignItems: "center" },
+numpadDigit:       { fontSize: 22, color: "#111827" },
   biometricRow:      { alignItems: "center", marginTop: 14, gap: 4 },
   biometricLabel:    { fontSize: 12, color: "#6b7280" },
-  cancelLink:        { alignItems: "center", marginTop: 10 },
-  cancelLinkText:    { fontSize: 13, color: "#9ca3af" },
+  cancelLink:     { alignItems: "center", marginTop: 14, paddingVertical: 8 },
+cancelLinkText: { fontSize: 14, fontWeight: "600", color: BLUE },
 
   modalOverlay:      { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
   bankModal:         { backgroundColor: "#fff", borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, maxHeight: "80%" },
@@ -714,8 +827,7 @@ const s = StyleSheet.create({
   receiptLabel:      { fontSize: 11, color: "#9ca3af", marginBottom: 3 },
   receiptValue:      { fontSize: 13, fontWeight: "600", color: "#111827" },
   recipientRow:      { flexDirection: "row", alignItems: "center", gap: 10 },
-  recipientAvatar:   { width: 36, height: 36, borderRadius: 18, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
-  recipientInitials: { fontSize: 13, fontWeight: "700", color: BLUE },
+recipientAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center", overflow: "hidden" },  recipientInitials: { fontSize: 13, fontWeight: "700", color: BLUE },
   recipientName:     { fontSize: 13, fontWeight: "600", color: "#111827" },
   recipientMeta:     { fontSize: 11, color: "#6b7280" },
   doneBtn:           { width: "100%", backgroundColor: BLUE, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
@@ -748,4 +860,16 @@ phoneBankLabel:     { fontSize: 11, color: "#6b7280", marginBottom: 8 },
 phoneBankRow:       { flexDirection: "row", gap: 8, flexWrap: "wrap" },
 phoneBankChip:      { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18, backgroundColor: "#fff", borderWidth: 1.5, borderColor: BLUE },
 phoneBankChipText:  { fontSize: 12, fontWeight: "700", color: BLUE },
+
+bankItemLogo:         { width: 28, height: 28, borderRadius: 14 },
+bankItemLogoFallback: { width: 28, height: 28, borderRadius: 14, backgroundColor: "#f3f4f6", justifyContent: "center", alignItems: "center" },
+bankItemLogoFallbackText: { fontSize: 10, fontWeight: "700", color: "#6b7280" },
+forgotBtn:  { marginTop: 12, marginBottom: 28 },
+forgotText: { fontSize: 14, color: BLUE, fontWeight: "600" },
+bankScreen:       { flex: 1, backgroundColor: "#fff", paddingHorizontal: 18 },
+bankScreenHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14 },
+confirmSheetFull: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+reviewRowBorder:      { borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+reviewHighlightRow:   { backgroundColor: "#EEF3FF" },
+reviewValueHighlight: { fontSize: 15, fontWeight: "700", color: BLUE, textAlign: "right" },
 });

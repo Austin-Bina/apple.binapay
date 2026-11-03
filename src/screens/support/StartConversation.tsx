@@ -12,19 +12,16 @@ import { AxiosError } from "axios";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
-import { Chip, HelperText, Text, TouchableRipple } from "react-native-paper";
+import { Avatar, Chip, HelperText, Text } from "react-native-paper";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from 'expo-file-system/legacy';
 import { findFileSize, formatBytes, MAXIMUM_FILE_UPLOAD_SIZE, MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES } from "@utils/file";
-import { Image } from "react-native-element-image";
-import { vs } from "react-native-size-matters";
 import TextInput from "@components/ui/form/TextInput";
 import PleaseWaitModal from "@components/ui/modals/please-wait-modal";
 import { truncateString } from "@utils/index";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -54,44 +51,44 @@ export default function StartConversation({ navigation, route }: any) {
   const [initiateSupport]     = useInitiateSupportMutation();
 
   const { control, handleSubmit, setError, setValue, watch, reset } = useForm<FormValues>({
-  resolver: zodResolver(schema),
-  defaultValues: {
-    description: route.params?.initialMessage || "",
-    attachment: "",
-    attachment_mime: "",
-    attachment_name: "",
-  },
-});
+    resolver: zodResolver(schema),
+    defaultValues: {
+      description: route.params?.initialMessage || "",
+      attachment: "",
+      attachment_mime: "",
+      attachment_name: "",
+    },
+  });
 
   const values = watch();
 
-const handleSelectFile = async () => {
-  try {
-    const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
-    if (!result.canceled) {
-      const { uri, size, name, mimeType } = result.assets[0];
-      const formattedSize = formatBytes(size);
-      setReceiptInfo({ fileName: name, fileSize: formattedSize });
-      if (size && findFileSize(size) <= MAXIMUM_FILE_UPLOAD_SIZE) {
-        const receipt = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
-        setValue("attachment", receipt);
-        setValue("attachment_mime", mimeType);
-        setValue("attachment_name", name);
-      } else {
-        setError("attachment", {
-          message: `File is ${formattedSize}, exceeds limit of ${formatBytes(MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES)}`,
-        });
+  const handleSelectFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
+      if (!result.canceled) {
+        const { uri, size, name, mimeType } = result.assets[0];
+        const formattedSize = formatBytes(size);
+        setReceiptInfo({ fileName: name, fileSize: formattedSize });
+        if (size && findFileSize(size) <= MAXIMUM_FILE_UPLOAD_SIZE) {
+          const receipt = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+          setValue("attachment", receipt);
+          setValue("attachment_mime", mimeType);
+          setValue("attachment_name", name);
+        } else {
+          setError("attachment", {
+            message: `File is ${formattedSize}, exceeds limit of ${formatBytes(MAXIMUM_FILE_UPLOAD_SIZE_IN_BYTES)}`,
+          });
+        }
       }
+    } catch {
+      showToast({ message: "Something went wrong. Please try again." });
     }
-  } catch {
-    showToast({ message: "Something went wrong. Please try again." });
-  }
-};
+  };
 
   const handleRemoveFile = () => {
-  reset({ ...values, attachment: "", attachment_mime: "", attachment_name: "" });
-  setReceiptInfo(emptyReceiptInfo);
-};
+    reset({ ...values, attachment: "", attachment_mime: "", attachment_name: "" });
+    setReceiptInfo(emptyReceiptInfo);
+  };
 
   const onSubmit = handleSubmit(async function (values) {
     if (!departmentId) {
@@ -129,13 +126,20 @@ const handleSelectFile = async () => {
   });
 
   return (
-    <SafeAreaView style={s.root}>
-      {/* Header */}
-      <ScreenHeader
-  title="New Conversation"
-  subtitle={department?.name ? `${department.name} Team` : "Support Team"}
-  onBack={() => navigation.goBack()}
-/>
+    <View style={[s.root]}>
+      {/* Hero header — matches Support Hub / Support Assistant / Chat */}
+      <View style={[s.hero, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={s.backBtn}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View style={s.heroBrandRow}>
+          
+          <View>
+            <Text style={s.heroTitle}>New Conversation</Text>
+            <Text style={s.heroSub}>{department?.name ? `${department.name} Team` : "Support Team"}</Text>
+          </View>
+        </View>
+      </View>
 
       <ScrollableView contentContainerStyle={s.scroll}>
         {hasError && <Banner content="We had trouble starting a conversation. Please try again." />}
@@ -214,16 +218,19 @@ const handleSelectFile = async () => {
       </ScrollableView>
 
       <PleaseWaitModal visible={isProcessing} />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: "#f8f9fb" },
-  header:          { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
-  backBtn:         { width: 32, height: 32, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
-  headerTitle:     { fontSize: 16, fontWeight: "700", color: BRAND },
-  headerSub:       { fontSize: 11, color: "#6b7280", marginTop: 1 },
+
+  hero:            { backgroundColor: BRAND, paddingHorizontal: 20, paddingBottom: 22 },
+  backBtn:         { marginBottom: 14, alignSelf: "flex-start" },
+  heroBrandRow:    { flexDirection: "row", alignItems: "center", gap: 10 },
+  heroAvatar:      { backgroundColor: "#EEF3FF" },
+  heroTitle:       { fontSize: 18, fontWeight: "800", color: "#fff" },
+  heroSub:         { fontSize: 12, color: "#dbeafe", marginTop: 1 },
 
   scroll:          { padding: 16, paddingBottom: 40 },
 

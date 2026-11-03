@@ -28,6 +28,7 @@ import { TransactionStatus } from "@enum/transaction";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { generateEpinsTemplate } from "@helpers/templates/generateEpinsTemplate";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image as RNImage } from "react-native";
 
 type Props = HomeStackScreenProps<typeof SCREENS.VIEW_TRANSACTION>;
 
@@ -255,8 +256,12 @@ const detailRows = useMemo(() => {
             <Text style={s.recipientCardLabel}>Recipient Details</Text>
             <View style={s.recipientRow}>
               <View style={s.recipientAvatar}>
-                <MaterialCommunityIcons name="account" size={20} color={BRAND_MID} />
-              </View>
+          {td.bank_logo ? (
+  <RNImage source={{ uri: td.bank_logo }} style={{ width: 44, height: 44 }} resizeMode="cover" />
+) : (
+  <MaterialCommunityIcons name="account" size={20} color={BRAND_MID} />
+)}
+         </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.recipientName}>{td.beneficiary_name}</Text>
                 <Text style={s.recipientMeta}>
@@ -278,20 +283,28 @@ const detailRows = useMemo(() => {
       </Text>
     </View>
     <View style={s.feeRow}>
-      <Text style={s.feeLabel}>Transaction Fee</Text>
-      <Text style={[s.feeValue, { color: td.service_fee && Number(td.service_fee) > 0 ? FAIL : SUCCESS }]}>
-        {td.service_fee && Number(td.service_fee) > 0
-          ? `−₦${Number(td.service_fee).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
-          : "Free"}
-      </Text>
-    </View>
-    <View style={s.feeDivider} />
-    <View style={s.feeRow}>
-      <Text style={s.feeTotalLabel}>Total Charged</Text>
-      <Text style={s.feeTotalValue}>
-        ₦{(Number(td.transfer_amount ?? 0) + Number(td.service_fee ?? 0)).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-      </Text>
-    </View>
+  <Text style={s.feeLabel}>Transaction Fee</Text>
+  <Text style={[s.feeValue, { color: td.service_fee && Number(td.service_fee) > 0 ? FAIL : SUCCESS }]}>
+    {td.service_fee && Number(td.service_fee) > 0
+      ? `−₦${Number(td.service_fee).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
+      : "Free"}
+  </Text>
+</View>
+{!!td.stamp_duty && Number(td.stamp_duty) > 0 && (
+  <View style={s.feeRow}>
+    <Text style={s.feeLabel}>Stamp Duty</Text>
+    <Text style={[s.feeValue, { color: FAIL }]}>
+      −₦{Number(td.stamp_duty).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+    </Text>
+  </View>
+)}
+<View style={s.feeDivider} />
+<View style={s.feeRow}>
+  <Text style={s.feeTotalLabel}>Total Charged</Text>
+  <Text style={s.feeTotalValue}>
+    ₦{(Number(td.transfer_amount ?? 0) + Number(td.service_fee ?? 0) + Number(td.stamp_duty ?? 0)).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+  </Text>
+</View>
   </View>
 )}
         {/* ── Detail rows ── */}
@@ -415,8 +428,7 @@ heroStatus: { fontSize: 14, fontWeight: "600", textAlign: "center" },
   recipientCard:      { backgroundColor: "#fff", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#f0f0f0" },
   recipientCardLabel: { fontSize: 11, fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 },
   recipientRow:       { flexDirection: "row", alignItems: "center", gap: 12 },
-  recipientAvatar:    { width: 44, height: 44, borderRadius: 22, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
-  recipientName:      { fontSize: 15, fontWeight: "700", color: BRAND },
+recipientAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center", overflow: "hidden" },  recipientName:      { fontSize: 15, fontWeight: "700", color: BRAND },
   recipientMeta:      { fontSize: 13, color: "#6b7280", marginTop: 2 },
 
   // Detail section

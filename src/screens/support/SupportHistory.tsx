@@ -4,11 +4,10 @@ import { SupportStackScreenProps } from "@navigators/types";
 import { useGetSupportHistoryQuery } from "@store/redux-api/supportApi";
 import { formatSecondsToDate } from "@utils/index";
 import { Fragment } from "react";
-import { View, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
-import { Text } from "react-native-paper";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { Avatar, Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import ScreenHeader from "@components/ui/shared/ScreenHeader";
 
 const BLUE  = "#2563EB";
 const BRAND = "#1E3A8A";
@@ -25,13 +24,20 @@ export default function SupportHistory({ navigation }: Props) {
   };
 
   return (
- <View style={[s.root]}>      
+    <View style={s.root}>
+      {/* Hero header — matches Support Hub / Support Assistant / Chat */}
+      <View style={[s.hero, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={s.backBtn}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View style={s.heroBrandRow}>
 
- <ScreenHeader
-        title="Support History"
-        subtitle="All your previous support tickets"
-        onBack={() => navigation.goBack()}
-      />
+          <View>
+            <Text style={s.heroTitle}>Support History</Text>
+            <Text style={s.heroSub}>All your previous support tickets</Text>
+          </View>
+        </View>
+      </View>
 
       <ScrollableView contentContainerStyle={s.scroll}>
         {isHistoryError && (
@@ -84,10 +90,13 @@ export default function SupportHistory({ navigation }: Props) {
 
 const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: "#f8f9fb" },
-  header:          { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
-  backBtn:         { width: 32, height: 32, borderRadius: 10, backgroundColor: "#EEF3FF", justifyContent: "center", alignItems: "center" },
-  headerTitle:     { fontSize: 16, fontWeight: "700", color: BRAND },
-  headerSub:       { fontSize: 11, color: "#6b7280", marginTop: 1 },
+
+  hero:            { backgroundColor: BRAND, paddingHorizontal: 20, paddingBottom: 22 },
+  backBtn:         { marginBottom: 14, alignSelf: "flex-start" },
+  heroBrandRow:    { flexDirection: "row", alignItems: "center", gap: 10 },
+  heroAvatar:      { backgroundColor: "#EEF3FF" },
+  heroTitle:       { fontSize: 18, fontWeight: "800", color: "#fff" },
+  heroSub:         { fontSize: 12, color: "#dbeafe", marginTop: 1 },
 
   scroll:          { padding: 16, paddingBottom: 40 },
 

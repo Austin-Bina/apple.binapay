@@ -219,6 +219,9 @@ const viewTransactionHelper = (transaction: WalletTransaction | null): ViewTrans
             transfer_amount: details.transfer_details.transfer_amount ?? null,
             service_fee:     details.transfer_details.service_fee     ?? null,
             narration:           details.transfer_details.narration           ?? null,
+             bank_logo:           details.transfer_details.bank_logo            ?? null,
+             stamp_duty: details.transfer_details.stamp_duty  ?? null,
+            
           }
         : undefined;
 
